@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checklist — Projeção Fundo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f4f4f4;
+      font-family: 'Nunito', sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .a4-page {
+      width: 210mm;
+      min-height: 297mm;
+      background: #ffffff;
+      padding: 14mm 14mm 12mm;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.13);
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 4mm;
+      padding-bottom: 3mm;
+      border-bottom: 3px solid #013C21;
+    }
+
+    .header-icon-wrap {
+      width: 58px;
+      height: 58px;
+      background: #013C21;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .header-icon-wrap i {
+      font-size: 40px;
+      color: #ffff77;
+    }
+
+    .header-text h1 {
+      font-size: 26px;
+      font-weight: 900;
+      color: #013C21;
+      letter-spacing: -0.4px;
+      line-height: 1.1;
+    }
+
+    .header-text p {
+      font-size: 13px;
+      color: #595959;
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    .header-logo {
+      height: 58px;
+      width: auto;
+      margin-left: auto;
+      object-fit: contain;
+    }
+
+    /* ── SECTIONS ── */
+    .sections-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5mm;
+      flex: 1;
+    }
+
+    .section-card {
+      border-radius: 11px;
+      overflow: hidden;
+      border: 1.5px solid #e4e4e4;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+    }
+
+    .section-header i { font-size: 28px; }
+
+    .section-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      line-height: 0.9;
+      display: block;
+    }
+
+    .section-subtitle {
+      font-size: 11.5px;
+      font-weight: 600;
+      opacity: 0.72;
+      margin-top: 2px;
+      display: block;
+    }
+
+    .section-body {
+      background: #ffffff;
+      padding: 6px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    /* ── ITEMS ── */
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .check-box {
+      width: 17px;
+      height: 17px;
+      border-radius: 4px;
+      border: 2px solid #ccc;
+      flex-shrink: 0;
+    }
+
+    .item-content {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex: 1;
+    }
+
+    .item-content i {
+      font-size: 18px;
+      color: #949494;
+      flex-shrink: 0;
+    }
+
+    .item-text {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #1e1e1e;
+      line-height: 1.45;
+    }
+
+    /* ── TAGS ── */
+    .item-tag {
+      display: inline-block;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 20px;
+      margin-left: 3px;
+      vertical-align: middle;
+    }
+
+    .tag-vermelho { background: #ffe5e5; color: #b71c1c; }
+    .tag-branco   { background: #eeeeee; color: #595959; }
+    .tag-live     { background: #fff3cd; color: #7a5200; }
+    .tag-frente   { background: #ddeeff; color: #0d47a1; }
+
+    /* ── NOTE inline ── */
+    .item-subnote {
+      font-size: 11.5px;
+      color: #888;
+      font-style: italic;
+      margin-left: 6px;
+    }
+
+    /* ── TIP (balão de informação) ── */
+    .tip-row {
+      background: #f0f7ff;
+      border: 1.5px solid #b3d4f5;
+      border-radius: 7px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      margin-top: 1px;
+    }
+
+    .tip-row i {
+      font-size: 17px;
+      color: #1565c0;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .tip-row .item-text {
+      font-size: 12.5px;
+      color: #0d3c6e;
+    }
+
+    /* ── ALERT ── */
+    .alert-row {
+      background: #fffde7;
+      border: 1px solid #ffe57f;
+      border-radius: 7px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      margin-top: 1px;
+    }
+
+    .alert-row i {
+      font-size: 14px;
+      color: #c07800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .alert-row .item-text {
+      font-size: 11px;
+      color: #4e3500;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #f0f0f0;
+      margin: 2px 0;
+    }
+
+    /* ── SECTION THEMES ── */
+    .s-antes30 .section-header { background: #ffff77; }
+    .s-antes30 .section-header i { color: #012615; }
+    .s-antes30 .section-title { color: #012615; }
+    .s-antes30 .section-subtitle { color: #013C21; }
+    .s-antes30 .check-box { border-color: #b8b800; }
+
+    .s-antes10 .section-header { background: #036135; }
+    .s-antes10 .section-header i { color: #ffff77; }
+    .s-antes10 .section-title { color: #ffffff; }
+    .s-antes10 .section-subtitle { color: #a8e8c0; }
+    .s-antes10 .check-box { border-color: #036135; }
+
+    .s-durante .section-header { background: #013C21; }
+    .s-durante .section-header i { color: #ffff77; }
+    .s-durante .section-title { color: #ffff77; }
+    .s-durante .section-subtitle { color: #8ecfaa; }
+    .s-durante .check-box { border-color: #013C21; }
+
+    .s-final .section-header { background: #595959; }
+    .s-final .section-header i { color: #ffff77; }
+    .s-final .section-title { color: #ffffff; }
+    .s-final .section-subtitle { color: #d0d0d0; }
+    .s-final .check-box { border-color: #595959; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3mm;
+      padding-top: 3mm;
+      border-top: 2px solid #013C21;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-brand {
+      font-size: 12px;
+      font-weight: 800;
+      color: #013C21;
+      letter-spacing: 0.3px;
+    }
+
+    .footer-tip {
+      font-size: 11.5px;
+      color: #949494;
+      font-weight: 600;
+      font-style: italic;
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      body {
+        background: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .a4-page {
+        box-shadow: none;
+        width: 100%;
+        min-height: auto;
+        padding: 8mm 12mm 28mm;
+        page-break-after: always;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page-footer {
+        position: fixed;
+        bottom: 14mm;
+        left: 12mm;
+        right: 12mm;
+        margin: 0;
+        padding-top: 3mm;
+      }
+
+
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="a4-page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="header-icon-wrap">
+      <i class="ti ti-device-projector" aria-hidden="true"></i>
+    </div>
+    <div class="header-text">
+      <h1>Projeção Fundo — Checklist</h1>
+      <p>Guia rápido para a utilização e operação do Projeção Fundo &nbsp;·&nbsp; Siga todas as instruções!</p>
+    </div>
+    <img src="assets/logo.png" alt="Logo da Igreja" class="header-logo">
+  </div>
+
+  <div class="sections-grid">
+
+    <!-- 30 min antes -->
+    <div class="section-card s-antes30">
+      <div class="section-header">
+        <i class="ti ti-tool" aria-hidden="true"></i>
+        <div>
+          <span class="section-title">30 minutos antes</span>
+          <span class="section-subtitle">Chegue adiantado — equipamento ligado, arquivos abertos e projeção testada</span>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-plug" aria-hidden="true"></i>
+            <span class="item-text">Ligar energia do Datashow Fundo e PC Fundo <span class="item-tag tag-vermelho">botão vermelho</span></span>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-device-desktop" aria-hidden="true"></i>
+            <span class="item-text">Ligar o PC Fundo pelo botão do próprio PC Fundo</span>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-music" aria-hidden="true"></i>
+            <span class="item-text">Abrir o Holyrics<span class="item-subnote">· será utilizado apenas para a Bíblia, não precisa adicionar as músicas</span> </span>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-folder-open" aria-hidden="true"></i>
+            <span class="item-text">Abrir o arquivo do PowerPoint do dia<span class="item-subnote">· OneDrive › Louvor › Cultos</span></span>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-eye" aria-hidden="true"></i>
+            <span class="item-text">Conferir o arquivo PowerPoint junto ao Holyrics do Note Frente<span class="item-subnote">· músicas, letras, ordem, repetições...</span></span>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-device-projector" aria-hidden="true"></i>
+            <span class="item-text">Testar a projeção do PowerPoint no Datashow Fundo </span>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-device-projector" aria-hidden="true"></i>
+            <span class="item-text">Testar a projeção de um versículo<span class="item-subnote">· deve aparecer na transmissão também</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10 min antes -->
+    <div class="section-card s-antes10">
+      <div class="section-header">
+        <i class="ti ti-clock" aria-hidden="true"></i>
+        <div>
+          <span class="section-title">10 minutos antes</span>
+          <span class="section-subtitle">Fique posicionado e confirme que a tudo está configurada</span>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-broadcast" aria-hidden="true"></i>
+            <span class="item-text">Confirmar que o Datashow Fundo está exibindo a tela da transmissão</span>
+          </div>
+        </div>
+        <div class="alert-row">
+          <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+          <span class="item-text">Se não estiver: abrir o Chrome na página NDI Fundo, e selecionar<span class="item-tag tag-frente">PC Live</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Durante o culto -->
+    <div class="section-card s-durante">
+      <div class="section-header">
+        <i class="ti ti-presentation" aria-hidden="true"></i>
+        <div>
+          <span class="section-title">Durante o culto</span>
+          <span class="section-subtitle">Sirva com atenção — antecipe os slides e fique atento ao culto</span>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-broadcast" aria-hidden="true"></i>
+            <span class="item-text">Confirmar que o Datashow Fundo agora está exibindo a tela do Note Frente</span>
+          </div>
+        </div>
+        <div class="alert-row">
+          <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+          <span class="item-text">Se não estiver: abrir o Chrome na página NDI Fundo, e selecionar<span class="item-tag tag-frente">Note Frente</span></span>
+        </div>
+        <hr class="divider">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-book" aria-hidden="true"></i>
+            <span class="item-text">Exibir textos bíblicos pelo Holyrics</span>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-player-skip-forward" aria-hidden="true"></i>
+            <span class="item-text">Exibir e passar os slides do PowerPoint para a Equipe de Louvor</span>
+          </div>
+        </div>
+        <div class="tip-row">
+          <i class="ti ti-info-circle" aria-hidden="true"></i>
+          <span class="item-text">Passe os slides um pouco <strong>antes</strong> do fim de cada frase</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ao final -->
+    <div class="section-card s-final">
+      <div class="section-header">
+        <i class="ti ti-power" aria-hidden="true"></i>
+        <div>
+          <span class="section-title">Ao final</span>
+          <span class="section-subtitle">Desligue tudo com cuidado e deixe a sala organizada para a próxima vez</span>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-x" aria-hidden="true"></i>
+            <span class="item-text">Fechar o Holyrics e todos os arquivos abertos</span>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-device-desktop-off" aria-hidden="true"></i>
+            <span class="item-text">Desligar o PC Fundo</span>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-device-remote" aria-hidden="true"></i>
+            <span class="item-text">Desligar o Datashow Fundo <span class="item-tag tag-branco">botão branco da sala</span><span class="item-subnote">· caso não funcione, utilize o controle remoto</span></span>
+          </div>
+        </div>
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-eye" aria-hidden="true"></i>
+            <span class="item-text">Confirmar que o Datashow Fundo desligou completamente</span>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="checklist-item">
+          <div class="check-box"></div>
+          <div class="item-content">
+            <i class="ti ti-plug" aria-hidden="true"></i>
+            <span class="item-text">Desligar energia do Datashow Fundo e PC Fundo <span class="item-tag tag-vermelho">botão vermelho</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="page-footer">
+    <span class="footer-brand">IPB Jacareí</span>
+    <span class="footer-tip">"Tudo quanto fizerem, façam de todo o coração, como para o Senhor, e não para os homens." (Colossenses 3:23) ✦</span>
+  </div>
+
+</div>
+
+</body>
+</html>

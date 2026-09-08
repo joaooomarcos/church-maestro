@@ -1,0 +1,29 @@
+{
+  "name": "maestro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Controlador de operação dos cultos — IPB Jacareí",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @maestro/shared && npm run build -w @maestro/hub && npm run build -w @maestro/agent && npm run build -w @maestro/web",
+    "dev": "MAESTRO_MOCK=1 npm run dev -w @maestro/hub",
+    "dev:web": "npm run dev -w @maestro/web",
+    "dev:agent": "npm run dev -w @maestro/agent",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "tsc -b packages/shared packages/hub packages/agent",
+    "start": "node packages/hub/dist/index.js",
+    "checklists": "node scripts/converter-checklist.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8",
+    "@types/node": "^22.10.2"
+  }
+}

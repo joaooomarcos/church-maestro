@@ -1,0 +1,163 @@
+{
+  "id": "projecao-fundo",
+  "nome": "Projeção Fundo",
+  "maquina": "pc-fundo",
+  "blocos": [
+    {
+      "id": "30-minutos-antes",
+      "titulo": "30 minutos antes",
+      "subtitulo": "Chegue adiantado — equipamento ligado, arquivos abertos e projeção testada",
+      "itens": [
+        {
+          "id": "ligar-energia-do-datashow-fundo-e",
+          "texto": "Ligar energia do Datashow Fundo e PC Fundo",
+          "etiqueta": "botão vermelho",
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "ligar-o-pc-fundo-pelo-botao",
+          "texto": "Ligar o PC Fundo pelo botão do próprio PC Fundo",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "abrir-o-holyrics",
+          "texto": "Abrir o Holyrics",
+          "etiqueta": null,
+          "nota": "será utilizado apenas para a Bíblia, não precisa adicionar as músicas",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "abrir-o-arquivo-do-powerpoint-do",
+          "texto": "Abrir o arquivo do PowerPoint do dia",
+          "etiqueta": null,
+          "nota": "OneDrive › Louvor › Cultos",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "conferir-o-arquivo-powerpoint-junto-ao",
+          "texto": "Conferir o arquivo PowerPoint junto ao Holyrics do Note Frente",
+          "etiqueta": null,
+          "nota": "músicas, letras, ordem, repetições...",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "testar-a-projecao-do-powerpoint-no",
+          "texto": "Testar a projeção do PowerPoint no Datashow Fundo",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "testar-a-projecao-de-um-versiculo",
+          "texto": "Testar a projeção de um versículo",
+          "etiqueta": null,
+          "nota": "deve aparecer na transmissão também",
+          "dica": null,
+          "autoCheck": null
+        }
+      ]
+    },
+    {
+      "id": "10-minutos-antes",
+      "titulo": "10 minutos antes",
+      "subtitulo": "Fique posicionado e confirme que a tudo está configurada",
+      "itens": [
+        {
+          "id": "confirmar-que-o-datashow-fundo-esta",
+          "texto": "Confirmar que o Datashow Fundo está exibindo a tela da transmissão",
+          "etiqueta": null,
+          "nota": null,
+          "dica": "Se não estiver: abrir o Chrome na página NDI Fundo, e selecionar PC Live",
+          "autoCheck": null
+        }
+      ]
+    },
+    {
+      "id": "durante-o-culto",
+      "titulo": "Durante o culto",
+      "subtitulo": "Sirva com atenção — antecipe os slides e fique atento ao culto",
+      "itens": [
+        {
+          "id": "confirmar-que-o-datashow-fundo-agora",
+          "texto": "Confirmar que o Datashow Fundo agora está exibindo a tela do Note Frente",
+          "etiqueta": null,
+          "nota": null,
+          "dica": "Se não estiver: abrir o Chrome na página NDI Fundo, e selecionar Note Frente",
+          "autoCheck": null
+        },
+        {
+          "id": "exibir-textos-biblicos-pelo-holyrics",
+          "texto": "Exibir textos bíblicos pelo Holyrics",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "exibir-e-passar-os-slides-do",
+          "texto": "Exibir e passar os slides do PowerPoint para a Equipe de Louvor",
+          "etiqueta": null,
+          "nota": null,
+          "dica": "Passe os slides um pouco antes do fim de cada frase",
+          "autoCheck": null
+        }
+      ]
+    },
+    {
+      "id": "ao-final",
+      "titulo": "Ao final",
+      "subtitulo": "Desligue tudo com cuidado e deixe a sala organizada para a próxima vez",
+      "itens": [
+        {
+          "id": "fechar-o-holyrics-e-todos-os",
+          "texto": "Fechar o Holyrics e todos os arquivos abertos",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "desligar-o-pc-fundo",
+          "texto": "Desligar o PC Fundo",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "desligar-o-datashow-fundo",
+          "texto": "Desligar o Datashow Fundo",
+          "etiqueta": "botão branco da sala",
+          "nota": "caso não funcione, utilize o controle remoto",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "confirmar-que-o-datashow-fundo-desligou",
+          "texto": "Confirmar que o Datashow Fundo desligou completamente",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "desligar-energia-do-datashow-fundo-e",
+          "texto": "Desligar energia do Datashow Fundo e PC Fundo",
+          "etiqueta": "botão vermelho",
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        }
+      ]
+    }
+  ]
+}

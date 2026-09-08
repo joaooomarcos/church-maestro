@@ -1,0 +1,35 @@
+{
+  "_comentario": "Os nomes em 'fonte' precisam bater exatamente com os que aparecem na lista do NDI Studio Monitor (formato 'MAQUINA (NDI Screen Capture)'). Ajuste na primeira instalação: abra a aba NDI do painel e copie os nomes de lá.",
+  "cenarios": [
+    {
+      "id": "pre-culto",
+      "nome": "Pré-culto",
+      "descricao": "Datashow do fundo exibindo a tela da transmissão, como manda o checklist dos 10 minutos antes.",
+      "icone": "🕐",
+      "acoes": [
+        { "tipo": "ndi.definirFonte", "dispositivo": "pc-fundo", "porta": 80, "fonte": "PC-LIVE (Screen Capture)" }
+      ]
+    },
+    {
+      "id": "louvor",
+      "nome": "Louvor",
+      "descricao": "Datashow do fundo exibindo a tela do Note Frente, para a equipe acompanhar a letra.",
+      "icone": "🎵",
+      "acoes": [
+        { "tipo": "ndi.definirFonte", "dispositivo": "pc-fundo", "porta": 80, "fonte": "NOTE-FRENTE (Screen Capture)" }
+      ]
+    },
+    {
+      "id": "encerrar",
+      "nome": "Encerrar",
+      "descricao": "Tira tudo do ar no fim do culto: fundo sem fonte e Holyrics com tela limpa.",
+      "icone": "🌙",
+      "acoes": [
+        { "tipo": "holyrics.encerrarApresentacao", "dispositivo": "note-frente" },
+        { "tipo": "holyrics.encerrarApresentacao", "dispositivo": "pc-fundo" },
+        { "tipo": "espera", "ms": 300 },
+        { "tipo": "ndi.definirFonte", "dispositivo": "pc-fundo", "porta": 80, "fonte": null }
+      ]
+    }
+  ]
+}

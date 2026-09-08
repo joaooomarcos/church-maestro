@@ -1,0 +1,654 @@
+/* ---------------------------------------------------------------------- *
+ * Maestro — painel de controle de culto.
+ * Mobile-first: a base é pensada para ~390px, com um único ajuste para
+ * telas largas no fim do arquivo. Tema escuro fixo (a igreja opera no
+ * escuro durante o culto) — não há variante clara.
+ * ---------------------------------------------------------------------- */
+
+:root {
+  --cor-fundo: #0b0f14;
+  --cor-fundo-elevado: #121821;
+  --cor-fundo-cartao: #182130;
+  --cor-borda: #2a3646;
+  --cor-texto: #eef3f8;
+  --cor-texto-fraco: #93a4b8;
+  --cor-primaria: #2f7dd8;
+  --cor-primaria-forte: #4a92ea;
+  --cor-sucesso: #2fa860;
+  --cor-sucesso-fundo: rgba(47, 168, 96, 0.16);
+  --cor-perigo: #e0453f;
+  --cor-perigo-fundo: rgba(224, 69, 63, 0.16);
+  --cor-aviso: #e0a83f;
+  --cor-aviso-fundo: rgba(224, 168, 63, 0.16);
+  --cor-neutro: #64758a;
+  --raio: 14px;
+  --raio-grande: 18px;
+  --altura-toque-min: 56px;
+  --altura-botao-gigante: 124px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button {
+  font-family: inherit;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+/* --- layout geral -------------------------------------------------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.carregando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  color: var(--cor-texto-fraco);
+}
+
+.app__cabecalho {
+  flex-shrink: 0;
+  padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.app__logo {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+.app__conteudo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app__rodape {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--cor-fundo-elevado);
+  border-top: 1px solid var(--cor-borda);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* --- faixa de reconexão --------------------------------------------- */
+
+.faixa-reconectando {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 8px;
+  background: var(--cor-aviso-fundo);
+  color: var(--cor-aviso);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* --- toasts ---------------------------------------------------------- */
+
+.toasts {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  text-align: left;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  color: var(--cor-texto);
+  background: var(--cor-fundo-cartao);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.toast--erro {
+  border-color: var(--cor-perigo);
+  background: var(--cor-perigo-fundo);
+}
+
+.toast--alerta {
+  border-color: var(--cor-aviso);
+  background: var(--cor-aviso-fundo);
+}
+
+.toast--info {
+  border-color: var(--cor-primaria);
+  background: rgba(47, 125, 216, 0.16);
+}
+
+/* --- abas (rodapé) ---------------------------------------------------- */
+
+.abas {
+  display: flex;
+}
+
+.abas__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 60px;
+  background: transparent;
+  border: none;
+  color: var(--cor-texto-fraco);
+}
+
+.abas__item--ativo {
+  color: var(--cor-primaria-forte);
+}
+
+.abas__icone {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.abas__rotulo {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.controles-contextuais {
+  padding: 10px 10px 0;
+}
+
+/* --- botões gigantes (avançar/voltar) --------------------------------- */
+
+.botoes-gigantes {
+  display: flex;
+  gap: 10px;
+}
+
+.botao-gigante {
+  flex: 1;
+  min-height: var(--altura-botao-gigante);
+  border-radius: var(--raio-grande);
+  border: none;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.botao-gigante:active {
+  background: var(--cor-primaria-forte);
+  transform: scale(0.98);
+}
+
+/* --- botão de ação (iniciar apresentação, testes, etc.) ---------------- */
+
+.botao-acao {
+  width: 100%;
+  min-height: var(--altura-toque-min);
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-primaria);
+  background: rgba(47, 125, 216, 0.14);
+  color: var(--cor-primaria-forte);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.botao-acao:active {
+  background: rgba(47, 125, 216, 0.28);
+}
+
+/* --- botões de opção (seleção de fonte, dispositivo, etc.) ------------- */
+
+.botao-opcao {
+  min-height: var(--altura-toque-min);
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.botao-opcao--ativo {
+  border-color: var(--cor-primaria);
+  background: rgba(47, 125, 216, 0.22);
+  color: var(--cor-primaria-forte);
+}
+
+.seletor-dispositivo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* --- tela de PIN -------------------------------------------------------- */
+
+.tela-pin {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+}
+
+.tela-pin__titulo {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.tela-pin__subtitulo {
+  color: var(--cor-texto-fraco);
+  margin-bottom: 8px;
+}
+
+.tela-pin__pontos {
+  display: flex;
+  gap: 12px;
+  min-height: 18px;
+}
+
+.tela-pin__ponto {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--cor-borda);
+  background: transparent;
+}
+
+.tela-pin__ponto--preenchido {
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+}
+
+.tela-pin__erro {
+  color: var(--cor-perigo);
+  font-weight: 600;
+  min-height: 20px;
+  text-align: center;
+}
+
+.tela-pin__teclado {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 8px;
+}
+
+.tela-pin__tecla {
+  min-height: 72px;
+  border-radius: var(--raio-grande);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.tela-pin__tecla:active {
+  background: var(--cor-fundo-elevado);
+}
+
+.tela-pin__tecla--entrar {
+  background: var(--cor-sucesso);
+  border-color: var(--cor-sucesso);
+  color: #fff;
+}
+
+.tela-pin__tecla--apagar {
+  color: var(--cor-texto-fraco);
+}
+
+/* --- Painel -------------------------------------------------------- */
+
+.painel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.painel__cenarios {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.botao-cenario {
+  min-height: 88px;
+  border-radius: var(--raio-grande);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px;
+}
+
+.botao-cenario:active {
+  background: var(--cor-fundo-elevado);
+}
+
+.botao-cenario__icone {
+  font-size: 1.6rem;
+}
+
+.painel__dispositivos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.painel__vazio {
+  color: var(--cor-texto-fraco);
+  text-align: center;
+  padding: 24px 0;
+}
+
+.cartao-dispositivo {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  background: var(--cor-fundo-cartao);
+  padding: 14px;
+}
+
+.cartao-dispositivo__cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cartao-dispositivo__cabecalho h2 {
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.cartao-dispositivo__integracoes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--cor-texto-fraco);
+  font-size: 0.9rem;
+}
+
+.cartao-dispositivo__sem-integracao {
+  color: var(--cor-texto-fraco);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+.cartao-dispositivo__alerta {
+  color: var(--cor-perigo);
+  font-weight: 700;
+}
+
+/* --- semáforo -------------------------------------------------------- */
+
+.semaforo {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.semaforo__ponto {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+}
+
+.semaforo--online .semaforo__ponto {
+  background: var(--cor-sucesso);
+  box-shadow: 0 0 8px var(--cor-sucesso);
+}
+
+.semaforo--offline .semaforo__ponto {
+  background: var(--cor-perigo);
+  box-shadow: 0 0 8px var(--cor-perigo);
+}
+
+.semaforo--nao-configurado .semaforo__ponto {
+  background: var(--cor-neutro);
+}
+
+/* --- NDI --------------------------------------------------------------- */
+
+.ndi {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ndi__vazio,
+.holyrics__vazio,
+.powerpoint__vazio {
+  color: var(--cor-texto-fraco);
+  text-align: center;
+  padding: 24px 0;
+}
+
+.ndi__bloco h2 {
+  font-size: 0.95rem;
+  color: var(--cor-texto-fraco);
+  margin-bottom: 10px;
+}
+
+.ndi__opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* --- Holyrics / PowerPoint ---------------------------------------------- */
+
+.holyrics__status,
+.powerpoint__status {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  background: var(--cor-fundo-cartao);
+  padding: 20px 16px;
+  text-align: center;
+}
+
+.holyrics__status h2,
+.powerpoint__status h2 {
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+
+.powerpoint__aviso {
+  color: var(--cor-aviso);
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+/* --- Testes -------------------------------------------------------------- */
+
+.testes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.testes__botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.testes__progresso {
+  text-align: center;
+  color: var(--cor-texto-fraco);
+}
+
+.resultado-check {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  background: var(--cor-fundo-cartao);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resultado-check--falha {
+  border-color: var(--cor-perigo);
+}
+
+.resultado-check--aviso {
+  border-color: var(--cor-aviso);
+}
+
+.resultado-check--ok {
+  border-color: var(--cor-sucesso);
+}
+
+.resultado-check__cabecalho h2 {
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+.resultado-check__cabecalho p {
+  color: var(--cor-texto-fraco);
+  font-size: 0.9rem;
+}
+
+.resultado-check__passos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passo-check {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--raio);
+  background: var(--cor-fundo-elevado);
+}
+
+.passo-check--falha {
+  background: var(--cor-perigo-fundo);
+}
+
+.passo-check--aviso {
+  background: var(--cor-aviso-fundo);
+}
+
+.passo-check--ok {
+  background: var(--cor-sucesso-fundo);
+}
+
+.passo-check__icone {
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.passo-check__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.passo-check__titulo {
+  font-weight: 700;
+  font-size: 0.94rem;
+}
+
+.passo-check__detalhe {
+  color: var(--cor-texto-fraco);
+  font-size: 0.88rem;
+}
+
+.passo-check__resolver {
+  margin-top: 4px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--cor-aviso);
+}
+
+/* --- adaptação para telas largas ---------------------------------------- */
+
+@media (min-width: 720px) {
+  body {
+    display: flex;
+    justify-content: center;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 0 0 1px var(--cor-borda);
+  }
+
+  .painel__cenarios {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

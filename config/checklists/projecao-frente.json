@@ -1,0 +1,171 @@
+{
+  "id": "projecao-frente",
+  "nome": "Projeção Frente",
+  "maquina": "note-frente",
+  "blocos": [
+    {
+      "id": "30-minutos-antes",
+      "titulo": "30 minutos antes",
+      "subtitulo": "Chegue adiantado — equipamento ligado, arquivos abertos e projeção testada",
+      "itens": [
+        {
+          "id": "ligar-energia-do-datashow-frente-e",
+          "texto": "Ligar energia do Datashow Frente e Note Frente",
+          "etiqueta": "botão vermelho",
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "ligar-o-note-frente-pelo-botao",
+          "texto": "Ligar o Note Frente pelo botão do próprio Note",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "abrir-o-holyrics",
+          "texto": "Abrir o Holyrics",
+          "etiqueta": null,
+          "nota": "será utilizado apenas para as músicas, não exibiremos a Bíblia",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "adicionar-as-musicas-do-dia-no",
+          "texto": "Adicionar as músicas do dia no Holyrics",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "conferir-a-ordem-dos-hinos-e",
+          "texto": "Conferir a ordem dos hinos e músicas",
+          "etiqueta": null,
+          "nota": "pela liturgia, ou pelo Voluts",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "conferir-as-letras-junto-aos-slides",
+          "texto": "Conferir as letras junto aos slides (PowerPoint) do louvor",
+          "etiqueta": null,
+          "nota": "músicas, letras, ordem, repetições...",
+          "dica": "Não se esqueça que à noite sempre temos um hino",
+          "autoCheck": null
+        },
+        {
+          "id": "conferir-os-avisos",
+          "texto": "Conferir os avisos",
+          "etiqueta": null,
+          "nota": "vá na pasta de avisos e confira se não tem avisos antigos e apague eles",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "testar-a-projecao-do-holyrics-com",
+          "texto": "Testar a projeção do Holyrics com uma música",
+          "etiqueta": null,
+          "nota": "deve aparecer na transmissão também",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "testar-a-projecao-dos-avisos",
+          "texto": "Testar a projeção dos avisos",
+          "etiqueta": null,
+          "nota": "caso tenha vídeo ou apresentação diferente, teste também",
+          "dica": null,
+          "autoCheck": null
+        }
+      ]
+    },
+    {
+      "id": "10-minutos-antes",
+      "titulo": "10 minutos antes",
+      "subtitulo": "Inicie os avisos e fique posicionado para o culto",
+      "itens": [
+        {
+          "id": "iniciar-a-apresentacao-dos-avisos",
+          "texto": "Iniciar a apresentação dos avisos",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        }
+      ]
+    },
+    {
+      "id": "durante-o-culto",
+      "titulo": "Durante o culto",
+      "subtitulo": "Sirva com atenção — acompanhe o culto e antecipe cada slide",
+      "itens": [
+        {
+          "id": "remover-os-avisos",
+          "texto": "Remover os avisos",
+          "etiqueta": null,
+          "nota": "assim que o culto iniciar",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "exibir-os-hinos-e-musicas",
+          "texto": "Exibir os hinos e músicas",
+          "etiqueta": null,
+          "nota": null,
+          "dica": "Não exibir os textos bíblicos lidos — exibir apenas pequenos textos que serão citados Passe os slides um pouco antes do fim de cada frase",
+          "autoCheck": null
+        }
+      ]
+    },
+    {
+      "id": "ao-final",
+      "titulo": "Ao final",
+      "subtitulo": "Feche tudo com cuidado e deixe a sala organizada para a próxima vez",
+      "itens": [
+        {
+          "id": "fechar-o-holyrics-e-todos-os",
+          "texto": "Fechar o Holyrics e todos os arquivos abertos",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "desligar-o-note-frente",
+          "texto": "Desligar o Note Frente",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "desligar-o-datashow",
+          "texto": "Desligar o Datashow",
+          "etiqueta": "botão branco da sala",
+          "nota": "caso não funcione, utilize o controle remoto",
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "confirmar-que-o-datashow-desligou-completamente",
+          "texto": "Confirmar que o Datashow desligou completamente",
+          "etiqueta": null,
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        },
+        {
+          "id": "desligar-energia-do-datashow-frente-e",
+          "texto": "Desligar energia do Datashow Frente e Note Frente",
+          "etiqueta": "botão vermelho",
+          "nota": null,
+          "dica": null,
+          "autoCheck": null
+        }
+      ]
+    }
+  ]
+}

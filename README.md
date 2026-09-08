@@ -1,0 +1,81 @@
+# Maestro
+
+Painel de operação dos cultos da IPB Jacareí. Roda na rede local e se abre no
+navegador do celular ou do computador.
+
+## O problema
+
+A operação de um culto envolve quatro máquinas, cada uma com uma pessoa
+diferente, e a escala muda toda semana. O que se sabe fazer está em dois
+checklists impressos e na memória de quem já operou — então volta e meia alguém
+esquece de testar a legenda, esquece de conferir o NDI, e o culto sai fora do
+padrão.
+
+O Maestro tira isso da memória das pessoas: mostra o estado real de todas as
+máquinas, deixa controlar o que precisa de um celular, e roda os testes de
+legenda e de NDI com um toque, dizendo em português onde quebrou e o que fazer.
+
+## As máquinas
+
+| Máquina | Sistema | Função |
+| --- | --- | --- |
+| PC Transmissão | Windows 11 | OBS, câmeras e YouTube. Hospeda o hub. |
+| Note Frente | Windows 11 | Holyrics da projeção da igreja e das legendas do OBS. |
+| PC Fundo | Windows 10 | PowerPoint do louvor e Holyrics dos textos de apoio. |
+| Note Som | Linux | Som que vai para a transmissão. |
+
+Cada máquina envia a própria tela pelo **NDI Screen Capture** e recebe a tela das
+outras pelo **NDI Studio Monitor**.
+
+## Estrutura
+
+```
+maestro/
+├── packages/
+│   ├── shared/   contratos (tipos e schemas) usados pelos três lados
+│   ├── hub/      servidor central: drivers, testes, WebSocket
+│   ├── web/      painel React, pensado primeiro para celular
+│   └── agent/    agente local de cada máquina (status e PowerPoint)
+├── config/       hub.json, devices.json, scenarios.json, checklists/
+├── manuais/      os checklists em HTML/PDF que deram origem ao projeto
+├── scripts/      utilitários de build e conversão
+└── docs/         guia de instalação máquina a máquina
+```
+
+## Desenvolvimento
+
+Requer Node.js 20 ou superior.
+
+```bash
+npm install
+npm run build
+```
+
+Para desenvolver fora da igreja, o hub sobe com máquinas simuladas — dá para
+mexer no painel inteiro sem depender da rede de lá:
+
+```bash
+npm run dev
+```
+
+O painel fica em `http://localhost:8700` (a porta vem de `config/hub.json`). O
+PIN inicial é `1234` e deve ser trocado antes do primeiro culto.
+
+Para trabalhar no front com recarga automática, em outro terminal:
+
+```bash
+npm run dev:web
+```
+
+Testar num celular é só abrir `http://<ip-do-seu-computador>:8700` na mesma rede.
+
+## Produção
+
+```bash
+npm run build
+npm start
+```
+
+Para instalar nas máquinas da igreja — habilitar o Web Control do NDI, o API
+Server do Holyrics, o obs-websocket e os agentes — siga
+[docs/instalacao.md](./docs/instalacao.md).
