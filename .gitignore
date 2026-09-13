@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+.claude/
 
 # Configuração local de cada instalação — contém tokens e PIN
 config/hub.json
