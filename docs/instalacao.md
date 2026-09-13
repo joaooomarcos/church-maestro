@@ -5,12 +5,77 @@ Não é preciso saber programar, mas é preciso ter paciência para seguir os pa
 na ordem — cada seção termina com um teste, e só faz sentido seguir adiante
 quando o teste passa.
 
-**Antes de começar**, instale o [Node.js 20 ou superior](https://nodejs.org) em
-todas as quatro máquinas.
+**Antes de começar**, instale o Node.js 20 ou superior em todas as quatro
+máquinas — veja como na seção 0 abaixo.
 
 Ao longo do guia você vai anotar algumas informações. Deixe um papel ou um bloco
 de notas aberto para: os endereços de IP de cada máquina, o token do Holyrics de
 cada máquina, a senha do WebSocket do OBS e o token dos agentes.
+
+---
+
+## 0. Instalar o Node.js
+
+O Node é o programa que faz o hub e os agentes rodarem. Sem ele, `npm install`
+e `npm start` não existem no terminal.
+
+### Windows (PC Transmissão, Note Frente, PC Fundo)
+
+1. No navegador da própria máquina, abra **nodejs.org**.
+2. A página já destaca um botão verde de download com um número de versão e a
+   palavra **LTS** — é esse que você quer (não o "Current"). Clique nele para
+   baixar o instalador `.msi`.
+3. Abra o arquivo baixado (geralmente em **Downloads**) e clique **Next** em
+   todas as telas, aceitando os padrões — não precisa marcar nenhuma opção
+   extra. Termine com **Install** e depois **Finish**.
+4. Abra o **PowerShell** (tecla Windows, digite `powershell`, Enter) e digite:
+
+   ```powershell
+   node -v
+   npm -v
+   ```
+
+   Se aparecer um número de versão em cada linha (por exemplo `v20.18.0` e
+   `10.8.2`), deu certo. Se aparecer "não é reconhecido como um comando",
+   feche e abra o PowerShell de novo — às vezes ele só reconhece o Node depois
+   de reaberto. Se ainda não reconhecer, reinicie a máquina.
+
+   Se em vez disso aparecer um erro dizendo que **a execução de scripts foi
+   desabilitada neste sistema** (mencionando `npm.ps1`), o Windows está
+   bloqueando o script do npm por padrão. Resolva rodando:
+
+   ```powershell
+   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+   ```
+
+   Confirme com `S` quando perguntar, e rode `npm -v` de novo. Esse comando
+   libera scripts locais (como o do npm) sem abrir mão da proteção contra
+   script baixado da internet sem assinatura — é seguro deixar assim.
+
+> Se a máquina não tem acesso à internet para baixar direto, baixe o `.msi` em
+> outro computador (no site nodejs.org, procure a versão **LTS para Windows
+> x64**) e leve por pendrive.
+
+### Linux (Note Som)
+
+O gerenciador de pacotes padrão do Ubuntu/Debian costuma trazer uma versão do
+Node antiga demais para o projeto. Use o repositório oficial do NodeSource:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+Depois confira:
+
+```bash
+node -v
+npm -v
+```
+
+**Teste (as duas plataformas).** `node -v` mostra `v20` ou mais alto, e
+`npm -v` mostra algum número. Isso já garante que os passos com `npm install`
+mais adiante vão funcionar.
 
 ---
 
@@ -99,19 +164,26 @@ dele.
 
 O hub é o painel. Ele roda numa máquina só.
 
-1. Copie a pasta do projeto para o PC Transmissão, por exemplo em `C:\maestro`.
-2. Abra o **PowerShell** e rode:
+1. Abra o **PowerShell** e rode o comando de instalação. Ele baixa a versão
+   mais nova do Maestro, instala em `C:\Users\<seu-usuário>\maestro` e compila
+   tudo — leva alguns minutos:
 
    ```powershell
-   cd C:\maestro
-   npm install
-   npm run build
+   irm https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/scripts/instalar.ps1 | iex
+   ```
+
+   Tem que terminar com **Pronto!** em azul. Se aparecer **ERRO** em vermelho,
+   a mensagem diz o que fazer.
+2. Suba o hub:
+
+   ```powershell
+   cd ~\maestro
    npm start
    ```
 
 3. Na primeira vez, o hub cria os arquivos de configuração e mostra no terminal
    uma mensagem sobre o PIN padrão. Pare o hub (`Ctrl + C`) e abra
-   `C:\maestro\config\hub.json` no Bloco de Notas:
+   `C:\Users\<seu-usuário>\maestro\config\hub.json` no Bloco de Notas:
 
    ```json
    {
@@ -146,7 +218,7 @@ hub está no ar para a equipe toda.
 5. Aba **Ações**: **Novo...** › Iniciar um programa:
    - Programa: `node`
    - Argumentos: `packages\hub\dist\index.js`
-   - Iniciar em: `C:\maestro`
+   - Iniciar em: `C:\Users\<seu-usuário>\maestro`
 6. Aba **Condições**: desmarque "Iniciar a tarefa somente se o computador
    estiver ligado na energia" (senão a tarefa não roda em notebook na bateria).
 
@@ -159,14 +231,25 @@ O agente informa ao hub que a máquina está viva, quais programas estão aberto
 
 Em **cada máquina**:
 
-1. Copie a pasta do projeto (por exemplo `C:\maestro`, ou `~/maestro` no Linux).
-2. No terminal:
+1. Rode o comando de instalação. No **PC Transmissão** isso já foi feito na
+   seção 4 — pule para o passo 2.
+   - Windows (PowerShell):
+
+     ```powershell
+     irm https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/scripts/instalar.ps1 | iex
+     ```
+
+   - Linux (Note Som):
+
+     ```bash
+     curl -fsSL https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/scripts/instalar.sh | bash
+     ```
+
+2. Suba o agente:
 
    ```powershell
-   cd C:\maestro
-   npm install
-   npm run build
-   npm run dev:agent
+   cd ~\maestro
+   npm run start:agent
    ```
 
 3. Na primeira execução o agente cria `config/agent.json` e mostra instruções no
@@ -311,12 +394,30 @@ deixe os checklists impressos à mão nas primeiras semanas.
 
 ---
 
+## 8. Atualizar o Maestro
+
+Quando sair uma correção, rode **o mesmo comando de instalação** em cada máquina
+(seção 4 no PC Transmissão, seção 5 nas outras). Ele:
+
+- para o hub e o agente se estiverem rodando;
+- baixa a versão nova e compila do zero;
+- **mantém** o que é daquela máquina: `config/hub.json` (PIN e tokens),
+  `config/agent.json`, `config/devices.json`, `config/scenarios.json` e `data/`;
+- religa as tarefas `maestro-hub` e `maestro-agent`, se existirem.
+
+A versão instalada fica anotada em `maestro/versao.txt`.
+
+Feche antes os terminais que estiverem abertos dentro da pasta `maestro` — no
+Windows, uma pasta em uso não pode ser apagada e o script avisa com **ERRO**.
+
+---
+
 ## Problemas comuns
 
 ### A máquina aparece offline no painel
 
-- O agente não está rodando: entre na máquina e rode `npm run dev:agent` no
-  terminal para ver a mensagem de erro.
+- O agente não está rodando: entre na máquina e rode `npm run start:agent` na
+  pasta `maestro` para ver a mensagem de erro.
 - O `token` do `config/agent.json` está diferente do `tokenAgentes` do
   `config/hub.json`. Eles precisam ser idênticos.
 - O `dispositivoId` do agente não existe em `config/devices.json` (confira se não

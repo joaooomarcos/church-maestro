@@ -69,13 +69,29 @@ npm run dev:web
 
 Testar num celular é só abrir `http://<ip-do-seu-computador>:8700` na mesma rede.
 
-## Produção
+## Instalar e atualizar nas máquinas da igreja
 
-```bash
-npm run build
-npm start
+Não precisa de git nem de copiar pasta à mão. Com o Node.js 20+ instalado, um
+comando baixa a versão mais nova do `main`, instala e compila:
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/scripts/instalar.ps1 | iex
 ```
 
-Para instalar nas máquinas da igreja — habilitar o Web Control do NDI, o API
-Server do Holyrics, o obs-websocket e os agentes — siga
-[docs/instalacao.md](./docs/instalacao.md).
+Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/scripts/instalar.sh | bash
+```
+
+Instala em `~/maestro` (`C:\Users\<usuário>\maestro` no Windows) e preserva o que
+é de cada máquina: `config/hub.json`, `config/agent.json`, `config/devices.json`,
+`config/scenarios.json` e `data/`. Para levar uma correção à igreja, faça push no
+`main` e rode o mesmo comando em cada máquina — ele para o hub/agente, atualiza e
+religa as tarefas agendadas.
+
+Depois de instalado: `npm start` sobe o hub e `npm run start:agent` sobe o
+agente. Para habilitar o Web Control do NDI, o API Server do Holyrics, o
+obs-websocket e os agentes, siga [docs/instalacao.md](./docs/instalacao.md).

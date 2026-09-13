@@ -18,6 +18,7 @@
     "test": "npm run test --workspaces --if-present",
     "typecheck": "tsc -b packages/shared packages/hub packages/agent",
     "start": "node packages/hub/dist/index.js",
+    "start:agent": "node packages/agent/dist/index.js",
     "checklists": "node scripts/converter-checklist.mjs"
   },
   "devDependencies": {
