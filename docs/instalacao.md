@@ -210,17 +210,34 @@ hub está no ar para a equipe toda.
 
 ### Subir o hub sozinho ao ligar a máquina
 
-1. Abra o **Agendador de Tarefas** (tecla Windows, digite `taskschd.msc`).
-2. **Criar Tarefa...** (não "Criar Tarefa Básica" — precisamos das abas).
-3. Aba **Geral**: nome `maestro-hub`. Deixe **Executar com privilégios mais
-   elevados** desmarcado.
-4. Aba **Disparadores**: **Novo...** › **Ao fazer logon** › OK.
-5. Aba **Ações**: **Novo...** › Iniciar um programa:
-   - Programa: `node`
-   - Argumentos: `packages\hub\dist\index.js`
-   - Iniciar em: `C:\Users\<seu-usuário>\maestro`
-6. Aba **Condições**: desmarque "Iniciar a tarefa somente se o computador
-   estiver ligado na energia" (senão a tarefa não roda em notebook na bateria).
+Pare o hub que está rodando na janela (`Ctrl + C`), abra o **PowerShell**
+logado com o usuário que fica na máquina e cole:
+
+```powershell
+cd ~\maestro
+$acao = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$HOME\maestro\scripts\iniciar-oculto.vbs`" hub" -WorkingDirectory "$HOME\maestro"
+$gatilho = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$regras = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero)
+Register-ScheduledTask -TaskName "maestro-hub" -Action $acao -Trigger $gatilho -Settings $regras
+Start-ScheduledTask -TaskName "maestro-hub"
+```
+
+O hub sobe **sem janela**, então ninguém fecha por engano, e tudo o que ele
+escreve vai para `maestro\data\hub.log`. Se o comando reclamar de permissão,
+abra o PowerShell como administrador e repita. Reinicie a máquina e faça login
+para confirmar que o painel volta sozinho.
+
+Para parar o hub sem reiniciar a máquina:
+
+```powershell
+Stop-ScheduledTask -TaskName "maestro-hub"
+Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.CommandLine -match 'hub' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+```
+
+> O limite padrão de 3 dias de execução do Agendador derrubaria o hub no meio da
+> semana; o `-ExecutionTimeLimit ([TimeSpan]::Zero)` acima desliga esse limite.
+> Se criar a tarefa pela tela do Agendador, desmarque "Parar a tarefa se ela for
+> executada por mais de 3 dias" na aba **Configurações**.
 
 ---
 
@@ -275,8 +292,20 @@ Em **cada máquina**:
 
 ### Windows: subir o agente ao fazer logon
 
-Mesmo procedimento do hub (seção 4), com nome `maestro-agent` e argumentos
-`packages\agent\dist\index.js`.
+Pare o agente que está rodando na janela (`Ctrl + C`) e, no PowerShell logado
+com o usuário da máquina:
+
+```powershell
+cd ~\maestro
+$acao = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$HOME\maestro\scripts\iniciar-oculto.vbs`" agent" -WorkingDirectory "$HOME\maestro"
+$gatilho = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$regras = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero)
+Register-ScheduledTask -TaskName "maestro-agent" -Action $acao -Trigger $gatilho -Settings $regras
+Start-ScheduledTask -TaskName "maestro-agent"
+```
+
+Em até 10 segundos a máquina fica verde no painel. Sem janela; a saída fica em
+`maestro\data\agent.log` — é lá que se olha quando algo der errado.
 
 > **Não configure o agente como serviço do Windows.** Ele precisa rodar dentro da
 > sessão da pessoa que está logada, porque é assim que ele consegue enxergar o
