@@ -106,10 +106,29 @@
 
     if ($versao) { Set-Content -Path (Join-Path $destino 'versao.txt') -Value $versao -Encoding UTF8 }
 
-    foreach ($tarefa in $tarefas) {
-      if (Get-ScheduledTask -TaskName $tarefa -ErrorAction SilentlyContinue) {
-        Start-ScheduledTask -TaskName $tarefa
-        Write-Host "reiniciado: $tarefa"
+    Passo 'Configurando a subida automatica (tarefas sem janela)'
+    $vbs = Join-Path $destino 'scripts\iniciar-oculto.vbs'
+    $regras = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero)
+    $gatilho = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+    $alvos = @(@{ Nome = 'maestro-agent'; Arg = 'agent'; Config = 'config\agent.json' })
+    if ($env:MAESTRO_HUB -eq '1' -or (Test-Path (Join-Path $destino 'config\hub.json'))) {
+      $alvos += @{ Nome = 'maestro-hub'; Arg = 'hub'; Config = 'config\hub.json' }
+    }
+    foreach ($alvo in $alvos) {
+      try {
+        if (Get-ScheduledTask -TaskName $alvo.Nome -ErrorAction SilentlyContinue) {
+          Unregister-ScheduledTask -TaskName $alvo.Nome -Confirm:$false
+        }
+        $acao = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument ('"{0}" {1}' -f $vbs, $alvo.Arg) -WorkingDirectory $destino
+        Register-ScheduledTask -TaskName $alvo.Nome -Action $acao -Trigger $gatilho -Settings $regras | Out-Null
+        if (Test-Path (Join-Path $destino $alvo.Config)) {
+          Start-ScheduledTask -TaskName $alvo.Nome
+          Write-Host "tarefa $($alvo.Nome): criada e iniciada"
+        } else {
+          Write-Host "tarefa $($alvo.Nome): criada, mas falta $($alvo.Config). Rode 'npm.cmd run start:$($alvo.Arg)' uma vez, edite o arquivo e depois rode Start-ScheduledTask -TaskName $($alvo.Nome)" -ForegroundColor Yellow
+        }
+      } catch {
+        Write-Host "AVISO: nao consegui criar a tarefa $($alvo.Nome): $($_.Exception.Message). Abra o PowerShell como administrador e rode o comando de instalacao de novo." -ForegroundColor Yellow
       }
     }
 

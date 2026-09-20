@@ -210,22 +210,15 @@ hub está no ar para a equipe toda.
 
 ### Subir o hub sozinho ao ligar a máquina
 
-Pare o hub que está rodando na janela (`Ctrl + C`), abra o **PowerShell**
-logado com o usuário que fica na máquina e cole:
+O comando de instalação (passo 1 desta seção) **já cria a tarefa `maestro-hub`**
+quando encontra o `config\hub.json`. Se você instalou antes de subir o hub pela
+primeira vez, rode o comando de instalação de novo depois de criar o
+`hub.json` (ou rode-o com `$env:MAESTRO_HUB=1;` na frente).
 
-```powershell
-cd ~\maestro
-$acao = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$HOME\maestro\scripts\iniciar-oculto.vbs`" hub" -WorkingDirectory "$HOME\maestro"
-$gatilho = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-$regras = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero)
-Register-ScheduledTask -TaskName "maestro-hub" -Action $acao -Trigger $gatilho -Settings $regras
-Start-ScheduledTask -TaskName "maestro-hub"
-```
-
-O hub sobe **sem janela**, então ninguém fecha por engano, e tudo o que ele
-escreve vai para `maestro\data\hub.log`. Se o comando reclamar de permissão,
-abra o PowerShell como administrador e repita. Reinicie a máquina e faça login
-para confirmar que o painel volta sozinho.
+O hub sobe **sem janela** ao fazer logon, então ninguém fecha por engano, e
+tudo o que ele escreve vai para `maestro\data\hub.log`. Se aparecer um AVISO
+de permissão, abra o PowerShell como administrador e rode o comando de novo.
+Reinicie a máquina e faça login para confirmar que o painel volta sozinho.
 
 Para parar o hub sem reiniciar a máquina:
 
@@ -235,8 +228,8 @@ Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.Comm
 ```
 
 > O limite padrão de 3 dias de execução do Agendador derrubaria o hub no meio da
-> semana; o `-ExecutionTimeLimit ([TimeSpan]::Zero)` acima desliga esse limite.
-> Se criar a tarefa pela tela do Agendador, desmarque "Parar a tarefa se ela for
+> semana; o instalador já desliga esse limite. Se criar a tarefa à mão pela tela
+> do Agendador, desmarque "Parar a tarefa se ela for
 > executada por mais de 3 dias" na aba **Configurações**.
 
 ---
@@ -292,17 +285,11 @@ Em **cada máquina**:
 
 ### Windows: subir o agente ao fazer logon
 
-Pare o agente que está rodando na janela (`Ctrl + C`) e, no PowerShell logado
-com o usuário da máquina:
-
-```powershell
-cd ~\maestro
-$acao = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$HOME\maestro\scripts\iniciar-oculto.vbs`" agent" -WorkingDirectory "$HOME\maestro"
-$gatilho = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-$regras = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero)
-Register-ScheduledTask -TaskName "maestro-agent" -Action $acao -Trigger $gatilho -Settings $regras
-Start-ScheduledTask -TaskName "maestro-agent"
-```
+O comando de instalação **já cria a tarefa `maestro-agent`** (sem janela, ao
+fazer logon). Se o `config\agent.json` ainda não existe, ele avisa: rode
+`npm run start:agent` uma vez para gerar o arquivo, edite (passo 3) e depois
+`Start-ScheduledTask -TaskName maestro-agent`, ou simplesmente rode o comando de
+instalação de novo.
 
 Em até 10 segundos a máquina fica verde no painel. Sem janela; a saída fica em
 `maestro\data\agent.log` — é lá que se olha quando algo der errado.
