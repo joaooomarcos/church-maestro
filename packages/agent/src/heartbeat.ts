@@ -70,7 +70,14 @@ async function enviarHeartbeat(config: ConfigAgente, hubUrl: string, ponte: Pont
   });
 
   if (!resposta.ok) {
-    throw new Error(`hub respondeu ${resposta.status}`);
+    // 404/401 quase sempre são configuração, não rede: vale dizer o que fazer.
+    const dica =
+      resposta.status === 404
+        ? ' — o hub não conhece esta máquina; rode "npm run setup"'
+        : resposta.status === 401
+          ? ' — o token não confere com o do hub; rode "npm run setup"'
+          : '';
+    throw new Error(`hub respondeu ${resposta.status}${dica}`);
   }
 }
 

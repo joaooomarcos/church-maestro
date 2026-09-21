@@ -19,6 +19,7 @@
     "typecheck": "tsc -b packages/shared packages/hub packages/agent",
     "start": "node packages/hub/dist/index.js",
     "start:agent": "node packages/agent/dist/index.js",
+    "setup": "node packages/agent/dist/setup.js",
     "checklists": "node scripts/converter-checklist.mjs"
   },
   "devDependencies": {

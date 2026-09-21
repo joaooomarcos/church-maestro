@@ -81,9 +81,40 @@ if [ -n "$VERSAO" ]; then
   echo "${VERSAO:0:7} ${VERSAO#* }" >versao.txt
 fi
 
-if command -v systemctl >/dev/null && systemctl --user is-enabled --quiet maestro-agent 2>/dev/null; then
-  systemctl --user restart maestro-agent
-  echo "reiniciado: maestro-agent"
+if [ ! -f config/agent.json ]; then
+  passo "Configurando esta máquina"
+  echo "O assistente procura o hub e pergunta o que esta máquina faz."
+  # Rodando por "curl | bash" a entrada padrão é o cano; /dev/tty devolve o teclado.
+  if [ -e /dev/tty ] && [ -r /dev/tty ]; then
+    npm run setup </dev/tty || echo "AVISO: o assistente não terminou. Rode 'npm run setup' nesta pasta."
+  else
+    echo "AVISO: sem terminal aqui. Rode 'npm run setup' nesta pasta para configurar."
+  fi
+fi
+
+if [ -f config/agent.json ] && command -v systemctl >/dev/null; then
+  passo "Subindo o agente"
+  mkdir -p "$HOME/.config/systemd/user"
+  cat >"$HOME/.config/systemd/user/maestro-agent.service" <<UNIT
+[Unit]
+Description=Agente Maestro
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=$DESTINO
+ExecStart=$(command -v node) $DESTINO/packages/agent/dist/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+UNIT
+  systemctl --user daemon-reload
+  systemctl --user enable maestro-agent >/dev/null 2>&1 || true
+  systemctl --user restart maestro-agent || echo "AVISO: não consegui subir o serviço; rode 'npm run start:agent' para ver o erro."
+  # Sem linger o serviço cai quando a pessoa faz logout.
+  loginctl enable-linger "$USER" >/dev/null 2>&1 || true
+  echo "serviço maestro-agent ativado"
 fi
 
 rm -rf "$TMP"
@@ -95,7 +126,8 @@ else
 fi
 echo "Pasta: $DESTINO"
 echo
-echo "Agente:  cd $DESTINO && npm run start:agent"
+echo "Reconfigurar:  cd $DESTINO && npm run setup"
+echo "Ver o log:     journalctl --user -u maestro-agent -n 30"
 echo "(se o terminal estava dentro da pasta antiga, rode 'cd $DESTINO' antes)"
 echo
 echo "Para atualizar depois, rode o mesmo comando de instalação."

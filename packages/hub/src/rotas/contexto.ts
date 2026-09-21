@@ -24,6 +24,15 @@ export interface ContextoApp {
   obterDispositivo(id: string): DispositivoConfig | undefined;
   /** Substitui o dispositivo pelo `id` dele (PUT completo) e persiste em config/devices.json. */
   atualizarDispositivo(dispositivo: DispositivoConfig): Promise<DispositivoConfig>;
+  /**
+   * Cadastra (ou recadastra) um dispositivo vindo do pareamento. `idAnterior`
+   * remove o registro antigo quando a máquina mudou de nome, para não deixar
+   * dois cadastros da mesma máquina no painel.
+   */
+  registrarDispositivo(
+    dispositivo: DispositivoConfig,
+    idAnterior?: string,
+  ): Promise<DispositivoConfig>;
   /** Publica um resultado de check no WebSocket, para todas as telas verem ao vivo. */
   publicar(resultado: ResultadoCheck): void;
 }
@@ -58,6 +67,21 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
       }
       const proximos = [...dispositivos];
       proximos[indice] = validado;
+      dispositivos = proximos;
+      await salvarDispositivos(opcoes.caminhoDispositivos, dispositivos);
+      return validado;
+    },
+
+    async registrarDispositivo(dispositivo, idAnterior) {
+      const validado = dispositivoConfigSchema.parse(dispositivo);
+      const base =
+        idAnterior && idAnterior !== validado.id
+          ? dispositivos.filter((d) => d.id !== idAnterior)
+          : dispositivos;
+      const indice = base.findIndex((d) => d.id === validado.id);
+      const proximos = [...base];
+      if (indice === -1) proximos.push(validado);
+      else proximos[indice] = validado;
       dispositivos = proximos;
       await salvarDispositivos(opcoes.caminhoDispositivos, dispositivos);
       return validado;

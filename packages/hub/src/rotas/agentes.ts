@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { ROTAS, heartbeatAgenteSchema, type ErroApi } from '@maestro/shared';
 import type { ContextoApp } from './contexto.js';
-import { responderDispositivoNaoEncontrado, responderRequisicaoInvalida } from './erros.js';
+import { responderRequisicaoInvalida } from './erros.js';
 
 /** Registro de agente usa o token compartilhado no header, não a sessão de PIN. */
 export function registrarRotasAgentes(app: FastifyInstance, ctx: ContextoApp): void {
@@ -20,7 +20,11 @@ export function registrarRotasAgentes(app: FastifyInstance, ctx: ContextoApp): v
 
     const dispositivo = ctx.obterDispositivo(heartbeat.dispositivoId);
     if (!dispositivo) {
-      return responderDispositivoNaoEncontrado(reply, heartbeat.dispositivoId);
+      const erro: ErroApi = {
+        erro: 'dispositivo_nao_pareado',
+        mensagem: `A máquina "${heartbeat.dispositivoId}" não está pareada neste hub. Rode "npm run setup" nela.`,
+      };
+      return reply.code(404).send(erro);
     }
 
     ctx.store.registrarHeartbeat(heartbeat.dispositivoId, heartbeat);

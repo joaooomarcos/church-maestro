@@ -52,16 +52,6 @@ async function lerJsonSeExistir(caminho: string): Promise<unknown | undefined> {
   }
 }
 
-function dispositivosEsqueleto(): DispositivoConfig[] {
-  const base: Array<Pick<DispositivoConfig, 'id' | 'nome'>> = [
-    { id: 'pc-transmissao', nome: 'PC Transmissão' },
-    { id: 'note-frente', nome: 'Note Frente' },
-    { id: 'pc-fundo', nome: 'PC Fundo' },
-    { id: 'note-som', nome: 'Note Som' },
-  ];
-  return base.map((d) => ({ ...d, host: '', fixarHost: false, servicos: {} }));
-}
-
 /**
  * Carrega config/hub.json; se não existir, cria com PIN e segredos gerados e
  * avisa no log — é a única vez que esses valores aparecem em texto puro.
@@ -90,11 +80,14 @@ export async function carregarOuCriarConfigHub(
   return resultado.data;
 }
 
-/** Carrega config/devices.json; se não existir, cria o esqueleto das 4 máquinas conhecidas. */
+/**
+ * Carrega config/devices.json. Nasce vazio: cada máquina entra sozinha quando o
+ * assistente do agente (`npm run setup`) pareia com o hub.
+ */
 export async function carregarOuCriarDispositivos(caminho: string): Promise<DispositivoConfig[]> {
   const bruto = await lerJsonSeExistir(caminho);
   if (bruto === undefined) {
-    const arquivo = arquivoDispositivosSchema.parse({ dispositivos: dispositivosEsqueleto() });
+    const arquivo = arquivoDispositivosSchema.parse({ dispositivos: [] });
     await escreverArquivoAtomico(caminho, JSON.stringify(arquivo, null, 2));
     return arquivo.dispositivos;
   }

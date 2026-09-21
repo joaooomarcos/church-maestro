@@ -1,4 +1,4 @@
-import { carregarConfig } from './config.js';
+import { ConfigAusente, carregarConfig } from './config.js';
 import { iniciarHeartbeat } from './heartbeat.js';
 import { criarPontePowerPoint } from './ppt/index.js';
 import { iniciarServidor } from './rotas.js';
@@ -30,7 +30,11 @@ async function main(): Promise<void> {
   process.on('SIGTERM', encerrar);
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
+  if (err instanceof ConfigAusente) {
+    console.error(`[agente] ${err.message}`);
+    process.exit(1);
+  }
   console.error('[agente] falha ao iniciar:', err);
   process.exit(1);
 });

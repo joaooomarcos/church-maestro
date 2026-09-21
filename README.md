@@ -72,7 +72,13 @@ Testar num celular é só abrir `http://<ip-do-seu-computador>:8700` na mesma re
 ## Instalar e atualizar nas máquinas da igreja
 
 Não precisa de git nem de copiar pasta à mão. Com o Node.js 20+ instalado, um
-comando baixa a versão mais nova do `main`, instala e compila:
+comando baixa a versão mais nova do `main`, instala, compila e chama o
+assistente de configuração.
+
+Comece pelo **PC Transmissão**: lá o instalador sobe o hub e pergunta o PIN da
+equipe. Nas outras máquinas, o assistente acha esse hub sozinho na rede, pergunta
+o que a máquina faz (NDI, Holyrics, OBS), testa cada um e cadastra tudo — não há
+IP, porta nem token para anotar, e `config/devices.json` é preenchido pelo hub.
 
 Windows (PowerShell):
 
@@ -90,8 +96,9 @@ Instala em `~/maestro` (`C:\Users\<usuário>\maestro` no Windows) e preserva o q
 é de cada máquina: `config/hub.json`, `config/agent.json`, `config/devices.json`,
 `config/scenarios.json` e `data/`. Para levar uma correção à igreja, faça push no
 `main` e rode o mesmo comando em cada máquina — ele para o hub/agente, atualiza e
-religa as tarefas agendadas.
+religa as tarefas agendadas, sem repetir o assistente.
 
-Depois de instalado: `npm start` sobe o hub e `npm run start:agent` sobe o
-agente. Para habilitar o Web Control do NDI, o API Server do Holyrics, o
-obs-websocket e os agentes, siga [docs/instalacao.md](./docs/instalacao.md).
+O hub e o agente sobem como tarefa ao fazer logon (Windows) ou serviço do usuário
+(Linux), sem janela. Para reconfigurar uma máquina depois — outro nome, outro
+serviço — rode `npm run setup` nela. O passo a passo completo, com o que ativar
+no NDI, no Holyrics e no OBS, está em [docs/instalacao.md](./docs/instalacao.md).

@@ -5,13 +5,17 @@ import { ROTAS, loginSchema, type ConfigHub, type ErroApi } from '@maestro/share
 export const NOME_COOKIE_SESSAO = 'maestro_sessao';
 const TRINTA_DIAS_S = 60 * 60 * 24 * 30;
 
-/** Rotas acessíveis sem sessão: saúde, login/sessão/logout, e o registro de agentes (usa token próprio). */
+/**
+ * Rotas acessíveis sem sessão: saúde, login/sessão/logout, o registro de agentes
+ * (usa token próprio) e o pareamento (exige o PIN no corpo).
+ */
 const ROTAS_PUBLICAS = new Set<string>([
   ROTAS.saude,
   ROTAS.login,
   ROTAS.sessao,
   ROTAS.logout,
   ROTAS.registrarAgente,
+  ROTAS.pareamento,
 ]);
 
 function caminhoDaRota(req: FastifyRequest): string {
@@ -28,7 +32,7 @@ function ehRotaPublica(caminho: string): boolean {
 }
 
 /** Compara em tempo constante: hasheia os dois lados para igualar o tamanho do buffer antes do `timingSafeEqual`. */
-function pinConfere(informado: string, esperado: string): boolean {
+export function pinConfere(informado: string, esperado: string): boolean {
   const a = createHash('sha256').update(informado).digest();
   const b = createHash('sha256').update(esperado).digest();
   return timingSafeEqual(a, b);
