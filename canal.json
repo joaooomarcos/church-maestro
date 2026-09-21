@@ -1,6 +1,6 @@
 {
   "ativo": true,
-  "sha": "a4fa4302831c348bef4b9f9322d231d95939c325",
-  "notas": "Atualização comandada pelo painel, máquina por máquina",
+  "sha": "ab102f60c97ef50500ef6c2d6e8c5a0815cefe8b",
+  "notas": "Corrige o texto do publicar: nada é aplicado sozinho",
   "liberadoEm": "2026-09-21"
 }
