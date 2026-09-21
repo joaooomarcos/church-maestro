@@ -749,3 +749,75 @@ p {
   color: var(--cor-aviso);
   font-size: 0.9rem;
 }
+
+/* --- programas da máquina ------------------------------------------- */
+
+.controle-apps {
+  margin-top: 10px;
+  border-top: 1px solid var(--cor-borda);
+  padding-top: 10px;
+}
+
+.controle-apps__alternar {
+  background: none;
+  border: none;
+  color: var(--cor-primaria-forte);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 6px 0;
+  min-height: 40px;
+}
+
+.controle-apps__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.controle-apps__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.controle-apps__nome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+
+.controle-apps__ponto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cor-neutro);
+  flex: none;
+}
+
+.controle-apps__ponto--aberto {
+  background: var(--cor-sucesso);
+}
+
+.controle-apps__botoes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.controle-apps__acao {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-elevado);
+  color: var(--cor-texto);
+  font-size: 0.85rem;
+}
+
+.controle-apps__acao:disabled {
+  opacity: 0.5;
+}

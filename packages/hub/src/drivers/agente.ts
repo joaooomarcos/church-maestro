@@ -84,6 +84,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           processos: Record<string, boolean>;
           capacidades: string[];
           atualizacao?: EstadoAgente['atualizacao'];
+          emPrimeiroPlano?: EstadoAgente['emPrimeiroPlano'];
         }>(dispositivo, '/health', { method: 'GET' }, op, tokenPadrao);
 
         return {
@@ -96,6 +97,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           so: saude.so,
           uptimeS: saude.uptimeS,
           processos: saude.processos as EstadoAgente['processos'],
+          emPrimeiroPlano: saude.emPrimeiroPlano ?? null,
           capacidades: saude.capacidades as EstadoAgente['capacidades'],
         };
       } catch (err) {
@@ -103,6 +105,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           online: false,
           erro: err instanceof ErroDriver ? err.message : String(err),
           processos: {},
+          emPrimeiroPlano: null,
           capacidades: [],
         };
       }
@@ -118,6 +121,21 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           body: JSON.stringify({ sha }),
         },
         op,
+        tokenPadrao,
+      );
+    },
+
+    async acaoApp(dispositivo, comando, op): Promise<void> {
+      await pedir<{ ok: boolean }>(
+        dispositivo,
+        '/apps/acao',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(comando),
+        },
+        // Abrir um programa pesado (o Holyrics, por exemplo) passa do timeout curto.
+        { timeoutMs: 30_000, ...(op ?? {}) },
         tokenPadrao,
       );
     },

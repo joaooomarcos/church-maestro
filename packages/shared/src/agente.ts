@@ -1,6 +1,38 @@
 import { z } from 'zod';
-import { APLICATIVOS } from './dispositivos.js';
+import { ACOES_APP, APLICATIVOS } from './dispositivos.js';
 import { estadoAtualizacaoSchema } from './versoes.js';
+
+/**
+ * Janela que está na frente na máquina. Serve para a equipe saber, sem ir até
+ * lá, se o que está aparecendo no datashow é o que deveria — e é o que o
+ * controle por setas precisa para mandar a tecla ao lugar certo.
+ */
+export const janelaPrimeiroPlanoSchema = z.object({
+  /** Nome do processo, minúsculo e sem `.exe`. */
+  processo: z.string(),
+  titulo: z.string().default(''),
+  /** Preenchido quando o processo é um dos aplicativos conhecidos. */
+  app: z.enum(APLICATIVOS).nullable().default(null),
+});
+
+export type JanelaPrimeiroPlano = z.infer<typeof janelaPrimeiroPlanoSchema>;
+
+export const comandoAppSchema = z.object({
+  app: z.enum(APLICATIVOS),
+  acao: z.enum(ACOES_APP),
+});
+
+export type ComandoApp = z.infer<typeof comandoAppSchema>;
+
+/** Um aplicativo conhecido na máquina: está aberto? o agente sabe abri-lo? */
+export const situacaoAppSchema = z.object({
+  app: z.enum(APLICATIVOS),
+  aberto: z.boolean(),
+  /** null = o agente não achou o executável; o assistente pode perguntar. */
+  caminho: z.string().nullable().default(null),
+});
+
+export type SituacaoApp = z.infer<typeof situacaoAppSchema>;
 
 /**
  * Contrato entre o agente local e o hub. O agente se anuncia sozinho a cada
@@ -21,6 +53,7 @@ export const heartbeatAgenteSchema = z.object({
   porta: z.number().int().positive(),
   uptimeS: z.number(),
   processos: z.record(z.enum(APLICATIVOS), z.boolean()).default({}),
+  emPrimeiroPlano: janelaPrimeiroPlanoSchema.nullable().default(null),
   capacidades: z.array(z.enum(['powerpoint', 'abrir-app', 'desligar'])).default([]),
 });
 
@@ -67,6 +100,8 @@ export const configAgenteSchema = z.object({
   /** Segredo compartilhado com o hub. Sem ele, o agente recusa comandos. */
   token: z.string().min(8),
   intervaloHeartbeatMs: z.number().int().positive().default(10_000),
+  /** Caminhos informados à mão, quando o agente não achou o programa sozinho. */
+  caminhosApps: z.record(z.string(), z.string()).default({}),
 });
 
 export type ConfigAgente = z.infer<typeof configAgenteSchema>;

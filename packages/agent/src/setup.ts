@@ -2,6 +2,8 @@ import net from 'node:net';
 import { hostname, platform } from 'node:os';
 import { createInterface, type Interface } from 'node:readline/promises';
 import {
+  APLICATIVOS,
+  NOMES_APLICATIVOS,
   PORTAS_PADRAO,
   ROTAS,
   respostaPareamentoSchema,
@@ -10,6 +12,7 @@ import {
   type PedidoPareamento,
   type RespostaPareamento,
 } from '@maestro/shared';
+import { detectarCaminhos } from './apps/index.js';
 import { CAMINHO_CONFIG, carregarConfigSeExistir, salvarConfig } from './config.js';
 import { confirmarHub, ipsLocais, procurarHubs } from './descoberta.js';
 
@@ -83,7 +86,7 @@ function portaAberta(host: string, porta: number, timeoutMs = 800): Promise<bool
 }
 
 async function escolherHub(rl: Interface): Promise<string> {
-  titulo('1 de 5 — Encontrar o hub');
+  titulo('1 de 6 — Encontrar o hub');
   console.log('Procurando o hub do Maestro na rede. Leva alguns segundos…');
   const achados = await procurarHubs();
 
@@ -124,7 +127,7 @@ async function escolherHub(rl: Interface): Promise<string> {
 }
 
 async function escolherNome(rl: Interface, padrao: string): Promise<string> {
-  titulo('2 de 5 — Nome desta máquina');
+  titulo('2 de 6 — Nome desta máquina');
   console.log('É o nome que a equipe vê no painel, como "PC Transmissão" ou "Note Frente".');
   for (;;) {
     const nome = await perguntar(rl, 'Nome desta máquina', padrao);
@@ -167,7 +170,7 @@ async function detectarNdi(): Promise<number[]> {
 }
 
 async function configurarNdi(rl: Interface): Promise<ServicoNdi | undefined> {
-  titulo('3 de 5 — NDI Studio Monitor');
+  titulo('3 de 6 — NDI Studio Monitor');
   console.log('O Studio Monitor mostra nesta máquina (e no datashow) a imagem que vem de outra.');
   if (!(await confirmar(rl, 'Esta máquina exibe imagem pelo NDI Studio Monitor?', false))) {
     return undefined;
@@ -264,7 +267,7 @@ async function perguntarLegenda(rl: Interface): Promise<string | undefined> {
 }
 
 async function configurarHolyrics(rl: Interface): Promise<ServicoHolyrics | undefined> {
-  titulo('4 de 5 — Holyrics');
+  titulo('4 de 6 — Holyrics');
   if (!(await confirmar(rl, 'Esta máquina roda o Holyrics?', false))) return undefined;
 
   console.log('\nO Maestro passa slide e liga a projeção pelo API Server do Holyrics:');
@@ -297,7 +300,7 @@ async function configurarHolyrics(rl: Interface): Promise<ServicoHolyrics | unde
 }
 
 async function configurarObs(rl: Interface): Promise<ServicoObs | undefined> {
-  titulo('5 de 5 — OBS');
+  titulo('5 de 6 — OBS');
   if (!(await confirmar(rl, 'Esta máquina roda o OBS (a transmissão)?', false))) return undefined;
 
   console.log('\nO Maestro conversa com o OBS pelo WebSocket dele:');
@@ -323,6 +326,37 @@ async function configurarObs(rl: Interface): Promise<ServicoObs | undefined> {
     ...(senha ? { senha } : {}),
     ...(sourceLegenda ? { sourceLegenda } : {}),
   };
+}
+
+/**
+ * O agente abre os programas pelo painel, e para isso precisa saber onde eles
+ * estão. Ele procura sozinho nos lugares de sempre; o que não achar é
+ * perguntado aqui, uma vez só.
+ */
+async function configurarCaminhos(
+  rl: Interface,
+  jaInformados: Record<string, string>,
+): Promise<Record<string, string>> {
+  titulo('6 de 6 — Onde estão os programas');
+  console.log('Procurando os programas instalados nesta máquina…');
+
+  const detectados = await detectarCaminhos(true);
+  const informados: Record<string, string> = { ...jaInformados };
+
+  for (const app of APLICATIVOS) {
+    const nome = NOMES_APLICATIVOS[app];
+    const achado = informados[app] ?? detectados[app] ?? null;
+    if (achado) {
+      ok(`${nome}: ${achado}`);
+      continue;
+    }
+    aviso(`${nome}: não encontrei.`);
+    console.log('   Se esta máquina usa esse programa, cole o caminho do .exe (Enter para pular).');
+    const caminho = await perguntar(rl, `   Caminho do ${nome}`);
+    if (caminho) informados[app] = caminho;
+  }
+
+  return informados;
 }
 
 async function parear(
@@ -380,6 +414,7 @@ async function main(): Promise<void> {
     const ndiMonitor = await configurarNdi(rl);
     const holyrics = await configurarHolyrics(rl);
     const obs = await configurarObs(rl);
+    const caminhosApps = await configurarCaminhos(rl, atual?.caminhosApps ?? {});
 
     const porta = atual?.porta ?? PORTAS_PADRAO.agente;
     const resposta = await parear(rl, hubUrl, {
@@ -400,6 +435,7 @@ async function main(): Promise<void> {
       porta,
       token: resposta.token,
       intervaloHeartbeatMs: atual?.intervaloHeartbeatMs ?? 10_000,
+      caminhosApps,
     });
 
     titulo('Pronto!');

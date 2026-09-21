@@ -185,6 +185,9 @@ export function criarDriversMock(): Drivers {
     async atualizar(dispositivo, sha) {
       console.log(`[mock] atualizaria ${dispositivo.nome} para ${sha}`);
     },
+    async acaoApp(dispositivo, comando) {
+      console.log(`[mock] ${comando.acao} ${comando.app} em ${dispositivo.nome}`);
+    },
   };
 
   return { ndi, holyrics, obs, agente };
@@ -246,6 +249,9 @@ function estadoAgenteMock(dispositivo: DispositivoConfig, inicioProcesso: number
       'ndi-studio-monitor': Boolean(dispositivo.servicos.ndiMonitor),
       'ndi-screen-capture': true,
     },
+    emPrimeiroPlano: ehLinux
+      ? null
+      : { processo: 'holyrics', titulo: 'Holyrics — Culto de Domingo', app: 'holyrics' },
     capacidades: ehLinux ? ['abrir-app', 'desligar'] : ['powerpoint', 'abrir-app', 'desligar'],
   };
 }

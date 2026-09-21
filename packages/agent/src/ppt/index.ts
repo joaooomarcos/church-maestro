@@ -17,6 +17,9 @@ const PONTE_INERTE: PontePowerPoint = {
   async executar() {
     return PPT_INDISPONIVEL;
   },
+  async janelaEmPrimeiroPlano() {
+    return null;
+  },
   async encerrar() {
     /* nada a encerrar */
   },

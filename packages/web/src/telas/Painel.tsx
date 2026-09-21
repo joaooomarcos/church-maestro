@@ -4,6 +4,7 @@ import { ROTAS } from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
 import { apiGet, apiPost } from '../nucleo/cliente';
 import { Semaforo, type EstadoSemaforo } from '../componentes/Semaforo';
+import { ControleApps } from '../componentes/ControleApps';
 import { vibrar } from '../nucleo/vibrar';
 
 function estadoSemaforoDispositivo(d: EstadoDispositivo): EstadoSemaforo {
@@ -46,6 +47,18 @@ function resumoAgente(d: EstadoDispositivo): string | null {
     .filter(([, aberto]) => aberto)
     .map(([chave]) => NOMES_APLICATIVOS[chave] ?? chave);
   return abertos.length > 0 ? abertos.join(', ') : 'nenhum programa aberto';
+}
+
+/** Qual janela está na frente naquela máquina — o que está indo para a tela. */
+function resumoPrimeiroPlano(d: EstadoDispositivo): string | null {
+  const janela = d.agente?.emPrimeiroPlano;
+  if (!janela) return null;
+  const nome = janela.app ? (NOMES_APLICATIVOS[janela.app] ?? janela.processo) : janela.processo;
+  if (!janela.titulo) return nome;
+  // O título da janela quase sempre já traz o nome do programa ("Louvor - PowerPoint").
+  return janela.titulo.toLowerCase().includes(nome.toLowerCase())
+    ? janela.titulo
+    : `${nome} — ${janela.titulo}`;
 }
 
 function resumoObs(d: EstadoDispositivo): { texto: string; alerta: boolean } | null {
@@ -124,6 +137,7 @@ export function Painel() {
             const powerpoint = resumoPowerPoint(dispositivo);
             const ndi = resumoNdi(dispositivo);
             const agente = resumoAgente(dispositivo);
+            const primeiroPlano = resumoPrimeiroPlano(dispositivo);
             return (
               <article key={dispositivo.id} className="cartao-dispositivo">
                 <header className="cartao-dispositivo__cabecalho">
@@ -139,6 +153,7 @@ export function Painel() {
                 ) : (
                   <ul className="cartao-dispositivo__integracoes">
                     {agente !== null ? <li>Aberto: {agente}</li> : null}
+                    {primeiroPlano !== null ? <li>Na frente: {primeiroPlano}</li> : null}
                     {holyrics !== null ? <li>Holyrics: {holyrics}</li> : null}
                     {powerpoint !== null ? <li>PowerPoint: {powerpoint}</li> : null}
                     {ndi.map((janela) => (
@@ -152,6 +167,7 @@ export function Painel() {
                     ) : null}
                   </ul>
                 )}
+                <ControleApps dispositivo={dispositivo} />
               </article>
             );
           })

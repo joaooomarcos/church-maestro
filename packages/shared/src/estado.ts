@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { APLICATIVOS } from './dispositivos.js';
+import { janelaPrimeiroPlanoSchema } from './agente.js';
 import { estadoAtualizacaoSchema } from './versoes.js';
 
 /**
@@ -22,6 +23,7 @@ export const estadoAgenteSchema = z.object({
   uptimeS: z.number().optional(),
   /** Um booleano por aplicativo conhecido. Ausente = agente não reportou. */
   processos: z.record(z.enum(APLICATIVOS), z.boolean()).default({}),
+  emPrimeiroPlano: janelaPrimeiroPlanoSchema.nullable().default(null),
   capacidades: z.array(z.enum(['powerpoint', 'abrir-app', 'desligar'])).default([]),
 });
 

@@ -39,7 +39,7 @@ function comTimeout<T>(promessa: Promise<T>, ms = TIMEOUT_LEITURA_MS): Promise<T
 }
 
 function estadoAgenteFalha(erro: string): EstadoAgente {
-  return { online: false, erro, processos: {}, capacidades: [] };
+  return { online: false, erro, processos: {}, emPrimeiroPlano: null, capacidades: [] };
 }
 
 function estadoPowerPointFalha(erro: string): EstadoPowerPoint {

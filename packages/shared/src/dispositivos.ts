@@ -14,6 +14,20 @@ export const APLICATIVOS = [
 
 export type Aplicativo = (typeof APLICATIVOS)[number];
 
+/** O que o painel pode mandar o agente fazer com um aplicativo da máquina. */
+export const ACOES_APP = ['abrir', 'fechar', 'reiniciar', 'frente'] as const;
+
+export type AcaoApp = (typeof ACOES_APP)[number];
+
+/** Nome de cada aplicativo como a equipe o chama, para mensagens e botões. */
+export const NOMES_APLICATIVOS: Record<Aplicativo, string> = {
+  obs: 'OBS',
+  holyrics: 'Holyrics',
+  powerpoint: 'PowerPoint',
+  'ndi-studio-monitor': 'NDI Studio Monitor',
+  'ndi-screen-capture': 'NDI Screen Capture',
+};
+
 /**
  * Nomes de processo por sistema operacional. O agente compara em minúsculas e
  * sem extensão, então `POWERPNT.EXE` casa com `powerpnt`.

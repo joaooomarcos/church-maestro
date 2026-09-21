@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url';
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-const ativos = [['packages/agent/src/ppt/ponte.ps1', 'packages/agent/dist/ppt/ponte.ps1']];
+const ativos = [
+  ['packages/agent/src/ppt/ponte.ps1', 'packages/agent/dist/ppt/ponte.ps1'],
+  ['packages/agent/src/apps/acoes.ps1', 'packages/agent/dist/apps/acoes.ps1'],
+];
 
 for (const [origem, destino] of ativos) {
   const alvo = resolve(raiz, destino);

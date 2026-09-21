@@ -91,6 +91,12 @@ export interface DriverAgente {
    * só então começa a troca — ele mesmo sai do ar no meio dela.
    */
   atualizar(dispositivo: DispositivoConfig, sha: string, op?: OpcoesRequisicao): Promise<void>;
+  /** Abre, fecha, reinicia ou traz para frente um aplicativo daquela máquina. */
+  acaoApp(
+    dispositivo: DispositivoConfig,
+    comando: import('@maestro/shared').ComandoApp,
+    op?: OpcoesRequisicao,
+  ): Promise<void>;
 }
 
 /** Conjunto de drivers injetado nas rotas. Em modo mock, trocado por falsos. */

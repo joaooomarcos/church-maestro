@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import {
+  ACOES_APP,
+  APLICATIVOS,
   PORTAS_PADRAO,
   servicoHolyricsSchema,
   servicoNdiMonitorSchema,
@@ -39,6 +41,7 @@ export const ROTAS = {
   pareamento: '/api/pareamento',
   versoes: '/api/versoes',
   atualizar: '/api/atualizar',
+  appAcao: '/api/apps/acao',
   ndiFonte: '/api/ndi/fonte',
   holyricsAcao: '/api/holyrics/acao',
   pptAcao: '/api/powerpoint/acao',
@@ -64,6 +67,12 @@ export const acaoHolyricsSchema = z.object({
   acao: z.enum(['proximo', 'anterior', 'irPara', 'encerrar', 'f8', 'f9', 'f10']),
   indice: z.number().int().nonnegative().optional(),
   ativar: z.boolean().optional(),
+});
+
+export const acaoAppSchema = z.object({
+  dispositivo: z.string(),
+  app: z.enum(APLICATIVOS),
+  acao: z.enum(ACOES_APP),
 });
 
 export const acaoPptSchema = z.object({

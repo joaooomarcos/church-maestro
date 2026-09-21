@@ -2,7 +2,15 @@ import { readFileSync } from 'node:fs';
 import { hostname, networkInterfaces, platform } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ROTAS, heartbeatAgenteSchema, type ConfigAgente, type HeartbeatAgente } from '@maestro/shared';
+import {
+  APLICATIVOS,
+  PROCESSOS_POR_APLICATIVO,
+  ROTAS,
+  heartbeatAgenteSchema,
+  type Aplicativo,
+  type ConfigAgente,
+  type HeartbeatAgente,
+} from '@maestro/shared';
 import { listarProcessos } from './processos.js';
 import { lerVersaoInstalada } from './versao.js';
 import type { PontePowerPoint } from './ppt/tipos.js';
@@ -28,6 +36,14 @@ function soAtual(): HeartbeatAgente['so'] {
   return 'linux';
 }
 
+/** Casa o nome do processo da frente com um dos aplicativos conhecidos. */
+function appDoProcesso(processo: string): Aplicativo | null {
+  for (const app of APLICATIVOS) {
+    if (PROCESSOS_POR_APLICATIVO[app].some((padrao) => processo.includes(padrao))) return app;
+  }
+  return null;
+}
+
 /** IPv4 de todas as interfaces que não sejam loopback. */
 function ipsLocais(): string[] {
   const ips: string[] = [];
@@ -45,7 +61,11 @@ function ipsLocais(): string[] {
 
 /** Também usado pela rota `/health`, que expõe os mesmos dados + timestamp. */
 export async function montarHeartbeat(config: ConfigAgente, ponte: PontePowerPoint): Promise<HeartbeatAgente> {
-  const [processos, instalada] = await Promise.all([listarProcessos(), lerVersaoInstalada()]);
+  const [processos, instalada, janela] = await Promise.all([
+    listarProcessos(),
+    lerVersaoInstalada(),
+    ponte.janelaEmPrimeiroPlano(),
+  ]);
   return heartbeatAgenteSchema.parse({
     dispositivoId: config.dispositivoId,
     hostname: hostname(),
@@ -56,6 +76,7 @@ export async function montarHeartbeat(config: ConfigAgente, ponte: PontePowerPoi
     porta: config.porta,
     uptimeS: process.uptime(),
     processos,
+    emPrimeiroPlano: janela ? { ...janela, app: appDoProcesso(janela.processo) } : null,
     capacidades: ponte.disponivel ? ['powerpoint'] : [],
   });
 }

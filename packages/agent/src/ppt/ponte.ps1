@@ -11,6 +11,39 @@
 $ErrorActionPreference = 'Stop'
 $app = $null
 
+# Esta ponte e o unico canal do agente com a area de trabalho do Windows, entao
+# e daqui que sai tambem a janela em primeiro plano — nao tem a ver com COM.
+Add-Type @"
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+public class MaestroJanela {
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int processId);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr hWnd, StringBuilder texto, int limite);
+}
+"@
+
+function Get-PrimeiroPlano {
+    $janela = [MaestroJanela]::GetForegroundWindow()
+    if ($janela -eq [IntPtr]::Zero) { return $null }
+
+    $idProcesso = 0
+    [void][MaestroJanela]::GetWindowThreadProcessId($janela, [ref]$idProcesso)
+    if ($idProcesso -le 0) { return $null }
+
+    $texto = New-Object System.Text.StringBuilder 512
+    [void][MaestroJanela]::GetWindowText($janela, $texto, $texto.Capacity)
+
+    $processo = Get-Process -Id $idProcesso -ErrorAction SilentlyContinue
+    if ($null -eq $processo) { return $null }
+
+    return @{
+        processo = $processo.ProcessName.ToLower()
+        titulo   = $texto.ToString()
+    }
+}
+
 function Get-PowerPoint {
     # GetActiveObject anexa a uma instancia ja aberta e falha se nao houver
     # nenhuma. E o comportamento que queremos: o agente nunca deve abrir o
@@ -66,6 +99,9 @@ function Invoke-Comando($comando) {
     switch ($comando.acao) {
         'status' {
             return Get-Status
+        }
+        'primeiroPlano' {
+            return Get-PrimeiroPlano
         }
         'proximo' {
             (Get-View).Next()

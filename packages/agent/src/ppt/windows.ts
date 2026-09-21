@@ -208,6 +208,21 @@ export function criarPonteWindows(): PontePowerPoint {
       return normalizar(await enviar(carga));
     },
 
+    async janelaEmPrimeiroPlano() {
+      try {
+        const dados = await enviar({ acao: 'primeiroPlano' });
+        if (dados === null || typeof dados !== 'object') return null;
+        const d = dados as Record<string, unknown>;
+        const processo = typeof d['processo'] === 'string' ? d['processo'].toLowerCase() : '';
+        if (!processo) return null;
+        return { processo, titulo: typeof d['titulo'] === 'string' ? d['titulo'] : '' };
+      } catch {
+        // Saber a janela da frente é conforto, não operação: se a ponte estiver
+        // ruim, o resto do heartbeat segue valendo.
+        return null;
+      }
+    },
+
     async encerrar() {
       encerrando = true;
       const filho = processo;
