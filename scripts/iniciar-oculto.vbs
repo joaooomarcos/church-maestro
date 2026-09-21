@@ -14,6 +14,15 @@ If Not fso.FolderExists(raiz & "\data") Then fso.CreateFolder raiz & "\data"
 
 If alvo = "update" Then
   comando = "powershell -NoProfile -ExecutionPolicy Bypass -File """ & raiz & "\scripts\atualizar.ps1"""
+  ' O segundo argumento, quando vem, e o commit que o painel mandou instalar.
+  ' So passa adiante se for mesmo um sha: este valor entra numa linha de comando.
+  If WScript.Arguments.Count > 1 Then
+    Set re = New RegExp
+    re.Pattern = "^[0-9a-fA-F]{7,40}$"
+    If re.Test(WScript.Arguments(1)) Then
+      comando = comando & " -Sha " & WScript.Arguments(1)
+    End If
+  End If
 Else
   comando = "cmd /c node packages\" & alvo & "\dist\index.js >> data\" & alvo & ".log 2>&1"
 End If

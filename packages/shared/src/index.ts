@@ -1,5 +1,6 @@
 export * from './dispositivos.js';
 export * from './texto.js';
+export * from './versoes.js';
 export * from './estado.js';
 export * from './checks.js';
 export * from './cenarios.js';

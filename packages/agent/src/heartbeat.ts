@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ROTAS, heartbeatAgenteSchema, type ConfigAgente, type HeartbeatAgente } from '@maestro/shared';
 import { listarProcessos } from './processos.js';
+import { lerVersaoInstalada } from './versao.js';
 import type { PontePowerPoint } from './ppt/tipos.js';
 
 const INTERVALO_MAXIMO_BACKOFF_MS = 60_000;
@@ -44,11 +45,12 @@ function ipsLocais(): string[] {
 
 /** Também usado pela rota `/health`, que expõe os mesmos dados + timestamp. */
 export async function montarHeartbeat(config: ConfigAgente, ponte: PontePowerPoint): Promise<HeartbeatAgente> {
-  const processos = await listarProcessos();
+  const [processos, instalada] = await Promise.all([listarProcessos(), lerVersaoInstalada()]);
   return heartbeatAgenteSchema.parse({
     dispositivoId: config.dispositivoId,
     hostname: hostname(),
     versao: VERSAO,
+    ...(instalada ? { versaoSha: instalada.sha, versaoNotas: instalada.notas } : {}),
     so: soAtual(),
     ips: ipsLocais(),
     porta: config.porta,

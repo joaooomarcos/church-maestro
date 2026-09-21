@@ -86,6 +86,11 @@ export interface DriverAgente {
     comando: import('@maestro/shared').ComandoPpt,
     op?: OpcoesRequisicao,
   ): Promise<StatusPpt>;
+  /**
+   * Manda a máquina se atualizar para um commit. O agente responde na hora e
+   * só então começa a troca — ele mesmo sai do ar no meio dela.
+   */
+  atualizar(dispositivo: DispositivoConfig, sha: string, op?: OpcoesRequisicao): Promise<void>;
 }
 
 /** Conjunto de drivers injetado nas rotas. Em modo mock, trocado por falsos. */

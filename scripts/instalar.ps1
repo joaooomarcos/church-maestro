@@ -215,9 +215,12 @@
       CriarTarefa 'maestro-agent' 'agent' | Out-Null
     }
 
-    # Ao fazer logon, antes do culto, a maquina pega sozinha a versao aprovada.
-    Passo 'Ligando a atualizacao automatica'
-    CriarTarefa 'maestro-update' 'update' | Out-Null
+    # Atualizacao e decisao de quem opera, tomada na aba Versoes do painel — nada
+    # de descobrir uma versao nova sozinho no domingo de manha.
+    if (Get-ScheduledTask -TaskName 'maestro-update' -ErrorAction SilentlyContinue) {
+      Unregister-ScheduledTask -TaskName 'maestro-update' -Confirm:$false
+      Write-Host 'tarefa maestro-update removida (agora quem atualiza e o painel)'
+    }
 
     Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 
@@ -231,11 +234,10 @@
     Write-Host ''
     Write-Host 'Painel:            http://localhost:8700 (ou o IP do PC Transmissao)'
     Write-Host 'Reconfigurar:      npm.cmd run setup'
-    Write-Host 'Atualizar agora:   npm.cmd run atualizar'
     Write-Host 'Logs:              data\hub.log, data\agent.log, data\atualizacao.log'
     Write-Host ''
-    Write-Host 'A partir daqui esta maquina se atualiza sozinha, uma vez por dia,'
-    Write-Host 'para a versao aprovada no canal.'
+    Write-Host 'As proximas atualizacoes saem da aba Versoes do painel: la voce ve a'
+    Write-Host 'versao de cada maquina e atualiza uma de cada vez.'
   } catch {
     if (Test-Path $backup) {
       Write-Host "`nAs configuracoes desta maquina estao guardadas em: $backup" -ForegroundColor Yellow

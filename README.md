@@ -114,9 +114,12 @@ npm run publicar -- <sha>     # volta as máquinas para um commit anterior
 npm run publicar -- --desligar  # pausa as atualizações automáticas
 ```
 
-Cada máquina checa uma vez por dia, no primeiro login — que, numa igreja onde as
-máquinas só ligam em dia de culto, é a manhã do próprio culto. Por isso o
-atualizador compila a versão nova numa pasta separada antes de trocar qualquer
-coisa e, se o painel ou o agente não voltarem, reverte sozinho. Se uma versão
-ruim passar, `npm run publicar -- <sha-anterior>` conserta todas as máquinas no
-próximo login delas.
+Publicar não empurra nada: as máquinas nunca se atualizam sozinhas. Quem aplica
+é o operador, pela aba **Versões** do painel, que mostra a versão instalada em
+cada máquina e marca qual é a aprovada. Numa igreja onde as máquinas só ligam em
+dia de culto, uma atualização automática cairia sempre na manhã do culto — daí a
+escolha.
+
+Cada máquina compila a versão nova numa pasta separada antes de trocar qualquer
+coisa e, se o painel ou o agente não voltarem depois da troca, reverte sozinha
+para a versão anterior.

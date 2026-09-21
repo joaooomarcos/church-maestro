@@ -652,3 +652,100 @@ p {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* --- versões --------------------------------------------------------- */
+
+.versoes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.versoes__titulo {
+  font-size: 0.95rem;
+  color: var(--cor-texto-fraco);
+  margin-bottom: 8px;
+}
+
+.versoes__select {
+  width: 100%;
+  min-height: var(--altura-toque-min);
+  padding: 0 12px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font-size: 0.95rem;
+}
+
+.versoes__dica {
+  margin-top: 8px;
+  color: var(--cor-texto-fraco);
+  font-size: 0.88rem;
+}
+
+.versoes__dica--alerta {
+  color: var(--cor-aviso);
+}
+
+.versoes__maquinas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cartao-versao {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  background: var(--cor-fundo-cartao);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cartao-versao__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cartao-versao__cabecalho h3 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cartao-versao__marca {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cor-texto-fraco);
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.cartao-versao__sha {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  color: var(--cor-texto-fraco);
+}
+
+.cartao-versao__sha--ok {
+  color: var(--cor-sucesso);
+}
+
+.cartao-versao__notas {
+  color: var(--cor-texto-fraco);
+  font-size: 0.9rem;
+}
+
+.cartao-versao__estado {
+  color: var(--cor-aviso);
+  font-size: 0.9rem;
+}

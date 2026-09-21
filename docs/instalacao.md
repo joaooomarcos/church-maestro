@@ -202,39 +202,33 @@ deixe os checklists impressos à mão nas primeiras semanas.
 
 ## 5. Atualizar o Maestro
 
-Depois de instalado, **cada máquina se atualiza sozinha**. Na primeira vez que
-alguém faz login no dia, ela consulta a versão aprovada e, se estiver
-desatualizada, se atualiza antes do culto começar.
+Quem atualiza é o painel, na aba **Versões**. Nenhuma máquina se atualiza
+sozinha: a decisão é sempre de quem está operando, na hora que escolher.
 
-Ela **não** pega tudo o que vai para o `main`. Só instala a versão que foi
-aprovada — quem desenvolve libera com um comando (veja o README). Assim um
-trabalho em andamento nunca chega num domingo.
+A aba mostra a versão instalada em cada máquina e a lista do que dá para
+instalar, com a **(aprovada)** já selecionada.
 
-Como a atualização acontece no dia do culto, ela é cautelosa:
+1. Confira a versão escolhida no alto da tela.
+2. No cartão da máquina, toque em **Atualizar esta máquina**.
+3. Acompanhe o andamento no próprio cartão: Baixando → Compilando → Trocando.
 
-1. Baixa e **compila numa pasta separada**. Se não compilar, nada é trocado e a
-   máquina continua rodando a versão que estava.
-2. Só então para o hub/agente, troca os arquivos e religa. `config/` e `data/`
-   ficam intactos.
-3. Confere se o painel e o agente voltaram a responder. Se não voltaram, ela
-   **volta sozinha para a versão anterior**.
+A máquina baixa e **compila numa pasta separada** antes de trocar qualquer
+coisa. Se não compilar, nada é trocado e ela continua rodando como estava. Se o
+painel ou o agente não voltarem depois da troca, ela **volta sozinha para a
+versão anterior**. `config/` e `data/` nunca são tocados.
 
-Tudo fica registrado em `maestro\data\atualizacao.log`:
+Atualize **uma máquina de cada vez** e confira se ela volta verde antes da
+próxima. A máquina marcada como **painel** é a que roda o hub: atualizar ela
+tira o painel do ar por cerca de um minuto — espere e recarregue a página.
+
+O que aconteceu fica registrado em cada máquina:
 
 ```powershell
 Get-Content ~\maestro\data\atualizacao.log -Tail 20
 ```
 
-Para atualizar na hora, sem esperar o próximo login:
-
-```powershell
-cd ~\maestro
-npm run atualizar
-```
-
-Rodar o **comando de instalação** de novo também funciona e continua valendo
-quando algo estiver muito fora do lugar. A versão instalada fica anotada em
-`maestro/versao.txt`.
+A versão instalada também fica em `maestro/versao.txt`, e rodar o **comando de
+instalação** de novo continua valendo quando algo estiver muito fora do lugar.
 
 Feche antes os terminais abertos dentro da pasta `maestro` — no Windows, uma
 pasta em uso não pode ser apagada, e o script avisa com **ERRO**.
@@ -284,15 +278,20 @@ No Linux: `systemctl --user restart maestro-agent`.
   visitantes).
 - Se ainda assim não achar, digite o IP do PC Transmissão quando ele pedir.
 
-### A máquina não se atualizou
+### A atualização não terminou
 
-- Ela checa **uma vez por dia**, no primeiro login. Para forçar:
-  `cd ~\maestro` e `npm run atualizar`.
-- Veja o motivo no log: `Get-Content ~\maestro\data\atualizacao.log -Tail 20`.
-  Ele diz se já estava na versão aprovada, se faltou internet, ou se a
-  compilação quebrou (nesse caso nada foi trocado — a máquina continua no ar).
-- "atualizacao automatica desligada no canal" significa que quem desenvolve
-  pausou as atualizações de propósito.
+- Veja o motivo no log da máquina:
+  `Get-Content ~\maestro\data\atualizacao.log -Tail 20`. Ele diz se faltou
+  internet ou se a compilação quebrou — nesses casos **nada foi trocado** e a
+  máquina continua no ar na versão anterior.
+- "revertido: a máquina voltou para a versão anterior" significa que a versão
+  nova não subiu e a máquina se protegeu sozinha. Avise quem desenvolve.
+- Se o botão estiver apagado, a máquina está offline ou já está naquela versão.
+
+### A aba Versões não lista nada
+
+- O hub precisa de internet para consultar as versões no GitHub. Sem ela, a aba
+  mostra um aviso e as máquinas continuam rodando normalmente.
 
 ### O hub não sobe
 

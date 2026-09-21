@@ -7,7 +7,7 @@
 #   3. confere se o hub/agente voltaram, e reverte para a versao anterior se nao voltaram.
 #
 # Mensagens sem acento: o PowerShell 5.1 le arquivos sem BOM como ANSI.
-param([switch]$Forcar)
+param([switch]$Forcar, [string]$Sha = '')
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -23,10 +23,31 @@ $caminhoVersao = Join-Path $destino 'versao.txt'
 
 if (-not (Test-Path $pastaDados)) { New-Item -ItemType Directory -Path $pastaDados | Out-Null }
 
+$estadoJson = Join-Path $pastaDados 'atualizacao-estado.json'
+
 function Registrar([string]$texto) {
   $linha = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  $texto"
   Add-Content -Path $log -Value $linha
   Write-Host $linha
+}
+
+# O painel le este arquivo (pelo /health do agente) para mostrar o andamento.
+# Sem BOM: quem le e o Node, e BOM quebra o JSON.parse dele.
+function EscreverEstado([string]$estado, [string]$mensagem, [string]$shaAlvo) {
+  try {
+    $dados = [ordered]@{ estado = $estado; mensagem = $mensagem; sha = $shaAlvo; ts = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
+    $utf8SemBom = New-Object System.Text.UTF8Encoding($false)
+    [IO.File]::WriteAllText($estadoJson, ($dados | ConvertTo-Json), $utf8SemBom)
+  } catch { }
+}
+
+function NotasDoCommit([string]$shaAlvo) {
+  try {
+    $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/commits/$shaAlvo" -TimeoutSec 10 -UseBasicParsing
+    return $commit.commit.message.Split("`n")[0]
+  } catch {
+    return 'atualizacao pedida no painel'
+  }
 }
 
 function Curto([string]$sha) {
@@ -139,22 +160,27 @@ function InstalarSha([string]$sha, [string]$notas) {
     New-Item -ItemType Directory -Path $tmp | Out-Null
 
     Registrar "baixando $(Curto $sha)"
+    EscreverEstado 'baixando' "Baixando a versao $(Curto $sha)" $sha
     $zip = Join-Path $tmp 'codigo.zip'
     Invoke-WebRequest -Uri "https://codeload.github.com/$repo/zip/$sha" -OutFile $zip -UseBasicParsing
     Expand-Archive -Path $zip -DestinationPath (Join-Path $tmp 'extraido')
     $origem = (Get-ChildItem (Join-Path $tmp 'extraido') -Directory | Select-Object -First 1).FullName
 
     Registrar 'instalando dependencias e compilando numa pasta separada'
+    EscreverEstado 'compilando' 'Compilando a versao nova (a maquina segue no ar)' $sha
     if ((RodarComando 'npm.cmd' @('ci', '--no-audit', '--no-fund') $origem) -ne 0) {
       Registrar 'FALHA: npm ci nao terminou; nada foi trocado'
+      EscreverEstado 'falhou' 'Falha ao baixar as dependencias; nada foi trocado' $sha
       return $false
     }
     if ((RodarComando 'npm.cmd' @('run', 'build') $origem) -ne 0) {
       Registrar 'FALHA: a compilacao quebrou; nada foi trocado'
+      EscreverEstado 'falhou' 'A versao nova nao compilou; nada foi trocado' $sha
       return $false
     }
 
     Registrar 'parando o Maestro para trocar os arquivos'
+    EscreverEstado 'trocando' 'Trocando os arquivos e reiniciando' $sha
     PararMaestro
 
     # /MIR deixa a pasta igual a da versao nova (some arquivo velho), menos
@@ -189,9 +215,11 @@ function InstalarSha([string]$sha, [string]$notas) {
     Set-Content -Path $caminhoVersao -Value "$sha $notas" -Encoding UTF8
     SubirMaestro
     Registrar "versao trocada para $(Curto $sha) — $notas"
+    EscreverEstado 'ok' "Atualizado para $(Curto $sha)" $sha
     return $true
   } catch {
     Registrar "FALHA: $($_.Exception.Message)"
+    EscreverEstado 'falhou' $_.Exception.Message $sha
     SubirMaestro
     return $false
   } finally {
@@ -200,6 +228,32 @@ function InstalarSha([string]$sha, [string]$notas) {
 }
 
 # --- daqui para baixo e o fluxo ---
+
+# Pedido pelo painel: instala exatamente esta versao, sem consultar o canal.
+if ($Sha) {
+  if ($Sha -notmatch '^[0-9a-fA-F]{7,40}$') {
+    Registrar "sha invalido: $Sha"
+    exit 1
+  }
+  $instaladoAntes = ShaInstalado
+  $notasPedido = NotasDoCommit $Sha
+  Registrar "atualizacao pedida no painel: $(Curto $Sha)"
+  if (InstalarSha $Sha $notasPedido) {
+    if (-not (Verificar)) {
+      if ($instaladoAntes -and $instaladoAntes -ne $Sha) {
+        Registrar 'revertendo para a versao anterior'
+        if ((InstalarSha $instaladoAntes 'versao anterior (revertida)') -and (Verificar)) {
+          EscreverEstado 'falhou' 'A versao nova nao subiu; voltei para a anterior' $instaladoAntes
+          Registrar 'revertido: a maquina voltou para a versao anterior'
+        } else {
+          EscreverEstado 'falhou' 'A versao nova nao subiu e nao consegui reverter' $Sha
+          Registrar 'ATENCAO: nao consegui reverter. Rode o comando de instalacao nesta maquina.'
+        }
+      }
+    }
+  }
+  exit 0
+}
 
 if (-not $Forcar) {
   $hoje = (Get-Date).ToString('yyyy-MM-dd')

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { APLICATIVOS } from './dispositivos.js';
+import { estadoAtualizacaoSchema } from './versoes.js';
 
 /**
  * Contrato entre o agente local e o hub. O agente se anuncia sozinho a cada
@@ -11,6 +12,9 @@ export const heartbeatAgenteSchema = z.object({
   dispositivoId: z.string().min(1),
   hostname: z.string(),
   versao: z.string(),
+  /** Commit instalado (de versao.txt). É o que o painel compara entre as máquinas. */
+  versaoSha: z.string().optional(),
+  versaoNotas: z.string().optional(),
   so: z.enum(['windows', 'linux', 'darwin']),
   /** IPv4 das interfaces não-loopback, para o hub saber onde responder. */
   ips: z.array(z.string()).default([]),
@@ -24,6 +28,13 @@ export type HeartbeatAgente = z.infer<typeof heartbeatAgenteSchema>;
 
 export const saudeAgenteSchema = heartbeatAgenteSchema.extend({
   ts: z.number(),
+  /** Presente enquanto uma atualização estiver em andamento (ou logo depois dela). */
+  atualizacao: estadoAtualizacaoSchema.optional(),
+});
+
+export const pedidoAtualizarAgenteSchema = z.object({
+  sha: z.string().min(7),
+  notas: z.string().default(''),
 });
 
 export type SaudeAgente = z.infer<typeof saudeAgenteSchema>;

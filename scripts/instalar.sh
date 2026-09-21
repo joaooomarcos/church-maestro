@@ -124,23 +124,14 @@ UNIT
   loginctl enable-linger "$USER" >/dev/null 2>&1 || true
   echo "serviço maestro-agent ativado"
 
-  # Ao fazer logon, antes do culto, a máquina pega sozinha a versão aprovada.
-  passo "Ligando a atualização automática"
-  cat >"$HOME/.config/systemd/user/maestro-update.service" <<UNIT
-[Unit]
-Description=Atualizador do Maestro
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/env bash $DESTINO/scripts/atualizar.sh
-
-[Install]
-WantedBy=default.target
-UNIT
-  systemctl --user daemon-reload
-  systemctl --user enable maestro-update >/dev/null 2>&1 || true
-  echo "serviço maestro-update ativado"
+  # Atualização é decisão de quem opera, tomada na aba Versões do painel — nada
+  # de descobrir uma versão nova sozinho no domingo de manhã.
+  if [ -f "$HOME/.config/systemd/user/maestro-update.service" ]; then
+    systemctl --user disable --now maestro-update >/dev/null 2>&1 || true
+    rm -f "$HOME/.config/systemd/user/maestro-update.service"
+    systemctl --user daemon-reload
+    echo "serviço maestro-update removido (agora quem atualiza é o painel)"
+  fi
 fi
 
 rm -rf "$TMP"
@@ -153,8 +144,8 @@ fi
 echo "Pasta: $DESTINO"
 echo
 echo "Reconfigurar:     cd $DESTINO && npm run setup"
-echo "Atualizar agora:  cd $DESTINO && npm run atualizar"
 echo "Ver o log:        journalctl --user -u maestro-agent -n 30"
+echo "Atualizações:     pela aba Versões do painel"
 echo "(se o terminal estava dentro da pasta antiga, rode 'cd $DESTINO' antes)"
 echo
 echo "Para atualizar depois, rode o mesmo comando de instalação."

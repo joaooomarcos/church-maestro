@@ -9,6 +9,7 @@ import { Ndi } from './telas/Ndi';
 import { Holyrics } from './telas/Holyrics';
 import { PowerPoint } from './telas/PowerPoint';
 import { Testes } from './telas/Testes';
+import { Versoes } from './telas/Versoes';
 
 function ConteudoPrincipal() {
   const { autenticado, reconectando, controlesRodape } = useAppContexto();
@@ -40,6 +41,7 @@ function ConteudoPrincipal() {
         {aba === 'holyrics' && <Holyrics />}
         {aba === 'powerpoint' && <PowerPoint />}
         {aba === 'testes' && <Testes />}
+        {aba === 'versoes' && <Versoes />}
       </main>
       <footer className="app__rodape">
         {controlesRodape ? <div className="controles-contextuais">{controlesRodape}</div> : null}

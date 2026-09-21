@@ -182,6 +182,9 @@ export function criarDriversMock(): Drivers {
       aplicarComandoPpt(ppt, comando);
       return statusPptDe(ppt);
     },
+    async atualizar(dispositivo, sha) {
+      console.log(`[mock] atualizaria ${dispositivo.nome} para ${sha}`);
+    },
   };
 
   return { ndi, holyrics, obs, agente };
@@ -232,6 +235,8 @@ function estadoAgenteMock(dispositivo: DispositivoConfig, inicioProcesso: number
     online: true,
     erro: null,
     versao: '1.0.0-mock',
+    versaoSha: ehLinux ? '0000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' : 'ffffffdddddddddddddddddddddddddddddddddd',
+    versaoNotas: ehLinux ? 'versão antiga (mock)' : 'versão atual (mock)',
     so: ehLinux ? 'linux' : 'windows',
     uptimeS,
     processos: {

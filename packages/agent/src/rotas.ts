@@ -7,11 +7,13 @@ import Fastify, {
 } from 'fastify';
 import {
   comandoPptSchema,
+  pedidoAtualizarAgenteSchema,
   saudeAgenteSchema,
   type ConfigAgente,
   type ErroApi,
 } from '@maestro/shared';
 import { montarHeartbeat } from './heartbeat.js';
+import { SHA_VALIDO, dispararAtualizacao, lerEstadoAtualizacao } from './versao.js';
 import { listarProcessos } from './processos.js';
 import { ErroPowerPoint, type PontePowerPoint } from './ppt/tipos.js';
 
@@ -44,8 +46,28 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
   const comToken = exigirToken(config);
 
   app.get('/health', async () => {
-    const heartbeat = await montarHeartbeat(config, ponte);
-    return saudeAgenteSchema.parse({ ...heartbeat, ts: Date.now() });
+    const [heartbeat, atualizacao] = await Promise.all([
+      montarHeartbeat(config, ponte),
+      lerEstadoAtualizacao(),
+    ]);
+    return saudeAgenteSchema.parse({
+      ...heartbeat,
+      ts: Date.now(),
+      ...(atualizacao ? { atualizacao } : {}),
+    });
+  });
+
+  /** O hub manda atualizar esta máquina; quem executa é o atualizador, solto daqui. */
+  app.post('/atualizar', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const analisado = pedidoAtualizarAgenteSchema.safeParse(req.body);
+    if (!analisado.success || !SHA_VALIDO.test(analisado.data.sha)) {
+      const corpo: ErroApi = { erro: 'sha-invalido', mensagem: 'Versão inválida para atualizar.' };
+      reply.code(400).send(corpo);
+      return;
+    }
+
+    dispararAtualizacao(analisado.data.sha);
+    return { aceito: true };
   });
 
   app.get('/processos', { preHandler: comToken }, async () => listarProcessos());

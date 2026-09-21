@@ -7,7 +7,17 @@
 set -uo pipefail
 
 FORCAR=0
-[ "${1:-}" = "--forcar" ] && FORCAR=1
+SHA_PEDIDO=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+  --forcar) FORCAR=1 ;;
+  --sha)
+    shift
+    SHA_PEDIDO="${1:-}"
+    ;;
+  esac
+  shift
+done
 
 REPO="joaooomarcos/church-maestro"
 DESTINO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -16,11 +26,28 @@ LOG="$DADOS/atualizacao.log"
 LOG_COMANDOS="$DADOS/atualizacao-comandos.log"
 MARCADOR="$DADOS/ultima-checagem.txt"
 VERSAO_TXT="$DESTINO/versao.txt"
+ESTADO_JSON="$DADOS/atualizacao-estado.json"
 
 mkdir -p "$DADOS"
 
 registrar() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" | tee -a "$LOG"; }
 curto() { if [ -n "${1:-}" ]; then echo "${1:0:7}"; else echo "desconhecida"; fi; }
+
+# O painel lê este arquivo (pelo /health do agente) para mostrar o andamento.
+escrever_estado() { # $1 = estado, $2 = mensagem, $3 = sha
+  node -e '
+    const fs=require("fs");
+    fs.writeFileSync(process.argv[1], JSON.stringify({
+      estado: process.argv[2], mensagem: process.argv[3], sha: process.argv[4] || undefined, ts: Date.now(),
+    }, null, 2));
+  ' "$ESTADO_JSON" "$1" "$2" "${3:-}" 2>/dev/null || true
+}
+
+notas_do_commit() { # $1 = sha
+  curl -fsSL --max-time 10 "https://api.github.com/repos/$REPO/commits/$1" 2>/dev/null |
+    node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).commit.message.split("\n")[0])}catch{}})' ||
+    true
+}
 
 sha_instalado() {
   [ -f "$VERSAO_TXT" ] || { echo ""; return; }
@@ -89,23 +116,29 @@ instalar_sha() { # $1 = sha, $2 = notas
   trap "rm -rf '$tmp'" RETURN
 
   registrar "baixando $(curto "$sha")"
+  escrever_estado baixando "Baixando a versão $(curto "$sha")" "$sha"
   mkdir -p "$tmp/codigo"
   if ! curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$sha" | tar -xz -C "$tmp/codigo" --strip-components=1; then
     registrar "FALHA: não consegui baixar $(curto "$sha"); nada foi trocado"
+    escrever_estado falhou "Não consegui baixar a versão; nada foi trocado" "$sha"
     return 1
   fi
 
   registrar "instalando dependências e compilando numa pasta separada"
+  escrever_estado compilando "Compilando a versão nova (a máquina segue no ar)" "$sha"
   if ! (cd "$tmp/codigo" && npm ci --no-audit --no-fund >>"$LOG_COMANDOS" 2>&1); then
     registrar "FALHA: npm ci não terminou; nada foi trocado"
+    escrever_estado falhou "Falha ao baixar as dependências; nada foi trocado" "$sha"
     return 1
   fi
   if ! (cd "$tmp/codigo" && npm run build >>"$LOG_COMANDOS" 2>&1); then
     registrar "FALHA: a compilação quebrou; nada foi trocado"
+    escrever_estado falhou "A versão nova não compilou; nada foi trocado" "$sha"
     return 1
   fi
 
   registrar "parando o Maestro para trocar os arquivos"
+  escrever_estado trocando "Trocando os arquivos e reiniciando" "$sha"
   parar_maestro
 
   # --delete tira arquivo velho que não existe mais na versão nova. Os arquivos
@@ -140,10 +173,34 @@ instalar_sha() { # $1 = sha, $2 = notas
   printf '%s %s\n' "$sha" "$notas" >"$VERSAO_TXT"
   subir_maestro
   registrar "versão trocada para $(curto "$sha") — $notas"
+  escrever_estado ok "Atualizado para $(curto "$sha")" "$sha"
   return 0
 }
 
 # --- daqui para baixo é o fluxo ---
+
+# Pedido pelo painel: instala exatamente esta versão, sem consultar o canal.
+if [ -n "$SHA_PEDIDO" ]; then
+  INSTALADO="$(sha_instalado)"
+  NOTAS="$(notas_do_commit "$SHA_PEDIDO")"
+  [ -z "$NOTAS" ] && NOTAS="atualização pedida no painel"
+  registrar "atualização pedida no painel: $(curto "$SHA_PEDIDO")"
+  if instalar_sha "$SHA_PEDIDO" "$NOTAS"; then
+    if ! verificar; then
+      if [ -n "$INSTALADO" ] && [ "$INSTALADO" != "$SHA_PEDIDO" ]; then
+        registrar "revertendo para a versão anterior"
+        if instalar_sha "$INSTALADO" "versão anterior (revertida)" && verificar; then
+          escrever_estado falhou "A versão nova não subiu; voltei para a anterior" "$INSTALADO"
+          registrar "revertido: a máquina voltou para a versão anterior"
+        else
+          escrever_estado falhou "A versão nova não subiu e não consegui reverter" "$SHA_PEDIDO"
+          registrar "ATENÇÃO: não consegui reverter. Rode o comando de instalação nesta máquina."
+        fi
+      fi
+    fi
+  fi
+  exit 0
+fi
 
 if [ "$FORCAR" -eq 0 ] && [ -f "$MARCADOR" ] && [ "$(cat "$MARCADOR")" = "$(date '+%Y-%m-%d')" ]; then
   exit 0

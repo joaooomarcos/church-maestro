@@ -7,6 +7,7 @@ import { registrarRotasDispositivos } from './dispositivos.js';
 import { registrarRotasVarredura } from './varredura.js';
 import { registrarRotasAgentes } from './agentes.js';
 import { registrarRotasPareamento } from './pareamento.js';
+import { registrarRotasVersoes } from './versoes.js';
 import { registrarRotasNdi } from './ndi.js';
 import { registrarRotasHolyrics } from './holyrics.js';
 import { registrarRotasPowerPoint } from './powerpoint.js';
@@ -29,6 +30,7 @@ export function registrarRotas(app: FastifyInstance, ctx: ContextoApp): void {
   registrarRotasVarredura(app, ctx);
   registrarRotasAgentes(app, ctx);
   registrarRotasPareamento(app, ctx);
+  registrarRotasVersoes(app, ctx);
   registrarRotasNdi(app, ctx);
   registrarRotasHolyrics(app, ctx);
   registrarRotasPowerPoint(app, ctx);

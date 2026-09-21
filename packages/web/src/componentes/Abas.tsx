@@ -1,4 +1,4 @@
-export type AbaId = 'painel' | 'ndi' | 'holyrics' | 'powerpoint' | 'testes';
+export type AbaId = 'painel' | 'ndi' | 'holyrics' | 'powerpoint' | 'testes' | 'versoes';
 
 const ABAS: ReadonlyArray<{ id: AbaId; rotulo: string; icone: string }> = [
   { id: 'painel', rotulo: 'Painel', icone: '🏠' },
@@ -6,6 +6,7 @@ const ABAS: ReadonlyArray<{ id: AbaId; rotulo: string; icone: string }> = [
   { id: 'holyrics', rotulo: 'Holyrics', icone: '📖' },
   { id: 'powerpoint', rotulo: 'PowerPoint', icone: '📊' },
   { id: 'testes', rotulo: 'Testes', icone: '🧪' },
+  { id: 'versoes', rotulo: 'Versões', icone: '⬆️' },
 ];
 
 export function Abas({ atual, aoSelecionar }: { atual: AbaId; aoSelecionar: (aba: AbaId) => void }) {

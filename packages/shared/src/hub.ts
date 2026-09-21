@@ -37,6 +37,8 @@ export const ROTAS = {
   varredura: '/api/varredura',
   registrarAgente: '/api/agentes/registrar',
   pareamento: '/api/pareamento',
+  versoes: '/api/versoes',
+  atualizar: '/api/atualizar',
   ndiFonte: '/api/ndi/fonte',
   holyricsAcao: '/api/holyrics/acao',
   pptAcao: '/api/powerpoint/acao',

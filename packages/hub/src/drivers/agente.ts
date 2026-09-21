@@ -77,16 +77,22 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
       try {
         const saude = await pedir<{
           versao: string;
+          versaoSha?: string;
+          versaoNotas?: string;
           so: 'windows' | 'linux' | 'darwin';
           uptimeS: number;
           processos: Record<string, boolean>;
           capacidades: string[];
+          atualizacao?: EstadoAgente['atualizacao'];
         }>(dispositivo, '/health', { method: 'GET' }, op, tokenPadrao);
 
         return {
           online: true,
           erro: null,
           versao: saude.versao,
+          ...(saude.versaoSha ? { versaoSha: saude.versaoSha } : {}),
+          ...(saude.versaoNotas ? { versaoNotas: saude.versaoNotas } : {}),
+          ...(saude.atualizacao ? { atualizacao: saude.atualizacao } : {}),
           so: saude.so,
           uptimeS: saude.uptimeS,
           processos: saude.processos as EstadoAgente['processos'],
@@ -100,6 +106,20 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           capacidades: [],
         };
       }
+    },
+
+    async atualizar(dispositivo, sha, op): Promise<void> {
+      await pedir<{ aceito: boolean }>(
+        dispositivo,
+        '/atualizar',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sha }),
+        },
+        op,
+        tokenPadrao,
+      );
     },
 
     async lerPowerPoint(dispositivo, op): Promise<EstadoPowerPoint> {

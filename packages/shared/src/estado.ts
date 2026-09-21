@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { APLICATIVOS } from './dispositivos.js';
+import { estadoAtualizacaoSchema } from './versoes.js';
 
 /**
  * Toda leitura de integração pode falhar sem que isso seja um erro do hub — a
@@ -14,6 +15,9 @@ const baseIntegracao = {
 export const estadoAgenteSchema = z.object({
   ...baseIntegracao,
   versao: z.string().optional(),
+  versaoSha: z.string().optional(),
+  versaoNotas: z.string().optional(),
+  atualizacao: estadoAtualizacaoSchema.optional(),
   so: z.enum(['windows', 'linux', 'darwin']).optional(),
   uptimeS: z.number().optional(),
   /** Um booleano por aplicativo conhecido. Ausente = agente não reportou. */
