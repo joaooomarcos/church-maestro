@@ -20,7 +20,9 @@
     "start": "node packages/hub/dist/index.js",
     "start:agent": "node packages/agent/dist/index.js",
     "setup": "node packages/agent/dist/setup.js",
-    "checklists": "node scripts/converter-checklist.mjs"
+    "checklists": "node scripts/converter-checklist.mjs",
+    "publicar": "node scripts/publicar.mjs",
+    "atualizar": "node scripts/atualizar-agora.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

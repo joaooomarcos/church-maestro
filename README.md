@@ -102,3 +102,21 @@ O hub e o agente sobem como tarefa ao fazer logon (Windows) ou serviço do usuá
 (Linux), sem janela. Para reconfigurar uma máquina depois — outro nome, outro
 serviço — rode `npm run setup` nela. O passo a passo completo, com o que ativar
 no NDI, no Holyrics e no OBS, está em [docs/instalacao.md](./docs/instalacao.md).
+
+## Liberar uma versão para as igrejas
+
+As máquinas não seguem o `main`: elas seguem o `canal.json`, e só instalam o
+commit apontado nele. Push é trabalho; publicar é decisão:
+
+```bash
+npm run publicar              # libera o commit atual
+npm run publicar -- <sha>     # volta as máquinas para um commit anterior
+npm run publicar -- --desligar  # pausa as atualizações automáticas
+```
+
+Cada máquina checa uma vez por dia, no primeiro login — que, numa igreja onde as
+máquinas só ligam em dia de culto, é a manhã do próprio culto. Por isso o
+atualizador compila a versão nova numa pasta separada antes de trocar qualquer
+coisa e, se o painel ou o agente não voltarem, reverte sozinho. Se uma versão
+ruim passar, `npm run publicar -- <sha-anterior>` conserta todas as máquinas no
+próximo login delas.

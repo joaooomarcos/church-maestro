@@ -202,14 +202,39 @@ deixe os checklists impressos à mão nas primeiras semanas.
 
 ## 5. Atualizar o Maestro
 
-Quando sair uma correção, rode **o mesmo comando de instalação** em cada
-máquina. Ele para o hub e o agente, baixa a versão nova, compila e religa tudo.
+Depois de instalado, **cada máquina se atualiza sozinha**. Na primeira vez que
+alguém faz login no dia, ela consulta a versão aprovada e, se estiver
+desatualizada, se atualiza antes do culto começar.
 
-Mantém o que é daquela máquina: `config/hub.json` (PIN e tokens),
-`config/agent.json`, `config/devices.json`, `config/scenarios.json` e `data/`.
-Como já existe configuração, ele não repete o assistente.
+Ela **não** pega tudo o que vai para o `main`. Só instala a versão que foi
+aprovada — quem desenvolve libera com um comando (veja o README). Assim um
+trabalho em andamento nunca chega num domingo.
 
-A versão instalada fica anotada em `maestro/versao.txt`.
+Como a atualização acontece no dia do culto, ela é cautelosa:
+
+1. Baixa e **compila numa pasta separada**. Se não compilar, nada é trocado e a
+   máquina continua rodando a versão que estava.
+2. Só então para o hub/agente, troca os arquivos e religa. `config/` e `data/`
+   ficam intactos.
+3. Confere se o painel e o agente voltaram a responder. Se não voltaram, ela
+   **volta sozinha para a versão anterior**.
+
+Tudo fica registrado em `maestro\data\atualizacao.log`:
+
+```powershell
+Get-Content ~\maestro\data\atualizacao.log -Tail 20
+```
+
+Para atualizar na hora, sem esperar o próximo login:
+
+```powershell
+cd ~\maestro
+npm run atualizar
+```
+
+Rodar o **comando de instalação** de novo também funciona e continua valendo
+quando algo estiver muito fora do lugar. A versão instalada fica anotada em
+`maestro/versao.txt`.
 
 Feche antes os terminais abertos dentro da pasta `maestro` — no Windows, uma
 pasta em uso não pode ser apagada, e o script avisa com **ERRO**.
@@ -258,6 +283,16 @@ No Linux: `systemctl --user restart maestro-agent`.
 - As máquinas precisam estar na **mesma rede** (nada de uma no wi-fi de
   visitantes).
 - Se ainda assim não achar, digite o IP do PC Transmissão quando ele pedir.
+
+### A máquina não se atualizou
+
+- Ela checa **uma vez por dia**, no primeiro login. Para forçar:
+  `cd ~\maestro` e `npm run atualizar`.
+- Veja o motivo no log: `Get-Content ~\maestro\data\atualizacao.log -Tail 20`.
+  Ele diz se já estava na versão aprovada, se faltou internet, ou se a
+  compilação quebrou (nesse caso nada foi trocado — a máquina continua no ar).
+- "atualizacao automatica desligada no canal" significa que quem desenvolve
+  pausou as atualizações de propósito.
 
 ### O hub não sobe
 

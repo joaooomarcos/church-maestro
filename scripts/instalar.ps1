@@ -39,13 +39,27 @@
 
     New-Item -ItemType Directory -Path $tmp | Out-Null
 
+    # As maquinas da igreja instalam a versao aprovada no canal, nao o topo do
+    # main: assim um push de trabalho nunca chega sozinho num domingo.
     $versao = ''
     $ref = "refs/heads/$branch"
-    try {
-      $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/commits/$branch" -UseBasicParsing
-      $ref = $commit.sha
-      $versao = $commit.sha.Substring(0, 7) + ' ' + $commit.commit.message.Split("`n")[0]
-    } catch { }
+    if (-not $env:MAESTRO_BRANCH) {
+      try {
+        $marca = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+        $canal = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/$repo/main/canal.json?t=$marca" -UseBasicParsing
+        if ($canal.ativo -and $canal.sha) {
+          $ref = $canal.sha
+          $versao = "$($canal.sha) $($canal.notas)"
+        }
+      } catch { }
+    }
+    if (-not $versao) {
+      try {
+        $commit = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/commits/$branch" -UseBasicParsing
+        $ref = $commit.sha
+        $versao = $commit.sha + ' ' + $commit.commit.message.Split("`n")[0]
+      } catch { }
+    }
 
     Passo "Baixando a versao mais nova ($branch)"
     $zip = Join-Path $tmp 'maestro.zip'
@@ -201,16 +215,27 @@
       CriarTarefa 'maestro-agent' 'agent' | Out-Null
     }
 
+    # Ao fazer logon, antes do culto, a maquina pega sozinha a versao aprovada.
+    Passo 'Ligando a atualizacao automatica'
+    CriarTarefa 'maestro-update' 'update' | Out-Null
+
     Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 
-    Passo "Pronto! Versao: $(if ($versao) { $versao } else { 'desconhecida' })"
+    $versaoCurta = 'desconhecida'
+    if ($versao) {
+      $partes = $versao -split ' ', 2
+      $versaoCurta = ($partes[0].Substring(0, [Math]::Min(7, $partes[0].Length)) + ' ' + $partes[1]).Trim()
+    }
+    Passo "Pronto! Versao: $versaoCurta"
     Write-Host "Pasta: $destino"
     Write-Host ''
     Write-Host 'Painel:            http://localhost:8700 (ou o IP do PC Transmissao)'
     Write-Host 'Reconfigurar:      npm.cmd run setup'
-    Write-Host 'Logs:              data\hub.log e data\agent.log'
+    Write-Host 'Atualizar agora:   npm.cmd run atualizar'
+    Write-Host 'Logs:              data\hub.log, data\agent.log, data\atualizacao.log'
     Write-Host ''
-    Write-Host 'Para atualizar depois, rode o mesmo comando de instalacao.'
+    Write-Host 'A partir daqui esta maquina se atualiza sozinha, uma vez por dia,'
+    Write-Host 'para a versao aprovada no canal.'
   } catch {
     if (Test-Path $backup) {
       Write-Host "`nAs configuracoes desta maquina estao guardadas em: $backup" -ForegroundColor Yellow

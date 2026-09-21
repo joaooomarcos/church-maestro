@@ -35,8 +35,16 @@ if [ -d "$DESTINO" ] && [ -n "$(ls -A "$DESTINO")" ] &&
   falha "A pasta $DESTINO já existe e não parece ser uma instalação do Maestro. Mova ou renomeie essa pasta e rode de novo."
 fi
 
-VERSAO="$(curl -fsSL "https://api.github.com/repos/$REPO/commits/$BRANCH" 2>/dev/null |
-  node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const c=JSON.parse(s);console.log(c.sha.slice(0,40)+" "+c.commit.message.split("\n")[0])}catch{}})' || true)"
+# As máquinas da igreja instalam a versão aprovada no canal, não o topo do main.
+VERSAO=""
+if [ -z "${MAESTRO_BRANCH:-}" ]; then
+  VERSAO="$(curl -fsSL --max-time 15 "https://raw.githubusercontent.com/$REPO/main/canal.json?t=$(date +%s)" 2>/dev/null |
+    node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);if(j.ativo&&j.sha)console.log(j.sha+" "+(j.notas||""))}catch{}})' || true)"
+fi
+if [ -z "$VERSAO" ]; then
+  VERSAO="$(curl -fsSL "https://api.github.com/repos/$REPO/commits/$BRANCH" 2>/dev/null |
+    node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const c=JSON.parse(s);console.log(c.sha+" "+c.commit.message.split("\n")[0])}catch{}})' || true)"
+fi
 SHA="${VERSAO%% *}"
 
 passo "Baixando a versão mais nova ($BRANCH)"
@@ -78,7 +86,7 @@ passo "Compilando (npm run build)"
 npm run build || falha "A compilação falhou. Copie as mensagens acima e mande para quem mantém o Maestro."
 
 if [ -n "$VERSAO" ]; then
-  echo "${VERSAO:0:7} ${VERSAO#* }" >versao.txt
+  printf '%s\n' "$VERSAO" >versao.txt
 fi
 
 if [ ! -f config/agent.json ]; then
@@ -115,6 +123,24 @@ UNIT
   # Sem linger o serviço cai quando a pessoa faz logout.
   loginctl enable-linger "$USER" >/dev/null 2>&1 || true
   echo "serviço maestro-agent ativado"
+
+  # Ao fazer logon, antes do culto, a máquina pega sozinha a versão aprovada.
+  passo "Ligando a atualização automática"
+  cat >"$HOME/.config/systemd/user/maestro-update.service" <<UNIT
+[Unit]
+Description=Atualizador do Maestro
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash $DESTINO/scripts/atualizar.sh
+
+[Install]
+WantedBy=default.target
+UNIT
+  systemctl --user daemon-reload
+  systemctl --user enable maestro-update >/dev/null 2>&1 || true
+  echo "serviço maestro-update ativado"
 fi
 
 rm -rf "$TMP"
@@ -126,8 +152,9 @@ else
 fi
 echo "Pasta: $DESTINO"
 echo
-echo "Reconfigurar:  cd $DESTINO && npm run setup"
-echo "Ver o log:     journalctl --user -u maestro-agent -n 30"
+echo "Reconfigurar:     cd $DESTINO && npm run setup"
+echo "Atualizar agora:  cd $DESTINO && npm run atualizar"
+echo "Ver o log:        journalctl --user -u maestro-agent -n 30"
 echo "(se o terminal estava dentro da pasta antiga, rode 'cd $DESTINO' antes)"
 echo
 echo "Para atualizar depois, rode o mesmo comando de instalação."
