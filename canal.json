@@ -1,6 +1,6 @@
 {
   "ativo": true,
-  "sha": "e4b08aba18682f397a59801a9ab7808193b8617b",
-  "notas": "Intervalo do heartbeat ajustável pelo painel",
+  "sha": "319b56940c3d6988169dfef9f7676cafc3f61002",
+  "notas": "Controle de slides por QR code para quem vai apresentar",
   "liberadoEm": "2026-09-21"
 }
