@@ -108,9 +108,18 @@ instalar_sha() { # $1 = sha, $2 = notas
   registrar "parando o Maestro para trocar os arquivos"
   parar_maestro
 
-  # --delete tira arquivo velho que não existe mais na versão nova.
+  # --delete tira arquivo velho que não existe mais na versão nova. Os arquivos
+  # que mantêm a máquina capaz de se atualizar ficam de fora da poda: voltar
+  # para uma versão anterior ao atualizador deixaria a máquina sem saída, só
+  # resolvida com visita presencial.
   if command -v rsync >/dev/null; then
-    copiar() { rsync -a --delete --exclude 'config/' --exclude 'data/' --exclude 'versao.txt' "$tmp/codigo/" "$DESTINO/"; }
+    copiar() {
+      rsync -a --delete \
+        --exclude 'config/' --exclude 'data/' --exclude 'versao.txt' \
+        --exclude 'scripts/atualizar.sh' --exclude 'scripts/atualizar.ps1' \
+        --exclude 'scripts/iniciar-oculto.vbs' \
+        "$tmp/codigo/" "$DESTINO/"
+    }
   else
     copiar() { cp -a "$tmp/codigo/." "$DESTINO/"; }
   fi
@@ -119,6 +128,14 @@ instalar_sha() { # $1 = sha, $2 = notas
     subir_maestro
     return 1
   fi
+
+  # Quando a versão nova traz esses arquivos, eles são atualizados também.
+  for arquivo in scripts/atualizar.sh scripts/atualizar.ps1 scripts/iniciar-oculto.vbs; do
+    if [ -f "$tmp/codigo/$arquivo" ]; then
+      cp -a "$tmp/codigo/$arquivo" "$DESTINO/$arquivo" 2>>"$LOG_COMANDOS" ||
+        registrar "aviso: não consegui trocar $arquivo; fica a versão atual"
+    fi
+  done
 
   printf '%s %s\n' "$sha" "$notas" >"$VERSAO_TXT"
   subir_maestro

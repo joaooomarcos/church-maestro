@@ -157,17 +157,33 @@ function InstalarSha([string]$sha, [string]$notas) {
     Registrar 'parando o Maestro para trocar os arquivos'
     PararMaestro
 
-    # /MIR deixa a pasta igual a da versao nova (some arquivo velho), menos config e data.
+    # /MIR deixa a pasta igual a da versao nova (some arquivo velho), menos
+    # config e data. Os arquivos que mantem a maquina capaz de se atualizar
+    # tambem ficam de fora: voltar para uma versao anterior ao atualizador
+    # deixaria a maquina sem saida, so resolvida com visita presencial. Ficar de
+    # fora tambem evita que o .ps1 em execucao derrube a copia inteira.
     $codigo = RodarComando 'robocopy' @(
       $origem, $destino, '/MIR',
       '/XD', (Join-Path $destino 'config'), (Join-Path $destino 'data'),
-      '/XF', 'versao.txt',
+      '/XF', 'versao.txt', 'atualizar.ps1', 'atualizar.sh', 'iniciar-oculto.vbs',
       '/MT:16', '/R:2', '/W:2', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'
     ) $null
     if ($codigo -ge 8) {
       Registrar "FALHA: nao consegui copiar os arquivos (robocopy $codigo)"
       SubirMaestro
       return $false
+    }
+
+    # Quando a versao nova traz esses arquivos, eles sao atualizados tambem.
+    foreach ($arquivo in 'scripts\atualizar.ps1', 'scripts\atualizar.sh', 'scripts\iniciar-oculto.vbs') {
+      $novo = Join-Path $origem $arquivo
+      if (Test-Path $novo) {
+        try {
+          Copy-Item $novo (Join-Path $destino $arquivo) -Force
+        } catch {
+          Registrar "aviso: nao consegui trocar $arquivo; fica a versao atual"
+        }
+      }
     }
 
     Set-Content -Path $caminhoVersao -Value "$sha $notas" -Encoding UTF8
