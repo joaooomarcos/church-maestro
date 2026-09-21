@@ -95,6 +95,8 @@ function Convite({ maquinas }: { maquinas: MaquinaVersao[] }) {
   const [link, setLink] = useState<RespostaLinkConvidado | null>(null);
   const [imagemQr, setImagemQr] = useState('');
   const [gerando, setGerando] = useState(false);
+  const [pinNovo, setPinNovo] = useState('');
+  const [salvandoPin, setSalvandoPin] = useState(false);
 
   const controlaveis = maquinas.filter((maquina) => maquina.id !== ALVO_HUB);
   const escolhida = dispositivo || controlaveis[0]?.id || '';
@@ -113,6 +115,20 @@ function Convite({ maquinas }: { maquinas: MaquinaVersao[] }) {
       // erro já virou toast
     } finally {
       setGerando(false);
+    }
+  }
+
+  async function trocarPin(): Promise<void> {
+    if (pinNovo.length < 4 || salvandoPin) return;
+    setSalvandoPin(true);
+    try {
+      await apiPost(ROTAS.ajustes, { pinConvidado: pinNovo });
+      setLink((atual) => (atual ? { ...atual, pin: pinNovo } : atual));
+      setPinNovo('');
+    } catch {
+      // erro já virou toast
+    } finally {
+      setSalvandoPin(false);
     }
   }
 
@@ -147,6 +163,26 @@ function Convite({ maquinas }: { maquinas: MaquinaVersao[] }) {
             A pessoa escaneia, digita esse PIN uma vez e passa os slides desta máquina. O acesso
             dura um dia.
           </p>
+
+          <div className="convite__troca">
+            <input
+              className="convite__campo"
+              type="tel"
+              inputMode="numeric"
+              placeholder="Novo PIN"
+              value={pinNovo}
+              onChange={(evento) => setPinNovo(evento.target.value.trim())}
+            />
+            <button
+              type="button"
+              className="controle-apps__acao"
+              disabled={pinNovo.length < 4 || salvandoPin}
+              onClick={() => void trocarPin()}
+            >
+              Trocar PIN
+            </button>
+          </div>
+
           <button type="button" className="controle-apps__acao" onClick={() => void gerar(true)}>
             Trocar o link (derruba os anteriores)
           </button>

@@ -937,3 +937,20 @@ p {
   color: var(--cor-perigo);
   font-size: 0.95rem;
 }
+
+.convite__troca {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.convite__campo {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-elevado);
+  color: var(--cor-texto);
+  font-size: 0.95rem;
+}
