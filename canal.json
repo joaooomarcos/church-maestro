@@ -1,6 +1,6 @@
 {
   "ativo": true,
-  "sha": "3b24a2cc79b64119b4562f00b1319e0bb9ca6aea",
-  "notas": "Atualizador nunca se apaga ao voltar para uma versão anterior",
+  "sha": "a4fa4302831c348bef4b9f9322d231d95939c325",
+  "notas": "Atualização comandada pelo painel, máquina por máquina",
   "liberadoEm": "2026-09-21"
 }
