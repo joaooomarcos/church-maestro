@@ -54,6 +54,7 @@ async function principal(): Promise<void> {
     cenarios: configuracao.cenarios,
     dispositivos,
     caminhoDispositivos: configuracao.caminhos.dispositivos,
+    caminhoHub: configuracao.caminhos.hub,
   });
 
   await registrarAutenticacao(app, configuracao.hub);

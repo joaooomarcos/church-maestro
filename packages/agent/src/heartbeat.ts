@@ -81,7 +81,12 @@ export async function montarHeartbeat(config: ConfigAgente, ponte: PontePowerPoi
   });
 }
 
-async function enviarHeartbeat(config: ConfigAgente, hubUrl: string, ponte: PontePowerPoint): Promise<void> {
+/** O hub devolve o intervalo que quer; `undefined` = mantém o local. */
+async function enviarHeartbeat(
+  config: ConfigAgente,
+  hubUrl: string,
+  ponte: PontePowerPoint,
+): Promise<number | undefined> {
   const corpo = await montarHeartbeat(config, ponte);
   const resposta = await fetch(new URL(ROTAS.registrarAgente, hubUrl), {
     method: 'POST',
@@ -102,6 +107,12 @@ async function enviarHeartbeat(config: ConfigAgente, hubUrl: string, ponte: Pont
           : '';
     throw new Error(`hub respondeu ${resposta.status}${dica}`);
   }
+
+  const respostaJson = (await resposta.json().catch(() => undefined)) as
+    | { intervaloHeartbeatMs?: number }
+    | undefined;
+  const pedido = respostaJson?.intervaloHeartbeatMs;
+  return typeof pedido === 'number' && pedido >= 2000 && pedido <= 120_000 ? pedido : undefined;
 }
 
 export interface ControleHeartbeat {
@@ -124,13 +135,18 @@ export function iniciarHeartbeat(config: ConfigAgente, ponte: PontePowerPoint): 
 
   let parado = false;
   let timer: NodeJS.Timeout | undefined;
-  let atrasoAtualMs = config.intervaloHeartbeatMs;
+  let intervaloDesejadoMs = config.intervaloHeartbeatMs;
+  let atrasoAtualMs = intervaloDesejadoMs;
 
   const ciclo = async (): Promise<void> => {
     if (parado) return;
     try {
-      await enviarHeartbeat(config, hubUrl, ponte);
-      atrasoAtualMs = config.intervaloHeartbeatMs;
+      const pedidoPeloHub = await enviarHeartbeat(config, hubUrl, ponte);
+      if (pedidoPeloHub && pedidoPeloHub !== intervaloDesejadoMs) {
+        console.log(`[agente] hub pediu heartbeat a cada ${Math.round(pedidoPeloHub / 1000)}s`);
+        intervaloDesejadoMs = pedidoPeloHub;
+      }
+      atrasoAtualMs = intervaloDesejadoMs;
     } catch (err) {
       console.debug('[agente] heartbeat falhou (hub pode estar desligado):', err);
       atrasoAtualMs = Math.min(atrasoAtualMs * 2, INTERVALO_MAXIMO_BACKOFF_MS);

@@ -113,6 +113,12 @@ export async function carregarOuCriarCenarios(caminho: string): Promise<Cenario[
   return resultado.data.cenarios;
 }
 
+/** Grava config/hub.json depois de um ajuste feito pelo painel. */
+export async function salvarConfigHub(caminho: string, config: ConfigHub): Promise<void> {
+  const validada = configHubSchema.parse(config);
+  await escreverArquivoAtomico(caminho, JSON.stringify(validada, null, 2));
+}
+
 export async function salvarDispositivos(
   caminho: string,
   dispositivos: DispositivoConfig[],

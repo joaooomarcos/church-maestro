@@ -34,6 +34,8 @@ export function registrarRotasAgentes(app: FastifyInstance, ctx: ContextoApp): v
       await ctx.atualizarDispositivo({ ...dispositivo, host: novoHost });
     }
 
-    return reply.send({ ok: true });
+    // O agente adota este intervalo na próxima batida: é assim que a equipe
+    // muda o ritmo de todas as máquinas mexendo num lugar só.
+    return reply.send({ ok: true, intervaloHeartbeatMs: ctx.config.intervaloHeartbeatMs });
   });
 }

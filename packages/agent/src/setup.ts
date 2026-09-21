@@ -416,6 +416,14 @@ async function main(): Promise<void> {
     const obs = await configurarObs(rl);
     const caminhosApps = await configurarCaminhos(rl, atual?.caminhosApps ?? {});
 
+    console.log('\nDe quantos em quantos segundos esta máquina avisa o hub que está viva?');
+    console.log('O painel pode mudar isso depois, para todas as máquinas de uma vez.');
+    const segundos = Number(
+      await perguntar(rl, 'Intervalo em segundos', String((atual?.intervaloHeartbeatMs ?? 10_000) / 1000)),
+    );
+    const intervaloHeartbeatMs =
+      Number.isFinite(segundos) && segundos >= 2 && segundos <= 120 ? Math.round(segundos * 1000) : 10_000;
+
     const porta = atual?.porta ?? PORTAS_PADRAO.agente;
     const resposta = await parear(rl, hubUrl, {
       nome,
@@ -434,7 +442,7 @@ async function main(): Promise<void> {
       hubUrl,
       porta,
       token: resposta.token,
-      intervaloHeartbeatMs: atual?.intervaloHeartbeatMs ?? 10_000,
+      intervaloHeartbeatMs,
       caminhosApps,
     });
 

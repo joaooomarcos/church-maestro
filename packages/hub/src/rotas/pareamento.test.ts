@@ -51,6 +51,7 @@ async function contextoTemporario(dispositivos: DispositivoConfig[]) {
       pin: '1234',
       segredoSessao: 'x'.repeat(16),
       tokenAgentes: 'y'.repeat(16),
+      intervaloHeartbeatMs: 10_000,
       intervaloPollingMs: 2000,
       varreduraAutomaticaMin: 10,
     },
@@ -59,6 +60,7 @@ async function contextoTemporario(dispositivos: DispositivoConfig[]) {
     cenarios: [],
     dispositivos,
     caminhoDispositivos,
+    caminhoHub: path.join(pasta, 'hub.json'),
   });
   return { ctx, caminhoDispositivos };
 }

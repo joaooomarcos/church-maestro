@@ -1,4 +1,5 @@
 import {
+  configHubSchema,
   dispositivoConfigSchema,
   type Cenario,
   type ConfigHub,
@@ -6,7 +7,7 @@ import {
   type ResultadoCheck,
 } from '@maestro/shared';
 import type { Drivers } from '../drivers/tipos.js';
-import { salvarDispositivos } from '../config.js';
+import { salvarConfigHub, salvarDispositivos } from '../config.js';
 import type { Store } from '../estado/store.js';
 
 /**
@@ -33,6 +34,12 @@ export interface ContextoApp {
     dispositivo: DispositivoConfig,
     idAnterior?: string,
   ): Promise<DispositivoConfig>;
+  /**
+   * Muda um ajuste do hub e grava em config/hub.json. O objeto de configuração
+   * é alterado no lugar, então quem já o tem em mãos (autenticação, rotas de
+   * agente) passa a enxergar o valor novo sem reiniciar o hub.
+   */
+  atualizarConfigHub(parcial: Partial<ConfigHub>): Promise<ConfigHub>;
   /** Publica um resultado de check no WebSocket, para todas as telas verem ao vivo. */
   publicar(resultado: ResultadoCheck): void;
 }
@@ -44,6 +51,7 @@ export interface OpcoesContexto {
   cenarios: Cenario[];
   dispositivos: DispositivoConfig[];
   caminhoDispositivos: string;
+  caminhoHub: string;
 }
 
 export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
@@ -85,6 +93,13 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
       dispositivos = proximos;
       await salvarDispositivos(opcoes.caminhoDispositivos, dispositivos);
       return validado;
+    },
+
+    async atualizarConfigHub(parcial) {
+      const validada = configHubSchema.parse({ ...opcoes.config, ...parcial });
+      Object.assign(opcoes.config, validada);
+      await salvarConfigHub(opcoes.caminhoHub, validada);
+      return validada;
     },
 
     publicar(resultado) {

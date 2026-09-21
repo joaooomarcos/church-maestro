@@ -6,7 +6,7 @@ const ABAS: ReadonlyArray<{ id: AbaId; rotulo: string; icone: string }> = [
   { id: 'holyrics', rotulo: 'Holyrics', icone: '📖' },
   { id: 'powerpoint', rotulo: 'PowerPoint', icone: '📊' },
   { id: 'testes', rotulo: 'Testes', icone: '🧪' },
-  { id: 'versoes', rotulo: 'Versões', icone: '⬆️' },
+  { id: 'versoes', rotulo: 'Sistema', icone: '⬆️' },
 ];
 
 export function Abas({ atual, aoSelecionar }: { atual: AbaId; aoSelecionar: (aba: AbaId) => void }) {

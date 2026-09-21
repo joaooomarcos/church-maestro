@@ -19,6 +19,11 @@ export const configHubSchema = z.object({
   segredoSessao: z.string().min(16),
   /** Token que o hub apresenta aos agentes, e vice-versa. */
   tokenAgentes: z.string().min(8),
+  /**
+   * De quanto em quanto tempo cada agente avisa que está vivo. Vale para todas
+   * as máquinas: o hub devolve este valor em toda batida e o agente se ajusta.
+   */
+  intervaloHeartbeatMs: z.number().int().min(2000).max(120_000).default(10_000),
   /** Sub-rede a varrer, ex.: "192.168.0.0/24". Vazio = detecta pela interface. */
   redeVarredura: z.string().optional(),
   intervaloPollingMs: z.number().int().positive().default(2000),
@@ -42,6 +47,7 @@ export const ROTAS = {
   versoes: '/api/versoes',
   atualizar: '/api/atualizar',
   appAcao: '/api/apps/acao',
+  ajustes: '/api/ajustes',
   ndiFonte: '/api/ndi/fonte',
   holyricsAcao: '/api/holyrics/acao',
   pptAcao: '/api/powerpoint/acao',
@@ -68,6 +74,13 @@ export const acaoHolyricsSchema = z.object({
   indice: z.number().int().nonnegative().optional(),
   ativar: z.boolean().optional(),
 });
+
+/** Ajustes que a equipe pode mudar pelo painel, sem mexer em arquivo. */
+export const ajustesSchema = z.object({
+  intervaloHeartbeatMs: z.number().int().min(2000).max(120_000),
+});
+
+export type Ajustes = z.infer<typeof ajustesSchema>;
 
 export const acaoAppSchema = z.object({
   dispositivo: z.string(),
