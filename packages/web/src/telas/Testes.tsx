@@ -4,14 +4,15 @@ import { ROTAS } from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
 import { apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
+import { Icone, type NomeIcone } from '../componentes/Icone';
 
 type TipoCheck = 'legendas' | 'ndi';
 
-const ICONES: Record<StatusPasso, string> = {
-  ok: '✅',
-  falha: '❌',
-  aviso: '⚠️',
-  pulado: '⏭️',
+const ICONES: Record<StatusPasso, NomeIcone> = {
+  ok: 'ok',
+  falha: 'falha',
+  aviso: 'aviso',
+  pulado: 'pulado',
 };
 
 const ROTULOS_BOTAO: Record<TipoCheck, string> = {
@@ -78,8 +79,8 @@ export function Testes() {
           <ol className="resultado-check__passos">
             {resultado.passos.map((passo) => (
               <li key={passo.id} className={`passo-check passo-check--${passo.status}`}>
-                <span className="passo-check__icone" aria-hidden="true">
-                  {ICONES[passo.status]}
+                <span className="passo-check__icone">
+                  <Icone nome={ICONES[passo.status]} tamanho={20} />
                 </span>
                 <div className="passo-check__corpo">
                   <p className="passo-check__titulo">{passo.titulo}</p>

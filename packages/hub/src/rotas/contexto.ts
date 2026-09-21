@@ -52,10 +52,16 @@ export interface OpcoesContexto {
   dispositivos: DispositivoConfig[];
   caminhoDispositivos: string;
   caminhoHub: string;
+  /**
+   * false em modo mock: os dispositivos são de mentira e gravá-los apagaria o
+   * cadastro real se alguém rodasse `npm run dev` na máquina da igreja.
+   */
+  persistir?: boolean;
 }
 
 export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
   let dispositivos = opcoes.dispositivos;
+  const persistir = opcoes.persistir !== false;
 
   return {
     config: opcoes.config,
@@ -76,7 +82,7 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
       const proximos = [...dispositivos];
       proximos[indice] = validado;
       dispositivos = proximos;
-      await salvarDispositivos(opcoes.caminhoDispositivos, dispositivos);
+      if (persistir) await salvarDispositivos(opcoes.caminhoDispositivos, dispositivos);
       return validado;
     },
 
@@ -91,14 +97,14 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
       if (indice === -1) proximos.push(validado);
       else proximos[indice] = validado;
       dispositivos = proximos;
-      await salvarDispositivos(opcoes.caminhoDispositivos, dispositivos);
+      if (persistir) await salvarDispositivos(opcoes.caminhoDispositivos, dispositivos);
       return validado;
     },
 
     async atualizarConfigHub(parcial) {
       const validada = configHubSchema.parse({ ...opcoes.config, ...parcial });
       Object.assign(opcoes.config, validada);
-      await salvarConfigHub(opcoes.caminhoHub, validada);
+      if (persistir) await salvarConfigHub(opcoes.caminhoHub, validada);
       return validada;
     },
 

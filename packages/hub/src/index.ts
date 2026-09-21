@@ -55,6 +55,7 @@ async function principal(): Promise<void> {
     dispositivos,
     caminhoDispositivos: configuracao.caminhos.dispositivos,
     caminhoHub: configuracao.caminhos.hub,
+    persistir: !usarMock,
   });
 
   await registrarAutenticacao(app, configuracao.hub);

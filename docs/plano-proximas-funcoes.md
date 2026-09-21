@@ -61,11 +61,16 @@ pastas do NDI Tools, que mudam de nome a cada versão) e o "trazer para frente".
 Falta testar no Windows: o envio das setas (`SendKeys`) depois de trazer o
 programa para frente. O resto do fluxo foi testado ponta a ponta.
 
-## Fase 4 — Ícones SVG e acabamento
+## Fase 4 — Ícones SVG e acabamento ✔ feita
 
 - Conjunto próprio de ícones SVG inline (sem dependência nova), um componente
   `Icone` com os nomes usados nas abas e nos cartões.
 - Passe de acabamento: espaçamento, hierarquia de títulos e estados de botão.
+- Os ícones dos cenários continuam vindo do `scenarios.json`: os emoji mais
+  usados viram ícone de traço, e o que não estiver mapeado aparece como a
+  equipe escreveu.
+
+Com isso as quatro fases combinadas em 2026-09-21 estão entregues.
 
 ## Como retomar
 

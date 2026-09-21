@@ -10,6 +10,7 @@ import {
 } from '@maestro/shared';
 import { apiGet, apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
+import { Icone } from '../componentes/Icone';
 
 const INTERVALO_ESTADO_MS = 10_000;
 
@@ -154,7 +155,8 @@ export function Convidado({ token }: { token: string }) {
           disabled={!modo || enviando}
           onClick={() => void passar('anterior')}
         >
-          ◀ Voltar
+          <Icone nome="seta-esquerda" tamanho={26} />
+          Voltar
         </button>
         <button
           type="button"
@@ -162,7 +164,8 @@ export function Convidado({ token }: { token: string }) {
           disabled={!modo || enviando}
           onClick={() => void passar('proximo')}
         >
-          Avançar ▶
+          Avançar
+          <Icone nome="seta-direita" tamanho={26} />
         </button>
       </div>
 

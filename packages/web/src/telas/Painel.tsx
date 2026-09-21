@@ -5,7 +5,31 @@ import { useAppContexto } from '../contexto/AppContext';
 import { apiGet, apiPost } from '../nucleo/cliente';
 import { Semaforo, type EstadoSemaforo } from '../componentes/Semaforo';
 import { ControleApps } from '../componentes/ControleApps';
+import { Icone, type NomeIcone } from '../componentes/Icone';
 import { vibrar } from '../nucleo/vibrar';
+
+/**
+ * Os cenários vêm do scenarios.json, que a equipe edita e onde os ícones são
+ * emoji. Os mais usados viram ícone de traço; o que não estiver aqui continua
+ * aparecendo como a equipe escreveu.
+ */
+const ICONES_CENARIO: Record<string, NomeIcone> = {
+  '🕐': 'relogio',
+  '🕒': 'relogio',
+  '⏰': 'relogio',
+  '🎵': 'musica',
+  '🎶': 'musica',
+  '🎤': 'musica',
+  '🌙': 'lua',
+  '🌚': 'lua',
+  '📺': 'ndi',
+  '📖': 'holyrics',
+  '📊': 'powerpoint',
+  '🎥': 'camera',
+  '📹': 'camera',
+  '▶': 'play',
+  '▶️': 'play',
+};
 
 function estadoSemaforoDispositivo(d: EstadoDispositivo): EstadoSemaforo {
   if (d.ultimoContato === null) return 'nao-configurado';
@@ -117,7 +141,11 @@ export function Painel() {
               onClick={() => void executarCenario(cenario)}
             >
               <span className="botao-cenario__icone" aria-hidden="true">
-                {cenario.icone ?? '▶'}
+                {(() => {
+                  const desenhado = cenario.icone ? ICONES_CENARIO[cenario.icone] : 'play';
+                  if (desenhado) return <Icone nome={desenhado} tamanho={26} />;
+                  return cenario.icone;
+                })()}
               </span>
               <span>{executando === cenario.id ? 'Aplicando…' : cenario.nome}</span>
             </button>
@@ -162,7 +190,11 @@ export function Painel() {
                     {obs !== null ? (
                       <li className={obs.alerta ? 'cartao-dispositivo__alerta' : ''}>
                         OBS: {obs.texto}
-                        {obs.alerta ? ' ⚠ perda de frames' : ''}
+                        {obs.alerta ? (
+                          <span className="cartao-dispositivo__aviso">
+                            <Icone nome="aviso" tamanho={16} /> perda de frames
+                          </span>
+                        ) : null}
                       </li>
                     ) : null}
                   </ul>

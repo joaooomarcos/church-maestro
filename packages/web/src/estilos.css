@@ -954,3 +954,140 @@ p {
   color: var(--cor-texto);
   font-size: 0.95rem;
 }
+
+/* ---------------------------------------------------------------------- *
+ * Acabamento: ícones SVG, estados de botão e hierarquia de títulos.
+ * Fica no fim do arquivo de propósito — sobrepõe o que veio da época dos
+ * emojis sem reescrever as regras originais.
+ * ---------------------------------------------------------------------- */
+
+.icone {
+  flex: none;
+  display: block;
+}
+
+/* Abas: o ícone herda a cor do item, então acende junto com o rótulo. */
+.abas__item {
+  color: var(--cor-texto-fraco);
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.abas__item--ativo {
+  color: var(--cor-primaria-forte);
+}
+
+.abas__icone {
+  font-size: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+}
+
+.abas__item:active {
+  background: rgba(47, 125, 216, 0.1);
+}
+
+/* Botões: resposta ao toque, foco visível no teclado e desabilitado legível. */
+.botao-acao,
+.botao-opcao,
+.botao-cenario,
+.controle-apps__acao,
+.convidado__modo,
+.convidado__passar {
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 90ms ease;
+  cursor: pointer;
+}
+
+.botao-acao:active,
+.botao-cenario:active,
+.controle-apps__acao:active,
+.convidado__passar:active {
+  transform: scale(0.985);
+}
+
+.botao-acao:disabled,
+.botao-opcao:disabled,
+.botao-cenario:disabled,
+.controle-apps__acao:disabled,
+.convidado__passar:disabled,
+.versoes__select:disabled {
+  cursor: not-allowed;
+  transform: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cor-primaria-forte);
+  outline-offset: 2px;
+}
+
+.botao-cenario__icone {
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+}
+
+/* Testes: o ícone toma a cor do resultado do passo. */
+.passo-check__icone {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  color: var(--cor-texto-fraco);
+}
+
+.passo-check--ok .passo-check__icone {
+  color: var(--cor-sucesso);
+}
+
+.passo-check--falha .passo-check__icone {
+  color: var(--cor-perigo);
+}
+
+.passo-check--aviso .passo-check__icone {
+  color: var(--cor-aviso);
+}
+
+.cartao-dispositivo__aviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  color: var(--cor-perigo);
+  font-weight: 700;
+}
+
+/* Títulos de seção: mesma voz em Sistema, testes e convidado. */
+.versoes__titulo {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--cor-texto-fraco);
+}
+
+.versoes__alvo {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-grande);
+  background: var(--cor-fundo-cartao);
+  padding: 14px;
+}
+
+.cartao-versao__cabecalho h3,
+.cartao-dispositivo__cabecalho h2 {
+  letter-spacing: -0.01em;
+}
+
+/* Convidado: botão com ícone e texto lado a lado. */
+.convidado__passar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
