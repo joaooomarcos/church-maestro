@@ -1,9 +1,9 @@
 /**
  * Libera para as máquinas da igreja a versão que está em HEAD.
  *
- * As máquinas nunca pegam o `main` direto: elas olham o `canal.json`, e só
- * instalam o commit apontado aqui. Assim um push de trabalho não chega na
- * igreja sozinho — chega quando você rodar `npm run publicar`.
+ * Marca no `canal.json` qual commit é o recomendado. O painel destaca essa
+ * versão como "(aprovada)" na aba Versões, e o instalador usa ela em máquina
+ * nova — mas nada é aplicado sozinho: quem atualiza é quem opera, pelo painel.
  *
  * Uso:
  *   npm run publicar                 libera o commit atual
@@ -63,5 +63,5 @@ if (!desligar) {
   console.log(`anterior: ${anterior?.slice(0, 7) ?? '—'}`);
   console.log(`agora:    ${sha.slice(0, 7)} — ${notas}`);
 }
-console.log('\nCada máquina pega isso na próxima vez que alguém fizer login nela.');
-console.log('Para voltar atrás: npm run publicar -- <sha-anterior>');
+console.log('\nNenhuma máquina pega isso sozinha: aplique pela aba Versões do painel,');
+console.log('uma máquina de cada vez. Para desmarcar: npm run publicar -- <sha-anterior>');
