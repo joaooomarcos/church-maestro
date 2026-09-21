@@ -91,6 +91,13 @@ export interface DriverAgente {
    * só então começa a troca — ele mesmo sai do ar no meio dela.
    */
   atualizar(dispositivo: DispositivoConfig, sha: string, op?: OpcoesRequisicao): Promise<void>;
+  /** Manda uma seta do teclado para um aplicativo, trazendo-o para frente antes. */
+  teclaApp(
+    dispositivo: DispositivoConfig,
+    app: import('@maestro/shared').Aplicativo,
+    direcao: 'proximo' | 'anterior',
+    op?: OpcoesRequisicao,
+  ): Promise<void>;
   /** Abre, fecha, reinicia ou traz para frente um aplicativo daquela máquina. */
   acaoApp(
     dispositivo: DispositivoConfig,

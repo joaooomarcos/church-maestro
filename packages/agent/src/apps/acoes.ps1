@@ -7,10 +7,12 @@
 # como ANSI, e acentos aqui viram lixo. Texto para o usuario fica no TypeScript.
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('localizar', 'abrir', 'fechar', 'frente')]
+    [ValidateSet('localizar', 'abrir', 'fechar', 'frente', 'tecla')]
     [string]$Acao,
     [string]$Caminho = '',
-    [string]$Processos = ''
+    [string]$Processos = '',
+    [ValidateSet('', 'RIGHT', 'LEFT')]
+    [string]$Tecla = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -161,6 +163,18 @@ try {
             $processos = Obter-Processos $Processos
             if (-not $processos) { throw "nao-esta-aberto" }
             $dados = @{ trouxe = (Trazer-ParaFrente $processos) }
+        }
+        'tecla' {
+            if (-not $Tecla) { throw "tecla-invalida" }
+            $processos = Obter-Processos $Processos
+            if (-not $processos) { throw "nao-esta-aberto" }
+            if (-not (Trazer-ParaFrente $processos)) { throw "nao-consegui-focar" }
+            # A janela leva um instante para assumir o foco; sem esta pausa a
+            # tecla chega na janela anterior.
+            Start-Sleep -Milliseconds 250
+            $wshell = New-Object -ComObject WScript.Shell
+            $wshell.SendKeys("{$Tecla}")
+            $dados = @{ enviou = $Tecla }
         }
     }
     [Console]::Out.WriteLine((@{ ok = $true; dados = $dados } | ConvertTo-Json -Compress -Depth 5))

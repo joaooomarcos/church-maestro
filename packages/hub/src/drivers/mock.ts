@@ -185,6 +185,9 @@ export function criarDriversMock(): Drivers {
     async atualizar(dispositivo, sha) {
       console.log(`[mock] atualizaria ${dispositivo.nome} para ${sha}`);
     },
+    async teclaApp(dispositivo, app, direcao) {
+      console.log(`[mock] tecla ${direcao} para ${app} em ${dispositivo.nome}`);
+    },
     async acaoApp(dispositivo, comando) {
       console.log(`[mock] ${comando.acao} ${comando.app} em ${dispositivo.nome}`);
     },

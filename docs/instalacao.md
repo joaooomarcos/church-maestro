@@ -181,6 +181,25 @@ New-NetFirewallRule -DisplayName "NDI Studio Monitor - Maestro" -Direction Inbou
 
 ---
 
+## 3.5. Quem vai apresentar controla os próprios slides
+
+Na aba **Sistema** do painel, em "Controle para quem vai apresentar", escolha a
+máquina onde a apresentação está aberta e toque em **Mostrar QR code**.
+
+A pessoa aponta a câmera, digita o **PIN de convidado** que aparece ao lado do
+QR (é diferente do PIN da equipe e não abre o painel) e ganha uma tela com dois
+botões: avançar e voltar. Ela escolhe o que está controlando:
+
+- **Holyrics** e **PowerPoint**: o Maestro fala direto com o programa.
+- **Setas do teclado**: para qualquer outra coisa (PDF, Canva, navegador). A
+  pessoa escolhe o programa e o agente o traz para frente antes de mandar a
+  tecla.
+
+O acesso dura um dia. Para cortar antes disso, use **Trocar o link**: o QR
+antigo para de funcionar na hora.
+
+---
+
 ## 4. Ensaio antes do primeiro culto
 
 Faça com calma, num dia que não seja domingo:

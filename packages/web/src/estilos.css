@@ -821,3 +821,119 @@ p {
 .controle-apps__acao:disabled {
   opacity: 0.5;
 }
+
+/* --- convite e página do convidado ----------------------------------- */
+
+.convite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.convite__qr {
+  width: 100%;
+  max-width: 280px;
+  border-radius: var(--raio);
+  background: #fff;
+  padding: 10px;
+}
+
+.convite__pin {
+  font-size: 1.05rem;
+}
+
+.convidado {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px;
+  min-height: 100%;
+}
+
+.convidado--entrada {
+  justify-content: center;
+}
+
+.convidado__titulo {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.convidado__resumo,
+.convidado__ajuda {
+  color: var(--cor-texto-fraco);
+  font-size: 0.95rem;
+}
+
+.convidado__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.convidado__pin {
+  min-height: var(--altura-toque-min);
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font-size: 1.4rem;
+  text-align: center;
+  letter-spacing: 0.3em;
+}
+
+.convidado__modos {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.convidado__modo {
+  flex: 1 1 30%;
+  min-height: 48px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font-size: 0.92rem;
+}
+
+.convidado__modo--ativo {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria);
+  font-weight: 700;
+}
+
+.convidado__botoes {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  min-height: 60vh;
+}
+
+.convidado__passar {
+  flex: 1;
+  border-radius: var(--raio-grande);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.convidado__passar--principal {
+  flex: 2;
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+}
+
+.convidado__passar:disabled {
+  opacity: 0.6;
+}
+
+.convidado__erro {
+  color: var(--cor-perigo);
+  font-size: 0.95rem;
+}

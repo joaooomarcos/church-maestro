@@ -24,6 +24,12 @@ export const comandoAppSchema = z.object({
 
 export type ComandoApp = z.infer<typeof comandoAppSchema>;
 
+/** Seta do teclado para um programa da máquina — o controle do convidado. */
+export const comandoTeclaSchema = z.object({
+  app: z.enum(APLICATIVOS),
+  direcao: z.enum(['proximo', 'anterior']),
+});
+
 /** Um aplicativo conhecido na máquina: está aberto? o agente sabe abri-lo? */
 export const situacaoAppSchema = z.object({
   app: z.enum(APLICATIVOS),

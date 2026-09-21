@@ -156,6 +156,16 @@ async function abrir(app: Aplicativo, config: ConfigAgente): Promise<void> {
   await rodarScript(['-Acao', 'abrir', '-Caminho', caminho], app);
 }
 
+/**
+ * Traz o programa para frente e manda a seta. O convidado escolhe o programa na
+ * tela do celular, então a tecla nunca depende de quem clicou por último na
+ * máquina.
+ */
+export async function enviarTecla(app: Aplicativo, direcao: 'proximo' | 'anterior'): Promise<void> {
+  const tecla = direcao === 'proximo' ? 'RIGHT' : 'LEFT';
+  await rodarScript(['-Acao', 'tecla', '-Processos', processosDe(app), '-Tecla', tecla], app);
+}
+
 export async function executarAcaoApp(
   app: Aplicativo,
   acao: AcaoApp,

@@ -24,6 +24,15 @@ export const configHubSchema = z.object({
    * as máquinas: o hub devolve este valor em toda batida e o agente se ajusta.
    */
   intervaloHeartbeatMs: z.number().int().min(2000).max(120_000).default(10_000),
+  /**
+   * PIN da página do convidado (o QR code). Separado do PIN da equipe: quem vai
+   * apresentar recebe só este, e ele não abre o painel.
+   */
+  pinConvidado: z
+    .string()
+    .min(4)
+    .max(12)
+    .default(() => String(Math.floor(1000 + Math.random() * 9000))),
   /** Sub-rede a varrer, ex.: "192.168.0.0/24". Vazio = detecta pela interface. */
   redeVarredura: z.string().optional(),
   intervaloPollingMs: z.number().int().positive().default(2000),
@@ -48,6 +57,10 @@ export const ROTAS = {
   atualizar: '/api/atualizar',
   appAcao: '/api/apps/acao',
   ajustes: '/api/ajustes',
+  convidadoLink: '/api/convidado/link',
+  convidadoEntrar: '/api/convidado/entrar',
+  convidadoEstado: '/api/convidado/estado',
+  convidadoAcao: '/api/convidado/acao',
   ndiFonte: '/api/ndi/fonte',
   holyricsAcao: '/api/holyrics/acao',
   pptAcao: '/api/powerpoint/acao',
@@ -77,7 +90,8 @@ export const acaoHolyricsSchema = z.object({
 
 /** Ajustes que a equipe pode mudar pelo painel, sem mexer em arquivo. */
 export const ajustesSchema = z.object({
-  intervaloHeartbeatMs: z.number().int().min(2000).max(120_000),
+  intervaloHeartbeatMs: z.number().int().min(2000).max(120_000).optional(),
+  pinConvidado: z.string().min(4).max(12).optional(),
 });
 
 export type Ajustes = z.infer<typeof ajustesSchema>;

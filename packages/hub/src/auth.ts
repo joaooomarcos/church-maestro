@@ -16,6 +16,11 @@ const ROTAS_PUBLICAS = new Set<string>([
   ROTAS.logout,
   ROTAS.registrarAgente,
   ROTAS.pareamento,
+  // Estas três são do celular de quem vai apresentar: protegidas pelo PIN de
+  // convidado e pelo cookie que elas mesmas emitem, não pela sessão da equipe.
+  ROTAS.convidadoEntrar,
+  ROTAS.convidadoEstado,
+  ROTAS.convidadoAcao,
 ]);
 
 function caminhoDaRota(req: FastifyRequest): string {

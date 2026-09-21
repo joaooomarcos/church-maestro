@@ -86,6 +86,8 @@ export const dispositivoConfigSchema = z.object({
   /** Quando true, o heartbeat do agente não sobrescreve o host configurado. */
   fixarHost: z.boolean().default(false),
   observacao: z.string().optional(),
+  /** Segredo do link de convidado desta máquina (o QR code). */
+  tokenConvidado: z.string().optional(),
   servicos: z
     .object({
       agente: servicoAgenteSchema.optional(),

@@ -140,6 +140,20 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
       );
     },
 
+    async teclaApp(dispositivo, app, direcao, op): Promise<void> {
+      await pedir<{ ok: boolean }>(
+        dispositivo,
+        '/teclas',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ app, direcao }),
+        },
+        { timeoutMs: 8000, ...(op ?? {}) },
+        tokenPadrao,
+      );
+    },
+
     async lerPowerPoint(dispositivo, op): Promise<EstadoPowerPoint> {
       try {
         const status = await pedir<StatusPpt>(

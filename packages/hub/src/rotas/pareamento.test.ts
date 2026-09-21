@@ -52,6 +52,7 @@ async function contextoTemporario(dispositivos: DispositivoConfig[]) {
       segredoSessao: 'x'.repeat(16),
       tokenAgentes: 'y'.repeat(16),
       intervaloHeartbeatMs: 10_000,
+      pinConvidado: '4321',
       intervaloPollingMs: 2000,
       varreduraAutomaticaMin: 10,
     },

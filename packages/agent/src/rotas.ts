@@ -7,13 +7,14 @@ import Fastify, {
 } from 'fastify';
 import {
   comandoAppSchema,
+  comandoTeclaSchema,
   comandoPptSchema,
   pedidoAtualizarAgenteSchema,
   saudeAgenteSchema,
   type ConfigAgente,
   type ErroApi,
 } from '@maestro/shared';
-import { ErroApp, executarAcaoApp, situacaoDosApps } from './apps/index.js';
+import { ErroApp, enviarTecla, executarAcaoApp, situacaoDosApps } from './apps/index.js';
 import { montarHeartbeat } from './heartbeat.js';
 import { SHA_VALIDO, dispararAtualizacao, lerEstadoAtualizacao } from './versao.js';
 import { listarProcessos } from './processos.js';
@@ -75,6 +76,27 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
   app.get('/processos', { preHandler: comToken }, async () => listarProcessos());
 
   app.get('/apps', { preHandler: comToken }, async () => situacaoDosApps(config));
+
+  app.post('/teclas', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const analisado = comandoTeclaSchema.safeParse(req.body);
+    if (!analisado.success) {
+      const corpo: ErroApi = { erro: 'comando-invalido', mensagem: 'Tecla inválida.' };
+      reply.code(400).send(corpo);
+      return;
+    }
+
+    try {
+      await enviarTecla(analisado.data.app, analisado.data.direcao);
+      return { ok: true };
+    } catch (err) {
+      if (err instanceof ErroApp) {
+        const corpo: ErroApi = { erro: 'falha-app', mensagem: err.message, detalhe: err.causaTecnica };
+        reply.code(502).send(corpo);
+        return;
+      }
+      throw err;
+    }
+  });
 
   app.post('/apps/acao', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
     const analisado = comandoAppSchema.safeParse(req.body);

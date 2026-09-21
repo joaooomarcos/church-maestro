@@ -40,13 +40,13 @@ Já existe hoje: o agente reporta quais dos cinco apps estão abertos
 Falta testar no Windows de verdade: a detecção dos caminhos (principalmente as
 pastas do NDI Tools, que mudam de nome a cada versão) e o "trazer para frente".
 
-## Fase 2 — Heartbeat ajustável (pequena, pode ir junto com a 1)
+## Fase 2 — Heartbeat ajustável ✔ feita
 
 - `intervaloHeartbeatMs` no `config/hub.json`; a resposta do heartbeat devolve o
   valor e o agente adota na hora (sem mexer em arquivo na máquina).
 - Campo no painel e pergunta no assistente.
 
-## Fase 3 — Controle por QR code (convidado)
+## Fase 3 — Controle por QR code (convidado) ✔ feita
 
 - `hub`: `pinConvidado` no `config/hub.json`; token por máquina; rotas fora da
   sessão do operador: entrar com PIN, ler estado, mandar ação. Sessão do
@@ -57,6 +57,9 @@ pastas do NDI Tools, que mudam de nome a cada versão) e o "trazer para frente".
   convidado: escolher Holyrics / PowerPoint / setas e dois botões grandes
   (avançar e voltar).
 - A URL do QR usa o IP do hub na rede da igreja.
+
+Falta testar no Windows: o envio das setas (`SendKeys`) depois de trazer o
+programa para frente. O resto do fluxo foi testado ponta a ponta.
 
 ## Fase 4 — Ícones SVG e acabamento
 
