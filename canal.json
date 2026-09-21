@@ -1,6 +1,6 @@
 {
   "ativo": true,
-  "sha": "9ac2569958d7449c01cb1f3732200e628fd79717",
-  "notas": "Abrir, fechar e trazer programas para frente pelo painel",
+  "sha": "e4b08aba18682f397a59801a9ab7808193b8617b",
+  "notas": "Intervalo do heartbeat ajustável pelo painel",
   "liberadoEm": "2026-09-21"
 }
