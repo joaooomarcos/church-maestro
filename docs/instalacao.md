@@ -302,6 +302,35 @@ No Linux: `systemctl --user restart maestro-agent`.
 
 ---
 
+## 7. Recomeçar do zero
+
+Quando as máquinas ficaram muito para trás, ou algo ficou fora do lugar, dá
+para tirar o Maestro de tudo e instalar de novo. Em **cada máquina**, no
+PowerShell **como administrador**:
+
+```powershell
+irm https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/scripts/desinstalar.ps1 | iex
+```
+
+No Linux (Note Som):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/scripts/desinstalar.sh | bash
+```
+
+Ele remove as tarefas agendadas, para o hub e o agente, apaga a pasta
+`maestro`, o atalho da área de trabalho e as regras de firewall com "Maestro"
+no nome. **Não** mexe no Node, no Holyrics, no OBS nem no NDI — o Web Control,
+o API Server e os tokens continuam lá.
+
+A pasta `config` antiga fica guardada em `maestro-config-antiga-<data>`, na
+pasta do usuário. Serve só para consulta; pode apagar depois que tudo estiver
+funcionando.
+
+Depois, instale de novo a partir da **seção 1**, com o PC Transmissão primeiro.
+
+---
+
 ## Problemas comuns
 
 ### A máquina não aparece no painel
