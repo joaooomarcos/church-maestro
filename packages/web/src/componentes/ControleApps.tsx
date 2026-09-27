@@ -29,6 +29,15 @@ export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }
   const agente = dispositivo.agente;
   if (!agente?.online) return null;
 
+  // Programa não instalado não aparece. Aberto aparece mesmo sem caminho
+  // conhecido, para dar para fechar ou trazer para frente. Agente antigo (sem a
+  // lista) mostra todos, como antes.
+  const instalados = agente.appsInstalados;
+  const visiveis = APLICATIVOS.filter(
+    (app) => !instalados || instalados.includes(app) || agente.processos[app] === true,
+  );
+  if (visiveis.length === 0) return null;
+
   async function acionar(app: Aplicativo, acao: AcaoApp): Promise<void> {
     if (ocupado) return;
     vibrar(15);
@@ -54,7 +63,7 @@ export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }
 
       {expandido ? (
         <ul className="controle-apps__lista">
-          {APLICATIVOS.map((app) => {
+          {visiveis.map((app) => {
             const aberto = agente.processos[app] === true;
             return (
               <li key={app} className="controle-apps__item">

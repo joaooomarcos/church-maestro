@@ -1196,3 +1196,66 @@ p {
   word-break: break-all;
   font-size: 0.9rem;
 }
+
+/* --- Holyrics: F8 / F9 / F10 / ESC ----------------------------------- */
+
+.holyrics__modos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.holyrics__modo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: var(--altura-toque-min);
+  padding: 0 14px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.holyrics__modo--ligado {
+  border-color: var(--cor-aviso);
+  background: var(--cor-aviso-fundo);
+  color: var(--cor-aviso);
+}
+
+.holyrics__modo--sair {
+  border-color: var(--cor-perigo);
+  color: var(--cor-perigo);
+}
+
+.holyrics__modo:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.holyrics__tecla {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  opacity: 0.8;
+}
+
+.ndi__bloco .versoes__select {
+  margin-top: 8px;
+}
+
+.holyrics__modo > span:first-child {
+  text-align: left;
+  line-height: 1.2;
+}

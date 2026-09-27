@@ -85,6 +85,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           capacidades: string[];
           atualizacao?: EstadoAgente['atualizacao'];
           emPrimeiroPlano?: EstadoAgente['emPrimeiroPlano'];
+          appsInstalados?: EstadoAgente['appsInstalados'];
         }>(dispositivo, '/health', { method: 'GET' }, op, tokenPadrao);
 
         return {
@@ -98,6 +99,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           uptimeS: saude.uptimeS,
           processos: saude.processos as EstadoAgente['processos'],
           emPrimeiroPlano: saude.emPrimeiroPlano ?? null,
+          ...(saude.appsInstalados ? { appsInstalados: saude.appsInstalados } : {}),
           capacidades: saude.capacidades as EstadoAgente['capacidades'],
         };
       } catch (err) {

@@ -98,13 +98,21 @@ async function rodarScript(argumentos: string[], app: Aplicativo): Promise<unkno
 }
 
 let cacheCaminhos: { ts: number; dados: Record<string, string | null> } | undefined;
+let deteccaoEmAndamento: Promise<Record<string, string | null>> | undefined;
 
 /** Procura os programas nos lugares de sempre. Vazio fora do Windows. */
 export async function detectarCaminhos(forcar = false): Promise<Record<string, string | null>> {
   if (!forcar && cacheCaminhos && Date.now() - cacheCaminhos.ts < CACHE_CAMINHOS_MS) {
     return cacheCaminhos.dados;
   }
+  if (!forcar && deteccaoEmAndamento) return deteccaoEmAndamento;
+  deteccaoEmAndamento = procurarProgramas().finally(() => {
+    deteccaoEmAndamento = undefined;
+  });
+  return deteccaoEmAndamento;
+}
 
+async function procurarProgramas(): Promise<Record<string, string | null>> {
   let detectados: Record<string, string | null> = {};
   if (platform() === 'win32') {
     try {
@@ -125,6 +133,23 @@ export async function detectarCaminhos(forcar = false): Promise<Record<string, s
  * o que a pessoa informou no assistente entra por cima — é o caso de quem
  * instalou o Holyrics fora do lugar de sempre.
  */
+/**
+ * Para o heartbeat, que o hub consulta a cada poucos segundos: devolve o que já
+ * foi descoberto sem esperar a busca (que leva segundos no Windows), e dispara
+ * a busca em segundo plano quando ainda não houve nenhuma.
+ */
+export function appsJaConhecidos(config: ConfigAgente): Aplicativo[] | undefined {
+  const expirado = !cacheCaminhos || Date.now() - cacheCaminhos.ts >= CACHE_CAMINHOS_MS;
+  if (expirado) {
+    void detectarCaminhos().catch(() => {
+      // sem detecção a tela mostra todos os programas, como antes
+    });
+  }
+  if (!cacheCaminhos) return undefined;
+  const caminhos: Record<string, string | null> = { ...cacheCaminhos.dados, ...config.caminhosApps };
+  return APLICATIVOS.filter((app) => Boolean(caminhos[app]));
+}
+
 export async function caminhosDosApps(
   config: ConfigAgente,
   forcar = false,

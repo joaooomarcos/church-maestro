@@ -60,6 +60,11 @@ export const heartbeatAgenteSchema = z.object({
   uptimeS: z.number(),
   processos: z.record(z.enum(APLICATIVOS), z.boolean()).default({}),
   emPrimeiroPlano: janelaPrimeiroPlanoSchema.nullable().default(null),
+  /**
+   * Programas que esta máquina tem instalados (caminho conhecido). Ausente
+   * quando o agente é antigo ou ainda está procurando — aí a tela mostra todos.
+   */
+  appsInstalados: z.array(z.enum(APLICATIVOS)).optional(),
   capacidades: z.array(z.enum(['powerpoint', 'abrir-app', 'desligar'])).default([]),
 });
 

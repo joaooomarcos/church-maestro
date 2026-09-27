@@ -252,6 +252,12 @@ function estadoAgenteMock(dispositivo: DispositivoConfig, inicioProcesso: number
       'ndi-studio-monitor': Boolean(dispositivo.servicos.ndiMonitor),
       'ndi-screen-capture': true,
     },
+    // Nenhuma máquina de demonstração tem OBS instalado, a não ser a da transmissão.
+    appsInstalados: ehLinux
+      ? []
+      : dispositivo.servicos.obs
+        ? ['obs', 'holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture']
+        : ['holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture'],
     emPrimeiroPlano: ehLinux
       ? null
       : { processo: 'holyrics', titulo: 'Holyrics — Culto de Domingo', app: 'holyrics' },

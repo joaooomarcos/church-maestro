@@ -24,6 +24,7 @@ export const estadoAgenteSchema = z.object({
   /** Um booleano por aplicativo conhecido. Ausente = agente não reportou. */
   processos: z.record(z.enum(APLICATIVOS), z.boolean()).default({}),
   emPrimeiroPlano: janelaPrimeiroPlanoSchema.nullable().default(null),
+  appsInstalados: z.array(z.enum(APLICATIVOS)).optional(),
   capacidades: z.array(z.enum(['powerpoint', 'abrir-app', 'desligar'])).default([]),
 });
 

@@ -66,27 +66,24 @@ export function Ndi() {
             <h2>
               {janela.dispositivoNome} — janela {janela.porta}
             </h2>
-            <div className="ndi__opcoes">
-              <button
-                type="button"
-                className={`botao-opcao${atual === null ? ' botao-opcao--ativo' : ''}`}
-                disabled={enviando === chave}
-                onClick={() => void selecionar(janela, null)}
-              >
-                Nenhuma
-              </button>
-              {janela.fontesDisponiveis.map((fonte) => (
-                <button
-                  key={fonte}
-                  type="button"
-                  className={`botao-opcao${atual === fonte ? ' botao-opcao--ativo' : ''}`}
-                  disabled={enviando === chave}
-                  onClick={() => void selecionar(janela, fonte)}
-                >
+            <select
+              className="versoes__select"
+              aria-label={`Fonte da janela ${janela.porta} do ${janela.dispositivoNome}`}
+              value={atual ?? ''}
+              disabled={enviando === chave}
+              onChange={(evento) => void selecionar(janela, evento.target.value || null)}
+            >
+              <option value="">Nenhuma</option>
+              {/* A fonte atual pode ter saído da rede; ainda assim ela aparece selecionada. */}
+              {(atual && !janela.fontesDisponiveis.includes(atual)
+                ? [atual, ...janela.fontesDisponiveis]
+                : janela.fontesDisponiveis
+              ).map((fonte) => (
+                <option key={fonte} value={fonte}>
                   {fonte}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           </section>
         );
       })}

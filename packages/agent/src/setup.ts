@@ -8,6 +8,7 @@ import {
   ROTAS,
   respostaPareamentoSchema,
   slugificar,
+  type Aplicativo,
   type DispositivoConfig,
   type PedidoPareamento,
   type RespostaPareamento,
@@ -336,6 +337,7 @@ async function configurarObs(rl: Interface): Promise<ServicoObs | undefined> {
 async function configurarCaminhos(
   rl: Interface,
   jaInformados: Record<string, string>,
+  recusados: ReadonlySet<Aplicativo>,
 ): Promise<Record<string, string>> {
   titulo('6 de 6 — Onde estão os programas');
   console.log('Procurando os programas instalados nesta máquina…');
@@ -344,6 +346,7 @@ async function configurarCaminhos(
   const informados: Record<string, string> = { ...jaInformados };
 
   for (const app of APLICATIVOS) {
+    if (recusados.has(app)) continue;
     const nome = NOMES_APLICATIVOS[app];
     const achado = informados[app] ?? detectados[app] ?? null;
     if (achado) {
@@ -414,15 +417,17 @@ async function main(): Promise<void> {
     const ndiMonitor = await configurarNdi(rl);
     const holyrics = await configurarHolyrics(rl);
     const obs = await configurarObs(rl);
-    const caminhosApps = await configurarCaminhos(rl, atual?.caminhosApps ?? {});
+    // Só pergunta pelo programa que a pessoa disse que esta máquina usa.
+    const recusados = new Set<Aplicativo>([
+      ...(obs ? [] : (['obs'] as const)),
+      ...(holyrics ? [] : (['holyrics'] as const)),
+      ...(ndiMonitor ? [] : (['ndi-studio-monitor'] as const)),
+    ]);
+    const caminhosApps = await configurarCaminhos(rl, atual?.caminhosApps ?? {}, recusados);
 
-    console.log('\nDe quantos em quantos segundos esta máquina avisa o hub que está viva?');
-    console.log('O painel pode mudar isso depois, para todas as máquinas de uma vez.');
-    const segundos = Number(
-      await perguntar(rl, 'Intervalo em segundos', String((atual?.intervaloHeartbeatMs ?? 10_000) / 1000)),
-    );
-    const intervaloHeartbeatMs =
-      Number.isFinite(segundos) && segundos >= 2 && segundos <= 120 ? Math.round(segundos * 1000) : 10_000;
+    // O intervalo é ajustado pelo painel (aba Sistema) para todas as máquinas;
+    // aqui a máquina só nasce com o padrão.
+    const intervaloHeartbeatMs = atual?.intervaloHeartbeatMs ?? 10_000;
 
     const porta = atual?.porta ?? PORTAS_PADRAO.agente;
     const resposta = await parear(rl, hubUrl, {
