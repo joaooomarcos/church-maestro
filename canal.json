@@ -1,6 +1,6 @@
 {
   "ativo": true,
-  "sha": "2651c97010d559943e4222d38022b60e4aaee3b7",
-  "notas": "Ajustes do teste na igreja: assistente, programas, NDI e Holyrics",
+  "sha": "813e5d2fcdad2d34c3ea4725268386e64a303936",
+  "notas": "Reconhece e abre o NDI Studio Monitor e o Screen Capture",
   "liberadoEm": "2026-09-27"
 }
