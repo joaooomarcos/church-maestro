@@ -29,15 +29,25 @@ export const NOMES_APLICATIVOS: Record<Aplicativo, string> = {
 };
 
 /**
- * Nomes de processo por sistema operacional. O agente compara em minúsculas e
- * sem extensão, então `POWERPNT.EXE` casa com `powerpnt`.
+ * Deixa o nome do processo só com letras e números, em minúsculas: é assim que
+ * ele é comparado com os pedaços de `PROCESSOS_POR_APLICATIVO`.
+ */
+export function normalizarNomeProcesso(nome: string): string {
+  return nome.toLowerCase().replace(/\.exe$/, '').replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Pedaços do nome do processo de cada aplicativo, já normalizados (veja
+ * `normalizarNomeProcesso`). O NDI Tools registra nomes como
+ * "Application.Network.StudioMonitor.x64", e o Screen Capture ainda usa o nome
+ * antigo da NDI: "Application.Network.ScanConverter2.x64".
  */
 export const PROCESSOS_POR_APLICATIVO: Record<Aplicativo, string[]> = {
-  obs: ['obs64', 'obs', 'obs-studio'],
+  obs: ['obs64', 'obs', 'obsstudio'],
   holyrics: ['holyrics', 'javaw'],
   powerpoint: ['powerpnt'],
-  'ndi-studio-monitor': ['studio monitor', 'ndi studio monitor', 'video monitor'],
-  'ndi-screen-capture': ['screen capture', 'ndi screen capture', 'screen capture hx'],
+  'ndi-studio-monitor': ['studiomonitor', 'videomonitor'],
+  'ndi-screen-capture': ['scanconverter', 'screencapture'],
 };
 
 /** Portas padrão de cada integração. Servem de chute inicial na varredura. */

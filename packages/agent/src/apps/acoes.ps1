@@ -49,15 +49,19 @@ $CATALOGO = @{
         "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16\POWERPNT.EXE",
         "$env:ProgramFiles\Microsoft Office\Office16\POWERPNT.EXE"
     )
+    # O executavel do NDI Tools nao leva o nome da pasta: e
+    # "Application.Network.StudioMonitor.x64.exe", e o Screen Capture ainda usa
+    # o nome antigo, "Application.Network.ScanConverter2.x64.exe".
     'ndi-studio-monitor' = @(
+        "$env:ProgramFiles\NDI\*\Studio Monitor\*StudioMonitor*.exe",
         "$env:ProgramFiles\NDI\*\Studio Monitor\*Studio Monitor*.exe",
-        "$env:ProgramFiles\NDI\*\*Studio Monitor*.exe",
-        "${env:ProgramFiles(x86)}\NDI\*\Studio Monitor\*Studio Monitor*.exe"
+        "${env:ProgramFiles(x86)}\NDI\*\Studio Monitor\*StudioMonitor*.exe"
     )
     'ndi-screen-capture' = @(
+        "$env:ProgramFiles\NDI\*\Screen Capture\*ScanConverter*.exe",
+        "$env:ProgramFiles\NDI\*\Screen Capture\*ScreenCapture*.exe",
         "$env:ProgramFiles\NDI\*\Screen Capture\*Screen Capture*.exe",
-        "$env:ProgramFiles\NDI\*\*Screen Capture*.exe",
-        "${env:ProgramFiles(x86)}\NDI\*\Screen Capture\*Screen Capture*.exe"
+        "${env:ProgramFiles(x86)}\NDI\*\Screen Capture\*ScanConverter*.exe"
     )
 }
 
@@ -90,8 +94,10 @@ function Buscar-NoMenuIniciar($nome) {
     $shell = New-Object -ComObject WScript.Shell
     foreach ($pasta in $pastas) {
         if (-not (Test-Path -LiteralPath $pasta)) { continue }
+        # Nome exato primeiro: "Screen Capture" nao pode pegar "Screen Capture HX".
         $atalhos = Get-ChildItem -Path $pasta -Filter '*.lnk' -Recurse -ErrorAction SilentlyContinue |
-            Where-Object { $_.BaseName -like "*$nome*" }
+            Where-Object { $_.BaseName -like "*$nome*" } |
+            Sort-Object { if ($_.BaseName -eq $nome) { 0 } else { 1 } }
         foreach ($atalho in $atalhos) {
             try {
                 $alvo = $shell.CreateShortcut($atalho.FullName).TargetPath
@@ -116,12 +122,14 @@ function Localizar-Todos {
     return $resultado
 }
 
+# Compara so letras e numeros, como o agente: "Application.Network.StudioMonitor.x64"
+# vira "applicationnetworkstudiomonitorx64" e casa com "studiomonitor".
 function Obter-Processos($lista) {
-    $nomes = $lista -split ',' | ForEach-Object { $_.Trim().ToLower() } | Where-Object { $_ }
+    $nomes = $lista -split ',' | ForEach-Object { $_.Trim().ToLower() -replace '[^a-z0-9]', '' } | Where-Object { $_ }
     if (-not $nomes) { return @() }
     return Get-Process -ErrorAction SilentlyContinue | Where-Object {
-        $nome = $_.ProcessName.ToLower()
-        $nomes | Where-Object { $nome -like "*$_*" }
+        $nome = $_.ProcessName.ToLower() -replace '[^a-z0-9]', ''
+        $nomes | Where-Object { $nome.Contains($_) }
     }
 }
 

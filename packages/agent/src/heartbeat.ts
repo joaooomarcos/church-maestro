@@ -6,6 +6,7 @@ import {
   APLICATIVOS,
   PROCESSOS_POR_APLICATIVO,
   ROTAS,
+  normalizarNomeProcesso,
   heartbeatAgenteSchema,
   type Aplicativo,
   type ConfigAgente,
@@ -39,8 +40,9 @@ function soAtual(): HeartbeatAgente['so'] {
 
 /** Casa o nome do processo da frente com um dos aplicativos conhecidos. */
 function appDoProcesso(processo: string): Aplicativo | null {
+  const nome = normalizarNomeProcesso(processo);
   for (const app of APLICATIVOS) {
-    if (PROCESSOS_POR_APLICATIVO[app].some((padrao) => processo.includes(padrao))) return app;
+    if (PROCESSOS_POR_APLICATIVO[app].some((padrao) => nome.includes(padrao))) return app;
   }
   return null;
 }

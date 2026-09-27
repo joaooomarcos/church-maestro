@@ -1,7 +1,12 @@
 import { exec } from 'node:child_process';
 import { platform } from 'node:os';
 import { promisify } from 'node:util';
-import { APLICATIVOS, PROCESSOS_POR_APLICATIVO, type Aplicativo } from '@maestro/shared';
+import {
+  APLICATIVOS,
+  PROCESSOS_POR_APLICATIVO,
+  normalizarNomeProcesso,
+  type Aplicativo,
+} from '@maestro/shared';
 
 const execAsync = promisify(exec);
 
@@ -26,7 +31,7 @@ async function nomesDeProcessosAtivos(): Promise<string[]> {
       .split(/\r?\n/)
       .map((linha) => linha.split(',')[0]?.replace(/^"|"$/g, '').trim())
       .filter((nome): nome is string => Boolean(nome))
-      .map((nome) => nome.toLowerCase().replace(/\.exe$/, ''));
+      .map(normalizarNomeProcesso);
   }
 
   const { stdout } = await execAsync('ps -eo comm=');
@@ -37,7 +42,7 @@ async function nomesDeProcessosAtivos(): Promise<string[]> {
     .map((caminho) => {
       // ps costuma trazer o caminho completo do binário no Linux/macOS.
       const base = caminho.split('/').pop() ?? caminho;
-      return base.toLowerCase();
+      return normalizarNomeProcesso(base);
     });
 }
 
@@ -64,12 +69,18 @@ export async function listarProcessos(): Promise<Record<Aplicativo, boolean>> {
     return resultado;
   }
 
+  const resultado = aplicativosAbertos(nomes);
+  cache = { ts: Date.now(), resultado };
+  return resultado;
+}
+
+/** Recebe nomes de processo como o sistema devolve e diz quais aplicativos estão abertos. */
+export function aplicativosAbertos(nomes: string[]): Record<Aplicativo, boolean> {
+  const normalizados = nomes.map(normalizarNomeProcesso);
   const resultado = todosFalse();
   for (const app of APLICATIVOS) {
     const padroes = PROCESSOS_POR_APLICATIVO[app];
-    resultado[app] = nomes.some((nome) => padroes.some((padrao) => nome.includes(padrao)));
+    resultado[app] = normalizados.some((nome) => padroes.some((padrao) => nome.includes(padrao)));
   }
-
-  cache = { ts: Date.now(), resultado };
   return resultado;
 }
