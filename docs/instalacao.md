@@ -391,6 +391,9 @@ Depois, instale de novo a partir da **seção 1**, com o PC Transmissão primeir
 - **A causa mais comum:** o agente foi instalado como serviço do Windows em vez
   de tarefa "ao fazer logon". Como serviço ele não enxerga o PowerPoint. O
   instalador cria a tarefa do jeito certo — não troque por um serviço.
+- O painel diz "nenhum arquivo foi carregado" com o arquivo aberto: é o
+  agente de antes da versão 202c769, que ficava preso a um PowerPoint já
+  fechado. Atualize a máquina pela aba **Sistema**.
 - A apresentação está aberta mas não foi iniciada. O painel avisa isso e oferece
   o botão **Iniciar apresentação**.
 - O PowerPoint está com uma caixa de diálogo aberta esperando alguém clicar.

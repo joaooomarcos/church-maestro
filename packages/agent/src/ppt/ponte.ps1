@@ -9,7 +9,6 @@
 # texto voltado ao usuario fica do lado TypeScript.
 
 $ErrorActionPreference = 'Stop'
-$app = $null
 # Titulos de janela e mensagens de erro com acento: o Node le UTF-8, e o console
 # do Windows em portugues escreve em outra pagina de codigo. Sem BOM.
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
@@ -48,19 +47,15 @@ function Get-PrimeiroPlano {
 }
 
 function Get-PowerPoint {
-    # GetActiveObject anexa a uma instancia ja aberta e falha se nao houver
-    # nenhuma. E o comportamento que queremos: o agente nunca deve abrir o
-    # PowerPoint sozinho so porque o painel pediu o status.
-    if ($null -ne $script:app) {
-        try {
-            $null = $script:app.Version
-            return $script:app
-        } catch {
-            $script:app = $null
-        }
-    }
-    $script:app = [Runtime.InteropServices.Marshal]::GetActiveObject('PowerPoint.Application')
-    return $script:app
+    # Conecta de novo a cada comando, sem guardar a referencia entre um e outro.
+    # Com uma referencia viva, fechar o PowerPoint nao encerra o processo: ele
+    # fica invisivel e vazio, e o agente seguia falando com esse fantasma
+    # enquanto o arquivo de verdade abria em outro processo. GetActiveObject
+    # custa poucos milissegundos; o caro (abrir o powershell) continua evitado.
+    #
+    # GetActiveObject falha se nao houver PowerPoint aberto, e e isso que
+    # queremos: o agente nunca abre o PowerPoint so porque o painel pediu status.
+    return [Runtime.InteropServices.Marshal]::GetActiveObject('PowerPoint.Application')
 }
 
 function Get-Status {
@@ -186,4 +181,11 @@ while ($true) {
 
     [Console]::Out.WriteLine(($resposta | ConvertTo-Json -Compress -Depth 5))
     [Console]::Out.Flush()
+
+    # Solta as referencias COM desta volta (aplicacao, apresentacoes, janelas)
+    # para o PowerPoint poder encerrar quando a pessoa fechar ele.
+    $comando = $null
+    $dados = $null
+    [System.GC]::Collect()
+    [System.GC]::WaitForPendingFinalizers()
 }
