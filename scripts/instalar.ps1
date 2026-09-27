@@ -121,16 +121,25 @@
     if ($versao) { Set-Content -Path (Join-Path $destino 'versao.txt') -Value $versao -Encoding UTF8 }
 
     Passo 'Liberando as portas do Maestro no firewall'
-    foreach ($regra in @(@{ Nome = 'Maestro hub'; Porta = 8700 }, @{ Nome = 'Maestro agente'; Porta = 8770 })) {
-      try {
-        if (-not (Get-NetFirewallRule -DisplayName $regra.Nome -ErrorAction SilentlyContinue)) {
-          New-NetFirewallRule -DisplayName $regra.Nome -Direction Inbound -Protocol TCP -LocalPort $regra.Porta -Action Allow | Out-Null
-          Write-Host "porta $($regra.Porta) liberada"
-        } else {
-          Write-Host "porta $($regra.Porta) ja estava liberada"
+    $ehAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+      [Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $ehAdmin) {
+      Write-Host 'AVISO: este PowerShell nao esta como administrador, entao o firewall ficou como estava.' -ForegroundColor Yellow
+      Write-Host '       Depois de terminar, rode de novo num PowerShell como administrador.' -ForegroundColor Yellow
+    } else {
+      foreach ($regra in @(@{ Nome = 'Maestro hub'; Porta = 8700 }, @{ Nome = 'Maestro agente'; Porta = 8770 })) {
+        try {
+          if (-not (Get-NetFirewallRule -DisplayName $regra.Nome -ErrorAction SilentlyContinue)) {
+            # -ErrorAction explicito: os cmdlets de firewall ignoram o
+            # $ErrorActionPreference do script, e sem isso a falha passava calada.
+            New-NetFirewallRule -DisplayName $regra.Nome -Direction Inbound -Protocol TCP -LocalPort $regra.Porta -Action Allow -ErrorAction Stop | Out-Null
+            Write-Host "porta $($regra.Porta) liberada"
+          } else {
+            Write-Host "porta $($regra.Porta) ja estava liberada"
+          }
+        } catch {
+          Write-Host "AVISO: nao consegui liberar a porta $($regra.Porta): $($_.Exception.Message)" -ForegroundColor Yellow
         }
-      } catch {
-        Write-Host "AVISO: nao consegui liberar a porta $($regra.Porta). Abra o PowerShell como administrador e rode a instalacao de novo." -ForegroundColor Yellow
       }
     }
 

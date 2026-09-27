@@ -86,8 +86,12 @@
     $regras = Get-NetFirewallRule -DisplayName '*Maestro*' -ErrorAction SilentlyContinue
     if ($regras) {
       foreach ($regra in $regras) {
-        Remove-NetFirewallRule -Name $regra.Name
-        Write-Host "removida: $($regra.DisplayName)"
+        try {
+          Remove-NetFirewallRule -Name $regra.Name -ErrorAction Stop
+          Write-Host "removida: $($regra.DisplayName)"
+        } catch {
+          Aviso "nao consegui remover a regra $($regra.DisplayName): $($_.Exception.Message)"
+        }
       }
     } else {
       Write-Host 'nenhuma regra do Maestro'
