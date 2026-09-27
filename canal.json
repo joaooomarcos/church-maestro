@@ -1,6 +1,6 @@
 {
   "ativo": true,
-  "sha": "fecdf3ebdd70b9f7fa5f994154baba73a06c2df3",
-  "notas": "Desinstalador de um comando, para recomeçar do zero",
+  "sha": "b6e59d93be1afe50a048ed9df7d1a2d85716ce91",
+  "notas": "Corrige erro de sintaxe que impedia o instalador de rodar",
   "liberadoEm": "2026-09-27"
 }
