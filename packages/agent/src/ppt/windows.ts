@@ -42,6 +42,8 @@ function mensagemPara(codigo: string | undefined, bruto: string | undefined): st
       return 'O PowerPoint não está aberto nesta máquina.';
     case 'sem-apresentacao':
       return 'O PowerPoint está aberto, mas nenhum arquivo foi carregado.';
+    case 'modo-protegido':
+      return 'O arquivo abriu no Modo de Exibição Protegido. Na máquina, clique em "Habilitar Edição" no PowerPoint e tente de novo.';
     case 'fora-de-exibicao':
       return 'A apresentação não está no modo exibição. Inicie a apresentação para poder passar os slides.';
     case 'acao-desconhecida':
@@ -126,7 +128,7 @@ export function criarPonteWindows(): PontePowerPoint {
     linhas.on('line', (linha) => {
       let resposta: RespostaPonte;
       try {
-        resposta = JSON.parse(linha) as RespostaPonte;
+        resposta = JSON.parse(linha.replace(/^\uFEFF/, '')) as RespostaPonte;
       } catch {
         return;
       }

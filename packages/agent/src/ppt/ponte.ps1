@@ -10,6 +10,9 @@
 
 $ErrorActionPreference = 'Stop'
 $app = $null
+# Titulos de janela e mensagens de erro com acento: o Node le UTF-8, e o console
+# do Windows em portugues escreve em outra pagina de codigo. Sem BOM.
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 
 # Esta ponte e o unico canal do agente com a area de trabalho do Windows, entao
 # e daqui que sai tambem a janela em primeiro plano - nao tem a ver com COM.
@@ -118,6 +121,12 @@ function Invoke-Comando($comando) {
         'iniciar' {
             $ppt = Get-PowerPoint
             if ($ppt.Presentations.Count -eq 0) {
+                # Arquivo baixado da internet/WhatsApp abre no Modo de Exibicao
+                # Protegido, que nao entra em Presentations. Liberar a edicao e
+                # decisao de quem esta na maquina, nao do painel.
+                if ($ppt.ProtectedViewWindows.Count -gt 0) {
+                    throw [System.Exception]::new('modo-protegido')
+                }
                 throw [System.Exception]::new('sem-apresentacao')
             }
             if ($ppt.SlideShowWindows.Count -eq 0) {
@@ -143,6 +152,7 @@ function Invoke-Comando($comando) {
 function Get-CodigoErro($mensagem) {
     if ($mensagem -match 'fora-de-exibicao') { return 'fora-de-exibicao' }
     if ($mensagem -match 'sem-apresentacao') { return 'sem-apresentacao' }
+    if ($mensagem -match 'modo-protegido') { return 'modo-protegido' }
     if ($mensagem -match 'acao-desconhecida') { return 'acao-desconhecida' }
     if ($mensagem -match '0x800401E3' -or $mensagem -match 'Operation unavailable' -or $mensagem -match 'MK_E_UNAVAILABLE') {
         return 'sem-powerpoint'

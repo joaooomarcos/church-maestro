@@ -86,7 +86,7 @@ async function rodarScript(argumentos: string[], app: Aplicativo): Promise<unkno
     }
   }
 
-  const linha = saida.trim().split(/\r?\n/).pop() ?? '';
+  const linha = (saida.trim().split(/\r?\n/).pop() ?? '').replace(/^\uFEFF/, '');
   let resposta: RespostaPs;
   try {
     resposta = JSON.parse(linha) as RespostaPs;

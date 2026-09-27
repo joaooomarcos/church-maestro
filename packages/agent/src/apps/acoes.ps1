@@ -16,6 +16,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Windows em portugues escreve na pagina de codigo do console, e o Node le UTF-8:
+# sem isto os acentos dos titulos e das mensagens de erro chegam quebrados.
+# Sem BOM, senao a linha deixa de ser um JSON valido.
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 
 Add-Type @"
 using System;
@@ -121,11 +125,12 @@ function Obter-Processos($lista) {
     }
 }
 
-function Trazer-ParaFrente($processos) {
+function Trazer-ParaFrente($lista) {
     $trouxe = $false
-    foreach ($processo in $processos) {
+    foreach ($processo in $lista) {
         $janela = $processo.MainWindowHandle
-        if ($janela -eq [IntPtr]::Zero) { continue }
+        # Processo sem janela (servico, instancia em segundo plano): nada a focar.
+        if ($null -eq $janela -or $janela -eq [IntPtr]::Zero) { continue }
         if ([MaestroApps]::IsIconic($janela)) {
             # 9 = SW_RESTORE: janela minimizada nao aceita foco.
             [void][MaestroApps]::ShowWindow($janela, 9)
@@ -148,27 +153,27 @@ try {
             $dados = @{ pid = $processo.Id }
         }
         'fechar' {
-            $processos = Obter-Processos $Processos
-            if (-not $processos) { throw "nao-esta-aberto" }
-            foreach ($processo in $processos) {
+            $alvos = @(Obter-Processos $Processos)
+            if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
+            foreach ($processo in $alvos) {
                 # CloseMainWindow e o mesmo que clicar no X: o programa ainda
                 # pode perguntar se quer salvar. Nada de matar a forca aqui.
                 [void]$processo.CloseMainWindow()
             }
             Start-Sleep -Milliseconds 800
             $restantes = (Obter-Processos $Processos | Measure-Object).Count
-            $dados = @{ fechados = ($processos | Measure-Object).Count; restantes = $restantes }
+            $dados = @{ fechados = $alvos.Count; restantes = $restantes }
         }
         'frente' {
-            $processos = Obter-Processos $Processos
-            if (-not $processos) { throw "nao-esta-aberto" }
-            $dados = @{ trouxe = (Trazer-ParaFrente $processos) }
+            $alvos = @(Obter-Processos $Processos)
+            if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
+            $dados = @{ trouxe = (Trazer-ParaFrente $alvos) }
         }
         'tecla' {
             if (-not $Tecla) { throw "tecla-invalida" }
-            $processos = Obter-Processos $Processos
-            if (-not $processos) { throw "nao-esta-aberto" }
-            if (-not (Trazer-ParaFrente $processos)) { throw "nao-consegui-focar" }
+            $alvos = @(Obter-Processos $Processos)
+            if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
+            if (-not (Trazer-ParaFrente $alvos)) { throw "nao-consegui-focar" }
             # A janela leva um instante para assumir o foco; sem esta pausa a
             # tecla chega na janela anterior.
             Start-Sleep -Milliseconds 250
