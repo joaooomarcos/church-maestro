@@ -1,6 +1,6 @@
 {
   "ativo": true,
-  "sha": "202c76935e3db95f5fed5db71cacf6c7add59b4d",
-  "notas": "Corrige fechar/trazer para frente, acentos e PowerPoint em modo protegido",
+  "sha": "bc6a68a2ed1ad48fefd956e5aac8c02e44825da6",
+  "notas": "Ponte do PowerPoint não prende mais o programa aberto",
   "liberadoEm": "2026-09-27"
 }
