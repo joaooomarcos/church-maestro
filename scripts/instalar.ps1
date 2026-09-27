@@ -147,7 +147,7 @@
         $acao = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument ('"{0}" {1}' -f $vbs, $arg) -WorkingDirectory $destino
         Register-ScheduledTask -TaskName $nome -Action $acao -Trigger $gatilho -Settings $regras | Out-Null
         Start-ScheduledTask -TaskName $nome
-        Write-Host "tarefa $nome: criada e iniciada"
+        Write-Host "tarefa ${nome}: criada e iniciada"
         return $true
       } catch {
         Write-Host "AVISO: nao consegui criar a tarefa ${nome}: $($_.Exception.Message). Abra o PowerShell como administrador e rode o comando de instalacao de novo." -ForegroundColor Yellow
