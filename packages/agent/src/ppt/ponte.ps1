@@ -12,7 +12,7 @@ $ErrorActionPreference = 'Stop'
 $app = $null
 
 # Esta ponte e o unico canal do agente com a area de trabalho do Windows, entao
-# e daqui que sai tambem a janela em primeiro plano — nao tem a ver com COM.
+# e daqui que sai tambem a janela em primeiro plano - nao tem a ver com COM.
 Add-Type @"
 using System;
 using System.Text;

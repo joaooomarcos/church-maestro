@@ -78,3 +78,13 @@ Com isso as quatro fases combinadas em 2026-09-21 estão entregues.
 O estado atual de cada máquina da igreja aparece na aba **Versões** do painel —
 depois de mexer aqui, publique com `npm run publicar` e atualize as máquinas por
 lá.
+
+## Área de compartilhar (2026-09-27) ✔ feita
+
+Página `/compartilhar`, aberta a quem está na rede: um item só (texto ou
+arquivo de até 100 MB), colar de novo substitui e reiniciar o hub apaga. QR na
+aba Sistema e atalho "Maestro - Compartilhar" criado pelo instalador.
+
+Falta testar no Windows: o atalho na área de trabalho (inclusive com a área de
+trabalho redirecionada pelo OneDrive) e o botão Copiar num navegador aberto
+pelo IP da rede.

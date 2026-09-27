@@ -16,6 +16,8 @@ import { criarContexto, registrarRotas } from './rotas/index.js';
 import { criarDrivers } from './drivers/index.js';
 import { dispositivosDemo } from './drivers/mock.js';
 import { registrarRotasChecks } from './checks/index.js';
+import { criarAreaCompartilhada } from './compartilhar.js';
+import { registrarRotasCompartilhar } from './rotas/compartilhar.js';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const pastaWeb = path.join(aqui, '../../web/dist');
@@ -61,6 +63,11 @@ async function principal(): Promise<void> {
   await registrarAutenticacao(app, configuracao.hub);
   registrarRotas(app, ctx);
   registrarRotasChecks(app, ctx);
+
+  // Reiniciar o hub apaga o que foi compartilhado: é a regra combinada.
+  const areaCompartilhada = criarAreaCompartilhada();
+  await areaCompartilhada.limpar();
+  registrarRotasCompartilhar(app, ctx, areaCompartilhada);
 
   // Depois de toda rota de API registrada: 404 de GET não-`/api` cai na SPA; o resto vira erro JSON normal.
   app.setNotFoundHandler((req, reply) => {

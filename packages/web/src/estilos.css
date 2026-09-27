@@ -1091,3 +1091,108 @@ p {
   justify-content: center;
   gap: 10px;
 }
+
+/* --- área de compartilhar -------------------------------------------- */
+
+.compartilhar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 32px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.compartilhar__bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compartilhar__texto {
+  width: 100%;
+  resize: vertical;
+  padding: 10px 12px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-elevado);
+  color: var(--cor-texto);
+  font: inherit;
+  font-size: 0.95rem;
+  word-break: break-all;
+}
+
+.compartilhar__acoes {
+  display: flex;
+  gap: 10px;
+}
+
+.compartilhar__botao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.compartilhar__botao--desligado {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* O input de arquivo fica escondido dentro do label estilizado como botão. */
+.compartilhar__arquivo-campo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.compartilhar__arquivo {
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.compartilhar__apagar {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  background: none;
+  border: none;
+  color: var(--cor-texto-fraco);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.compartilhar__progresso {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--cor-fundo-elevado);
+  overflow: hidden;
+}
+
+.compartilhar__progresso-barra {
+  height: 100%;
+  background: var(--cor-primaria);
+  transition: width 150ms linear;
+}
+
+.compartilhar__ok {
+  color: var(--cor-sucesso);
+  font-size: 0.95rem;
+}
+
+.compartilhar__aviso {
+  color: var(--cor-texto-fraco);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.convite__link {
+  color: var(--cor-primaria-forte);
+  word-break: break-all;
+  font-size: 0.9rem;
+}

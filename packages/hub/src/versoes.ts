@@ -105,6 +105,12 @@ export function ipsLocais(): string[] {
   return ips;
 }
 
+/** Endereço deste hub na rede da igreja — é o que vai nos QR codes. */
+export function urlNaRede(porta: number, caminho: string): string {
+  const ip = ipsLocais().find((endereco) => endereco !== '127.0.0.1' && endereco !== 'localhost');
+  return `http://${ip ?? '127.0.0.1'}:${porta}${caminho}`;
+}
+
 /**
  * Atualiza a própria máquina do hub. Sai solto deste processo (`detached`):
  * o atualizador derruba o hub no meio da troca e o sobe de novo depois.

@@ -13,7 +13,7 @@ import {
   type ModoConvidado,
 } from '@maestro/shared';
 import { pinConfere } from '../auth.js';
-import { ipsLocais } from '../versoes.js';
+import { urlNaRede } from '../versoes.js';
 import type { ContextoApp } from './contexto.js';
 import {
   responderDispositivoNaoEncontrado,
@@ -24,11 +24,6 @@ import {
 const COOKIE_CONVIDADO = 'maestro_convidado';
 /** Um dia: quem apresentou de manhã não precisa digitar o PIN de novo à tarde. */
 const UM_DIA_S = 60 * 60 * 24;
-
-function urlDoConvidado(ctx: ContextoApp, token: string): string {
-  const ip = ipsLocais().find((endereco) => endereco !== '127.0.0.1' && endereco !== 'localhost');
-  return `http://${ip ?? '127.0.0.1'}:${ctx.config.porta}${caminhoConvidado(token)}`;
-}
 
 /** Máquina a que o celular do convidado está preso, pelo cookie assinado. */
 function dispositivoDoConvidado(
@@ -110,7 +105,7 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
     return reply.send({
       dispositivoId: dispositivo.id,
       nome: dispositivo.nome,
-      url: urlDoConvidado(ctx, token),
+      url: urlNaRede(ctx.config.porta, caminhoConvidado(token)),
       pin: ctx.config.pinConvidado,
     });
   });

@@ -25,7 +25,13 @@ export type NomeIcone =
   | 'relogio'
   | 'musica'
   | 'lua'
-  | 'camera';
+  | 'camera'
+  | 'copiar'
+  | 'baixar'
+  | 'enviar'
+  | 'lixo'
+  | 'link'
+  | 'compartilhar';
 
 const CAMINHOS: Record<NomeIcone, JSX.Element> = {
   painel: (
@@ -118,6 +124,46 @@ const CAMINHOS: Record<NomeIcone, JSX.Element> = {
     <>
       <rect x="3.5" y="7.5" width="11" height="9" rx="1.5" />
       <path d="M14.5 11l6-3v8l-6-3z" />
+    </>
+  ),
+  copiar: (
+    <>
+      <rect x="8.5" y="8.5" width="11" height="11" rx="2" />
+      <path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" />
+    </>
+  ),
+  baixar: (
+    <>
+      <path d="M12 4v11" />
+      <path d="M7.5 10.8 12 15.2l4.5-4.4" />
+      <path d="M5 19.5h14" />
+    </>
+  ),
+  enviar: (
+    <>
+      <path d="M12 15.5V4.5" />
+      <path d="M7.5 9 12 4.5 16.5 9" />
+      <path d="M5 19.5h14" />
+    </>
+  ),
+  lixo: (
+    <>
+      <path d="M4.5 7h15" />
+      <path d="M9.5 7V4.8h5V7" />
+      <path d="M6.5 7l.9 12.2a1.5 1.5 0 0 0 1.5 1.3h6.2a1.5 1.5 0 0 0 1.5-1.3L17.5 7" />
+    </>
+  ),
+  link: (
+    <>
+      <path d="M10.2 13.8a3.8 3.8 0 0 0 5.4 0l3-3a3.8 3.8 0 0 0-5.4-5.4l-1.2 1.2" />
+      <path d="M13.8 10.2a3.8 3.8 0 0 0-5.4 0l-3 3a3.8 3.8 0 0 0 5.4 5.4l1.2-1.2" />
+    </>
+  ),
+  compartilhar: (
+    <>
+      <rect x="5" y="4.5" width="14" height="16" rx="2" />
+      <path d="M9 4.5V3.5h6v1" />
+      <path d="M8.5 10.5h7M8.5 14h7M8.5 17.5h4" />
     </>
   ),
 };

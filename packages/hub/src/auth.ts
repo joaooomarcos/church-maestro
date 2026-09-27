@@ -21,6 +21,11 @@ const ROTAS_PUBLICAS = new Set<string>([
   ROTAS.convidadoEntrar,
   ROTAS.convidadoEstado,
   ROTAS.convidadoAcao,
+  // Área de transferência: aberta a quem está na rede, por decisão da equipe.
+  // O link (para o QR) continua exigindo a sessão do painel.
+  ROTAS.compartilhar,
+  ROTAS.compartilharTexto,
+  ROTAS.compartilharArquivo,
 ]);
 
 function caminhoDaRota(req: FastifyRequest): string {

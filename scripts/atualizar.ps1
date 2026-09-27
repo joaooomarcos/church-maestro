@@ -214,7 +214,7 @@ function InstalarSha([string]$sha, [string]$notas) {
 
     Set-Content -Path $caminhoVersao -Value "$sha $notas" -Encoding UTF8
     SubirMaestro
-    Registrar "versao trocada para $(Curto $sha) — $notas"
+    Registrar "versao trocada para $(Curto $sha) - $notas"
     EscreverEstado 'ok' "Atualizado para $(Curto $sha)" $sha
     return $true
   } catch {
@@ -281,7 +281,7 @@ if ($canal.sha -eq $instalado) {
   exit 0
 }
 
-Registrar "versao aprovada: $(Curto $canal.sha) — $($canal.notas)"
+Registrar "versao aprovada: $(Curto $canal.sha) - $($canal.notas)"
 Registrar "instalada aqui:  $(Curto $instalado)"
 
 if (InstalarSha $canal.sha $canal.notas) {

@@ -215,11 +215,30 @@
       CriarTarefa 'maestro-agent' 'agent' | Out-Null
     }
 
-    # Atualizacao e decisao de quem opera, tomada na aba Versoes do painel — nada
+    # Atualizacao e decisao de quem opera, tomada na aba Versoes do painel - nada
     # de descobrir uma versao nova sozinho no domingo de manha.
     if (Get-ScheduledTask -TaskName 'maestro-update' -ErrorAction SilentlyContinue) {
       Unregister-ScheduledTask -TaskName 'maestro-update' -Confirm:$false
       Write-Host 'tarefa maestro-update removida (agora quem atualiza e o painel)'
+    }
+
+    # Atalho na area de trabalho para a area de compartilhar do hub: no PC nao
+    # precisa de QR code, e so clicar. Reescrito a cada instalacao.
+    try {
+      $urlHub = 'http://localhost:8700'
+      $caminhoAgente = Join-Path $destino 'config\agent.json'
+      if (Test-Path $caminhoAgente) {
+        $agente = Get-Content $caminhoAgente -Raw | ConvertFrom-Json
+        if ($agente.hubUrl) { $urlHub = ([string]$agente.hubUrl).TrimEnd('/') }
+      }
+      # GetFolderPath acompanha a area de trabalho redirecionada pelo OneDrive.
+      $areaDeTrabalho = [Environment]::GetFolderPath('Desktop')
+      $atalho = Join-Path $areaDeTrabalho 'Maestro - Compartilhar.url'
+      $conteudo = "[InternetShortcut]`r`nURL=$urlHub/compartilhar`r`n"
+      [IO.File]::WriteAllText($atalho, $conteudo, (New-Object System.Text.UTF8Encoding($false)))
+      Write-Host "atalho criado: $atalho"
+    } catch {
+      Write-Host "AVISO: nao consegui criar o atalho na area de trabalho: $($_.Exception.Message)" -ForegroundColor Yellow
     }
 
     Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
@@ -234,6 +253,7 @@
     Write-Host ''
     Write-Host 'Painel:            http://localhost:8700 (ou o IP do PC Transmissao)'
     Write-Host 'Reconfigurar:      npm.cmd run setup'
+    Write-Host 'Compartilhar:      atalho "Maestro - Compartilhar" na area de trabalho'
     Write-Host 'Logs:              data\hub.log, data\agent.log, data\atualizacao.log'
     Write-Host ''
     Write-Host 'As proximas atualizacoes saem da aba Versoes do painel: la voce ve a'

@@ -200,6 +200,31 @@ antigo para de funcionar na hora.
 
 ---
 
+## 3.6. Compartilhar links e arquivos entre o celular e os PCs
+
+Para passar uma URL enorme ou um arquivo do celular para um PC da igreja (ou o
+contrário), sem WhatsApp Web nem pendrive:
+
+- **No PC:** clique no atalho **Maestro - Compartilhar** na área de trabalho
+  (o instalador cria).
+- **No celular:** na aba **Sistema** do painel, em "Compartilhar links e
+  arquivos", toque em **Mostrar QR code** e escaneie.
+
+Na página, cole um link ou texto e toque em **Enviar texto**, ou use **Enviar
+arquivo** (até 100 MB). No outro aparelho, o conteúdo aparece sozinho em alguns
+segundos, com os botões **Copiar**, **Abrir** (quando é link) ou **Baixar**.
+
+Regras que valem a pena saber:
+
+- Fica **um item só**: colar algo novo substitui o que estava lá.
+- **Reiniciar o painel apaga tudo.**
+- É **aberto para quem está na rede da igreja** — inclusive o wi-fi de
+  visitantes, se for o mesmo. Não use para senhas ou documentos pessoais.
+- Arquivos sempre **baixam**, nunca abrem direto no navegador. É de propósito:
+  impede que um arquivo enviado por qualquer um rode dentro do painel.
+
+---
+
 ## 4. Ensaio antes do primeiro culto
 
 Faça com calma, num dia que não seja domingo:
