@@ -2041,6 +2041,40 @@ p {
   padding: 0 16px;
 }
 
+.avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.avisos__recentes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.avisos__recente {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avisos__usar {
+  flex: 1;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 @media (min-width: 960px) {
   .painel__maquinas {
     display: grid;

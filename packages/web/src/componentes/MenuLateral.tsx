@@ -6,6 +6,7 @@ export type TelaId =
   | 'holyrics'
   | 'powerpoint'
   | 'testes'
+  | 'avisos'
   | 'cenarios'
   | 'agendamentos'
   | 'convidado'
@@ -28,6 +29,7 @@ const GRUPOS: ReadonlyArray<{ titulo: string; itens: ItemMenu[] }> = [
       { id: 'ndi', rotulo: 'NDI', icone: 'ndi' },
       { id: 'holyrics', rotulo: 'Holyrics', icone: 'holyrics' },
       { id: 'powerpoint', rotulo: 'PowerPoint', icone: 'powerpoint' },
+      { id: 'avisos', rotulo: 'Avisos', icone: 'sino' },
       { id: 'testes', rotulo: 'Testes', icone: 'testes' },
     ],
   },

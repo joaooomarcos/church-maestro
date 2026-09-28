@@ -11,6 +11,7 @@ import { Ndi } from './telas/Ndi';
 import { Holyrics } from './telas/Holyrics';
 import { PowerPoint } from './telas/PowerPoint';
 import { Testes } from './telas/Testes';
+import { Avisos } from './telas/Avisos';
 import { Cenarios } from './telas/Cenarios';
 import { Agendamentos } from './telas/Agendamentos';
 import { SlidesConvidado } from './telas/SlidesConvidado';
@@ -88,6 +89,7 @@ function ConteudoPrincipal() {
           {tela === 'holyrics' && <Holyrics />}
           {tela === 'powerpoint' && <PowerPoint />}
           {tela === 'testes' && <Testes />}
+          {tela === 'avisos' && <Avisos />}
           {tela === 'cenarios' && <Cenarios />}
           {tela === 'agendamentos' && <Agendamentos />}
           {tela === 'convidado' && <SlidesConvidado />}

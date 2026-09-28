@@ -255,6 +255,11 @@ o painel de quem estiver com o celular aberto.
 - **Painel:** o aviso cobre a tela e o celular vibra; some ao tocar em **Ok,
   visto**.
 
+Para mandar um aviso na hora, sem montar cenário ("câmera 2 sem imagem",
+"podem começar"), use **Operação › Avisos** no menu: escreva, marque onde ele
+aparece e toque em **Enviar aviso**. As mensagens usadas há pouco ficam
+guardadas no celular para reenviar com um toque.
+
 **Antes de usar, escolha o monitor** em **Sistema › Ajustes › Onde os avisos
 aparecem**. As máquinas têm mais de uma tela, e um aviso no telão aparece para a
 igreja; um aviso na tela que o NDI Screen Capture envia vai para a live. Para

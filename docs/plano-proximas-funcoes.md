@@ -98,6 +98,9 @@ Dois passos novos no editor de cenários:
 - **Mostrar um aviso na tela**: janela por cima de tudo no Windows, notificação
   no Linux e aviso no painel com vibração. Fica até alguém clicar em "Ok".
 
+Também dá para mandar um aviso na hora, pelo menu **Operação › Avisos**, que
+lembra os destinos e as últimas mensagens no próprio celular.
+
 O monitor do aviso é escolhido por máquina em **Sistema › Ajustes**, com um
 botão **Testar** (o agente informa os monitores no heartbeat). Rodar o
 assistente de novo preserva essa escolha e o link do convidado.
