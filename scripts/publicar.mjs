@@ -14,7 +14,7 @@
  *   npm run publicar -- 0.1.0            volta as máquinas para uma versão já liberada
  *   npm run publicar -- --desligar       para de oferecer versão nova ao instalador
  *
- *   --notas "texto"   descrição da versão (padrão: o assunto do último commit)
+ *   --notas "texto"   descrição da versão (padrão: os commits desde a última versão)
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -74,6 +74,19 @@ function gravarVersao(versao) {
   gravarJson(caminhoLock, lock);
 }
 
+/** Commits de trabalho desde a última versão liberada — os de liberação ficam de fora. */
+function novidadesDesde(shaAnterior) {
+  const intervalo = shaAnterior ? [`${shaAnterior}..HEAD`] : ['-1'];
+  return git('log', '--format=%s', ...intervalo)
+    .split('\n')
+    .filter((assunto) => assunto && !/^(Libera |Versão \d|Desliga a oferta)/.test(assunto));
+}
+
+function resumir(assuntos) {
+  const texto = assuntos.join('; ');
+  return texto.length > 160 ? `${texto.slice(0, 157)}…` : texto;
+}
+
 // ---------------------------------------------------------------------------
 
 const argumentos = process.argv.slice(2);
@@ -121,7 +134,11 @@ if (pedido && VERSAO_VALIDA.test(pedido) && historico.some((v) => v.versao === p
   if (historico.some((v) => v.versao === versao)) {
     sair(`a ${versao} já foi liberada. Para voltar as máquinas para ela: npm run publicar -- ${versao}`);
   }
-  notas = notasPedidas ?? git('log', '-1', '--format=%s');
+  const novidades = novidadesDesde(historico[0]?.sha);
+  if (novidades.length === 0 && historico.length > 0) {
+    sair(`não há nada novo desde a ${historico[0].versao}. Faça o commit das mudanças antes.`);
+  }
+  notas = notasPedidas ?? resumir(novidades);
   novaVersao = true;
 
   // Na primeira liberação o número já está no package.json: não há o que subir.
