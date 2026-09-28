@@ -105,14 +105,24 @@ no NDI, no Holyrics e no OBS, está em [docs/instalacao.md](./docs/instalacao.md
 
 ## Liberar uma versão para as igrejas
 
-As máquinas não seguem o `main`: elas seguem o `canal.json`, e só instalam o
-commit apontado nele. Push é trabalho; publicar é decisão:
+As máquinas não seguem o `main`: elas seguem o `canal.json`, que guarda a
+versão aprovada e o histórico de versões liberadas (número → commit). Push é
+trabalho; publicar é decisão. As versões são numeradas `x.y.z`:
+
+- **funcionalidade nova** sobe o número do meio: 0.2.0 → 0.3.0;
+- **correção** sobe o último: 0.2.0 → 0.2.1.
 
 ```bash
-npm run publicar              # libera o commit atual
-npm run publicar -- <sha>     # volta as máquinas para um commit anterior
-npm run publicar -- --desligar  # pausa as atualizações automáticas
+npm run publicar -- funcionalidade   # 0.2.0 → 0.3.0
+npm run publicar -- correcao         # 0.2.0 → 0.2.1
+npm run publicar -- 0.2.0            # volta as máquinas para uma versão já liberada
+npm run publicar -- --desligar       # para de oferecer versão nova ao instalador
 ```
+
+O script troca o número em todos os `package.json`, faz o commit "Versão
+x.y.z", cria a tag `vx.y.z` e registra a versão no `canal.json`. A descrição
+que aparece no painel sai dos commits desde a última versão; para escrever
+outra, use `--notas "texto"`.
 
 Publicar não empurra nada: as máquinas nunca se atualizam sozinhas. Quem aplica
 é o operador, em **Sistema › Versões** no menu do painel, que mostra a versão instalada em

@@ -305,8 +305,12 @@ deixe os checklists impressos à mão nas primeiras semanas.
 Quem atualiza é o painel, em **Sistema › Versões** (no menu ☰). Nenhuma máquina se atualiza
 sozinha: a decisão é sempre de quem está operando, na hora que escolher.
 
-A aba mostra a versão instalada em cada máquina e a lista do que dá para
-instalar, com a **(aprovada)** já selecionada.
+A tela mostra a versão instalada em cada máquina e a lista do que dá para
+instalar, com a **(aprovada)** já selecionada. As versões têm número, do tipo
+**0.2.1**: o do meio sobe quando entra uma funcionalidade nova (0.2.0 → 0.3.0),
+o último quando é só uma correção (0.2.0 → 0.2.1). Número maior é mais novo.
+Uma máquina que aparece com **sem número** está num commit que não foi liberado
+como versão (instalada antes da 0.1.0, por exemplo) — é só atualizá-la.
 
 1. Confira a versão escolhida no alto da tela.
 2. No cartão da máquina, toque em **Atualizar esta máquina**.
