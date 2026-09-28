@@ -1,6 +1,15 @@
 {
   "ativo": true,
-  "sha": "dcb58b760d81f1b7c7450004d0a0c8b0f312809f",
-  "notas": "Toast com fundo opaco: o título da tela aparecia através dele",
-  "liberadoEm": "2026-09-28"
+  "sha": "c1a33fe061918dc49409a6018e68bfdd6e9b689e",
+  "notas": "Primeira versão numerada: cenários com editor, agendamentos, avisos na tela, menu lateral",
+  "liberadoEm": "2026-09-28",
+  "versao": "0.1.0",
+  "versoes": [
+    {
+      "versao": "0.1.0",
+      "sha": "c1a33fe061918dc49409a6018e68bfdd6e9b689e",
+      "notas": "Primeira versão numerada: cenários com editor, agendamentos, avisos na tela, menu lateral",
+      "data": "2026-09-28"
+    }
+  ]
 }
