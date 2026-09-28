@@ -31,7 +31,17 @@ export type NomeIcone =
   | 'enviar'
   | 'lixo'
   | 'link'
-  | 'compartilhar';
+  | 'compartilhar'
+  | 'menu'
+  | 'fechar'
+  | 'raio'
+  | 'atualizar'
+  | 'qr'
+  | 'mais'
+  | 'editar'
+  | 'subir'
+  | 'descer'
+  | 'transmitir';
 
 const CAMINHOS: Record<NomeIcone, JSX.Element> = {
   painel: (
@@ -164,6 +174,40 @@ const CAMINHOS: Record<NomeIcone, JSX.Element> = {
       <rect x="5" y="4.5" width="14" height="16" rx="2" />
       <path d="M9 4.5V3.5h6v1" />
       <path d="M8.5 10.5h7M8.5 14h7M8.5 17.5h4" />
+    </>
+  ),
+  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  fechar: <path d="M6 6l12 12M18 6 6 18" />,
+  raio: <path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" />,
+  atualizar: (
+    <>
+      <path d="M19.5 12a7.5 7.5 0 0 1-13 5.1" />
+      <path d="M4.5 12a7.5 7.5 0 0 1 13-5.1" />
+      <path d="M17.5 3.5v3.4h-3.4M6.5 20.5v-3.4h3.4" />
+    </>
+  ),
+  qr: (
+    <>
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <rect x="14" y="4" width="6" height="6" rx="1" />
+      <rect x="4" y="14" width="6" height="6" rx="1" />
+      <path d="M14 14h2.5v2.5M20 14v6h-3.5M14 18v2" />
+    </>
+  ),
+  mais: <path d="M12 5v14M5 12h14" />,
+  editar: (
+    <>
+      <path d="M4.5 19.5h4l10-10a2.1 2.1 0 0 0-3-3l-10 10z" />
+      <path d="M13.5 8.5l3 3" />
+    </>
+  ),
+  subir: <path d="M6 14.5 12 8.5l6 6" />,
+  descer: <path d="M6 9.5l6 6 6-6" />,
+  transmitir: (
+    <>
+      <circle cx="12" cy="12" r="2" />
+      <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6" />
+      <path d="M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4" />
     </>
   ),
 };

@@ -425,7 +425,7 @@ async function main(): Promise<void> {
     ]);
     const caminhosApps = await configurarCaminhos(rl, atual?.caminhosApps ?? {}, recusados);
 
-    // O intervalo é ajustado pelo painel (aba Sistema) para todas as máquinas;
+    // O intervalo é ajustado pelo painel (Sistema › Ajustes) para todas as máquinas;
     // aqui a máquina só nasce com o padrão.
     const intervaloHeartbeatMs = atual?.intervaloHeartbeatMs ?? 10_000;
 

@@ -57,7 +57,7 @@ export async function checarNdi(ctx: ContextoCheck): Promise<ResultadoCheck> {
           titulo: `Studio Monitor — ${rotulo}`,
           status: 'aviso',
           detalhe: 'A janela está sem nenhuma fonte selecionada.',
-          comoResolver: 'Escolha a fonte na aba NDI do painel.',
+          comoResolver: 'Escolha a fonte no menu NDI do painel.',
         });
         continue;
       }
@@ -72,7 +72,7 @@ export async function checarNdi(ctx: ContextoCheck): Promise<ResultadoCheck> {
           : `Está selecionada a fonte "${estado.fonteAtual}", mas ela não está mais na rede. A tela deve estar preta.`,
         comoResolver: fonteExiste
           ? undefined
-          : 'Ligue a máquina que envia essa imagem e confira se o NDI Screen Capture está rodando nela; ou escolha outra fonte na aba NDI.',
+          : 'Ligue a máquina que envia essa imagem e confira se o NDI Screen Capture está rodando nela; ou escolha outra fonte no menu NDI.',
       });
     }
   }

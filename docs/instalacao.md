@@ -183,7 +183,7 @@ New-NetFirewallRule -DisplayName "NDI Studio Monitor - Maestro" -Direction Inbou
 
 ## 3.5. Quem vai apresentar controla os próprios slides
 
-Na aba **Sistema** do painel, em "Controle para quem vai apresentar", escolha a
+No menu do painel, em **Compartilhar › Slides do convidado**, escolha a
 máquina onde a apresentação está aberta e toque em **Mostrar QR code**.
 
 A pessoa aponta a câmera, digita o **PIN de convidado** que aparece ao lado do
@@ -207,8 +207,8 @@ contrário), sem WhatsApp Web nem pendrive:
 
 - **No PC:** clique no atalho **Maestro - Compartilhar** na área de trabalho
   (o instalador cria).
-- **No celular:** na aba **Sistema** do painel, em "Compartilhar links e
-  arquivos", toque em **Mostrar QR code** e escaneie.
+- **No celular:** no menu do painel, em **Compartilhar › Links e arquivos**,
+  toque em **Mostrar QR code** e escaneie.
 
 Na página, cole um link ou texto e toque em **Enviar texto**, ou use **Enviar
 arquivo** (até 100 MB). No outro aparelho, o conteúdo aparece sozinho em alguns
@@ -225,17 +225,41 @@ Regras que valem a pena saber:
 
 ---
 
+## 3.7. Cenários e agendamentos
+
+Um **cenário** deixa várias coisas prontas de uma vez: trocar a fonte de um
+datashow, trocar a cena do OBS, ligar o plano de fundo do Holyrics, fechar a
+apresentação, esperar um pouco entre um passo e outro. Eles ficam em
+**Automação › Cenários**, no menu ☰, e aparecem como atalhos no alto do Painel.
+
+- **Novo cenário:** dê um nome, escolha um ícone e adicione os passos. Máquina,
+  janela e fonte são escolhidas em listas, com os nomes reais — não tem como
+  errar a digitação.
+- Se um passo falhar, os outros continuam, e o painel avisa qual falhou.
+
+Em **Automação › Agendamentos** um cenário roda sozinho: escolha o cenário, os
+dias da semana e a hora (por exemplo, "Pré-culto, domingo, 18:50"). O botão no
+alto liga e desliga **todas** as automações de uma vez.
+
+O agendamento usa o relógio do PC Transmissão, que precisa estar ligado e com
+o painel no ar na hora marcada. Se ele ligar mais de 2 minutos depois, aquele
+horário é pulado até a próxima semana — rodar o "Pré-culto" atrasado, no meio
+do culto, faria mais mal do que bem. As últimas execuções aparecem no fim da
+tela, com o que deu certo e o que falhou.
+
+---
+
 ## 4. Ensaio antes do primeiro culto
 
 Faça com calma, num dia que não seja domingo:
 
 1. Ligue as quatro máquinas e abra o painel no celular.
 2. Confira se as quatro aparecem **online**.
-3. Na aba **NDI**, troque a fonte do PC Fundo e confirme, olhando o datashow,
+3. No menu **NDI**, troque a fonte do PC Fundo e confirme, olhando o datashow,
    que a imagem mudou.
-4. Na aba **Holyrics**, exiba uma música e passe alguns slides pelo celular.
-5. Na aba **PowerPoint**, inicie a apresentação e passe slides.
-6. Na aba **Testes**, rode **Testar legendas** com o OBS aberto — o texto de
+4. No menu **Holyrics**, exiba uma música e passe alguns slides pelo celular.
+5. No menu **PowerPoint**, inicie a apresentação e passe slides.
+6. No menu **Testes**, rode **Testar legendas** com o OBS aberto — o texto de
    teste deve aparecer e sumir sozinho.
 7. Rode um **cenário** e confira se tudo foi para o estado esperado.
 
@@ -246,7 +270,7 @@ deixe os checklists impressos à mão nas primeiras semanas.
 
 ## 5. Atualizar o Maestro
 
-Quem atualiza é o painel, na aba **Versões**. Nenhuma máquina se atualiza
+Quem atualiza é o painel, em **Sistema › Versões** (no menu ☰). Nenhuma máquina se atualiza
 sozinha: a decisão é sempre de quem está operando, na hora que escolher.
 
 A aba mostra a versão instalada em cada máquina e a lista do que dá para
@@ -361,7 +385,7 @@ Depois, instale de novo a partir da **seção 1**, com o PC Transmissão primeir
   nova não subiu e a máquina se protegeu sozinha. Avise quem desenvolve.
 - Se o botão estiver apagado, a máquina está offline ou já está naquela versão.
 
-### A aba Versões não lista nada
+### Sistema › Versões não lista nada
 
 - O hub precisa de internet para consultar as versões no GitHub. Sem ela, a aba
   mostra um aviso e as máquinas continuam rodando normalmente.
@@ -393,7 +417,7 @@ Depois, instale de novo a partir da **seção 1**, com o PC Transmissão primeir
   instalador cria a tarefa do jeito certo — não troque por um serviço.
 - O painel diz "nenhum arquivo foi carregado" com o arquivo aberto: é o
   agente de antes da versão 202c769, que ficava preso a um PowerPoint já
-  fechado. Atualize a máquina pela aba **Sistema**.
+  fechado. Atualize a máquina em **Sistema › Versões**.
 - A apresentação está aberta mas não foi iniciada. O painel avisa isso e oferece
   o botão **Iniciar apresentação**.
 - O PowerPoint está com uma caixa de diálogo aberta esperando alguém clicar.

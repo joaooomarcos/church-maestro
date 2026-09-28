@@ -18,6 +18,8 @@ import { dispositivosDemo } from './drivers/mock.js';
 import { registrarRotasChecks } from './checks/index.js';
 import { criarAreaCompartilhada } from './compartilhar.js';
 import { registrarRotasCompartilhar } from './rotas/compartilhar.js';
+import { criarAgendador } from './automacoes/agendador.js';
+import { registrarRotasAutomacoes } from './rotas/automacoes.js';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const pastaWeb = path.join(aqui, '../../web/dist');
@@ -54,9 +56,12 @@ async function principal(): Promise<void> {
     drivers,
     store,
     cenarios: configuracao.cenarios,
+    automacoes: configuracao.automacoes,
     dispositivos,
     caminhoDispositivos: configuracao.caminhos.dispositivos,
     caminhoHub: configuracao.caminhos.hub,
+    caminhoCenarios: configuracao.caminhos.cenarios,
+    caminhoAutomacoes: configuracao.caminhos.automacoes,
     persistir: !usarMock,
   });
 
@@ -68,6 +73,9 @@ async function principal(): Promise<void> {
   const areaCompartilhada = criarAreaCompartilhada();
   await areaCompartilhada.limpar();
   registrarRotasCompartilhar(app, ctx, areaCompartilhada);
+
+  const agendador = criarAgendador(ctx);
+  registrarRotasAutomacoes(app, ctx, agendador);
 
   // Depois de toda rota de API registrada: 404 de GET não-`/api` cai na SPA; o resto vira erro JSON normal.
   app.setNotFoundHandler((req, reply) => {
@@ -85,6 +93,7 @@ async function principal(): Promise<void> {
     intervaloMs: configuracao.hub.intervaloPollingMs,
   });
   poller.iniciar();
+  agendador.iniciar();
 
   await app.listen({ port: configuracao.hub.porta, host: '0.0.0.0' });
 
@@ -94,6 +103,7 @@ async function principal(): Promise<void> {
     encerrando = true;
     app.log.info(`recebido ${sinal}, encerrando…`);
     poller.parar();
+    agendador.parar();
     void drivers.obs
       .encerrar()
       .catch((erro: unknown) => app.log.warn({ erro }, 'falha ao encerrar driver do OBS'))

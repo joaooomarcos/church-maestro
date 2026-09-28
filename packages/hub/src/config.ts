@@ -3,9 +3,11 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  arquivoAutomacoesSchema,
   arquivoCenariosSchema,
   arquivoDispositivosSchema,
   configHubSchema,
+  type ArquivoAutomacoes,
   type ArquivoCenarios,
   type Cenario,
   type ConfigHub,
@@ -22,6 +24,7 @@ export interface CaminhosConfig {
   hub: string;
   dispositivos: string;
   cenarios: string;
+  automacoes: string;
 }
 
 export function obterCaminhosConfig(pasta: string = pastaConfig): CaminhosConfig {
@@ -29,6 +32,7 @@ export function obterCaminhosConfig(pasta: string = pastaConfig): CaminhosConfig
     hub: path.join(pasta, 'hub.json'),
     dispositivos: path.join(pasta, 'devices.json'),
     cenarios: path.join(pasta, 'scenarios.json'),
+    automacoes: path.join(pasta, 'automacoes.json'),
   };
 }
 
@@ -119,6 +123,27 @@ export async function salvarConfigHub(caminho: string, config: ConfigHub): Promi
   await escreverArquivoAtomico(caminho, JSON.stringify(validada, null, 2));
 }
 
+/** Carrega config/automacoes.json; se não existir, nasce ligado e sem agendamentos. */
+export async function carregarOuCriarAutomacoes(caminho: string): Promise<ArquivoAutomacoes> {
+  const bruto = await lerJsonSeExistir(caminho);
+  if (bruto === undefined) return arquivoAutomacoesSchema.parse({});
+  const resultado = arquivoAutomacoesSchema.safeParse(bruto);
+  if (!resultado.success) {
+    throw new Error(`config/automacoes.json inválido: ${resultado.error.message}`);
+  }
+  return resultado.data;
+}
+
+export async function salvarCenarios(caminho: string, cenarios: Cenario[]): Promise<void> {
+  const arquivo = arquivoCenariosSchema.parse({ cenarios });
+  await escreverArquivoAtomico(caminho, JSON.stringify(arquivo, null, 2));
+}
+
+export async function salvarAutomacoes(caminho: string, automacoes: ArquivoAutomacoes): Promise<void> {
+  const arquivo = arquivoAutomacoesSchema.parse(automacoes);
+  await escreverArquivoAtomico(caminho, JSON.stringify(arquivo, null, 2));
+}
+
 export async function salvarDispositivos(
   caminho: string,
   dispositivos: DispositivoConfig[],
@@ -131,15 +156,17 @@ export interface Configuracao {
   hub: ConfigHub;
   dispositivos: DispositivoConfig[];
   cenarios: Cenario[];
+  automacoes: ArquivoAutomacoes;
   caminhos: CaminhosConfig;
 }
 
 export async function carregarConfiguracao(pasta: string = pastaConfig): Promise<Configuracao> {
   const caminhos = obterCaminhosConfig(pasta);
-  const [hub, dispositivos, cenarios] = await Promise.all([
+  const [hub, dispositivos, cenarios, automacoes] = await Promise.all([
     carregarOuCriarConfigHub(caminhos.hub),
     carregarOuCriarDispositivos(caminhos.dispositivos),
     carregarOuCriarCenarios(caminhos.cenarios),
+    carregarOuCriarAutomacoes(caminhos.automacoes),
   ]);
-  return { hub, dispositivos, cenarios, caminhos };
+  return { hub, dispositivos, cenarios, automacoes, caminhos };
 }

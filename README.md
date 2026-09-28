@@ -115,7 +115,7 @@ npm run publicar -- --desligar  # pausa as atualizações automáticas
 ```
 
 Publicar não empurra nada: as máquinas nunca se atualizam sozinhas. Quem aplica
-é o operador, pela aba **Versões** do painel, que mostra a versão instalada em
+é o operador, em **Sistema › Versões** no menu do painel, que mostra a versão instalada em
 cada máquina e marca qual é a aprovada. Numa igreja onde as máquinas só ligam em
 dia de culto, uma atualização automática cairia sempre na manhã do culto — daí a
 escolha.

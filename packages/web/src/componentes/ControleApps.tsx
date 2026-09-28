@@ -17,6 +17,15 @@ const ROTULOS: Record<AcaoApp, string> = {
   reiniciar: 'Reiniciar',
 };
 
+/** Cabe na pílula do cartão; o nome completo aparece ao gerenciar. */
+const NOMES_CURTOS: Record<Aplicativo, string> = {
+  obs: 'OBS',
+  holyrics: 'Holyrics',
+  powerpoint: 'PowerPoint',
+  'ndi-studio-monitor': 'Studio Monitor',
+  'ndi-screen-capture': 'Screen Capture',
+};
+
 /** Fechado, só faz sentido abrir; aberto, o resto. */
 function acoesPara(aberto: boolean): AcaoApp[] {
   return aberto ? ['frente', 'reiniciar', 'fechar'] : ['abrir'];
@@ -53,13 +62,31 @@ export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }
 
   return (
     <div className="controle-apps">
-      <button
-        type="button"
-        className="controle-apps__alternar"
-        onClick={() => setExpandido((atual) => !atual)}
-      >
-        {expandido ? 'Esconder programas' : 'Programas desta máquina'}
-      </button>
+      <div className="controle-apps__resumo">
+        <div className="controle-apps__cabecalho">
+          <span className="controle-apps__titulo">Programas</span>
+          <button
+            type="button"
+            className="controle-apps__alternar"
+            aria-expanded={expandido}
+            onClick={() => setExpandido((atual) => !atual)}
+          >
+            {expandido ? 'Fechar' : 'Gerenciar'}
+          </button>
+        </div>
+        <ul className="pilulas" aria-label="Programas desta máquina">
+          {visiveis.map((app) => {
+            const aberto = agente.processos[app] === true;
+            return (
+              <li key={app} className={`pilula${aberto ? ' pilula--aberta' : ''}`}>
+                <span className="pilula__ponto" aria-hidden="true" />
+                {NOMES_CURTOS[app]}
+                <span className="visualmente-oculto">{aberto ? ' (aberto)' : ' (fechado)'}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
 
       {expandido ? (
         <ul className="controle-apps__lista">

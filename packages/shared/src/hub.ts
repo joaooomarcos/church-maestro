@@ -69,6 +69,8 @@ export const ROTAS = {
   holyricsAcao: '/api/holyrics/acao',
   pptAcao: '/api/powerpoint/acao',
   cenarios: '/api/cenarios',
+  cenario: '/api/cenarios/:id',
+  automacoes: '/api/automacoes',
   executarCenario: '/api/cenarios/executar',
   checkLegendas: '/api/checks/legendas',
   checkNdi: '/api/checks/ndi',

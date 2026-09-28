@@ -10,7 +10,7 @@
   $repo = 'joaooomarcos/church-maestro'
   $branch = if ($env:MAESTRO_BRANCH) { $env:MAESTRO_BRANCH } else { 'main' }
   $destino = if ($env:MAESTRO_DIR) { $env:MAESTRO_DIR } else { Join-Path $HOME 'maestro' }
-  $preservar = @('config\hub.json', 'config\agent.json', 'config\devices.json', 'config\scenarios.json', 'data')
+  $preservar = @('config\hub.json', 'config\agent.json', 'config\devices.json', 'config\scenarios.json', 'config\automacoes.json', 'data')
   $tarefas = @('maestro-hub', 'maestro-agent')
 
   function Passo([string]$texto) { Write-Host "`n==> $texto" -ForegroundColor Cyan }
@@ -224,7 +224,7 @@
       CriarTarefa 'maestro-agent' 'agent' | Out-Null
     }
 
-    # Atualizacao e decisao de quem opera, tomada na aba Versoes do painel - nada
+    # Atualizacao e decisao de quem opera, tomada em Sistema > Versoes, no painel - nada
     # de descobrir uma versao nova sozinho no domingo de manha.
     if (Get-ScheduledTask -TaskName 'maestro-update' -ErrorAction SilentlyContinue) {
       Unregister-ScheduledTask -TaskName 'maestro-update' -Confirm:$false
@@ -265,7 +265,7 @@
     Write-Host 'Compartilhar:      atalho "Maestro - Compartilhar" na area de trabalho'
     Write-Host 'Logs:              data\hub.log, data\agent.log, data\atualizacao.log'
     Write-Host ''
-    Write-Host 'As proximas atualizacoes saem da aba Versoes do painel: la voce ve a'
+    Write-Host 'As proximas atualizacoes saem de Sistema > Versoes, no painel: la voce ve a'
     Write-Host 'versao de cada maquina e atualiza uma de cada vez.'
   } catch {
     if (Test-Path $backup) {

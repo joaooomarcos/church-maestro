@@ -1,13 +1,21 @@
 import {
+  arquivoAutomacoesSchema,
+  cenarioSchema,
   configHubSchema,
   dispositivoConfigSchema,
+  type ArquivoAutomacoes,
   type Cenario,
   type ConfigHub,
   type DispositivoConfig,
   type ResultadoCheck,
 } from '@maestro/shared';
 import type { Drivers } from '../drivers/tipos.js';
-import { salvarConfigHub, salvarDispositivos } from '../config.js';
+import {
+  salvarAutomacoes,
+  salvarCenarios,
+  salvarConfigHub,
+  salvarDispositivos,
+} from '../config.js';
 import type { Store } from '../estado/store.js';
 
 /**
@@ -20,7 +28,6 @@ export interface ContextoApp {
   readonly config: ConfigHub;
   readonly drivers: Drivers;
   readonly store: Store;
-  readonly cenarios: Cenario[];
   /** Hub rodando com dados de demonstração (npm run dev): nada de mexer em máquina de verdade. */
   readonly modoDemo: boolean;
   dispositivos(): DispositivoConfig[];
@@ -42,6 +49,13 @@ export interface ContextoApp {
    * agente) passa a enxergar o valor novo sem reiniciar o hub.
    */
   atualizarConfigHub(parcial: Partial<ConfigHub>): Promise<ConfigHub>;
+  cenarios(): Cenario[];
+  /** Cria ou substitui pelo `id` e grava em config/scenarios.json. */
+  salvarCenario(cenario: Cenario): Promise<Cenario>;
+  /** Remove o cenário e os agendamentos que apontavam para ele. */
+  removerCenario(id: string): Promise<void>;
+  automacoes(): ArquivoAutomacoes;
+  salvarAutomacoes(automacoes: ArquivoAutomacoes): Promise<ArquivoAutomacoes>;
   /** Publica um resultado de check no WebSocket, para todas as telas verem ao vivo. */
   publicar(resultado: ResultadoCheck): void;
 }
@@ -51,9 +65,12 @@ export interface OpcoesContexto {
   drivers: Drivers;
   store: Store;
   cenarios: Cenario[];
+  automacoes?: ArquivoAutomacoes;
   dispositivos: DispositivoConfig[];
   caminhoDispositivos: string;
   caminhoHub: string;
+  caminhoCenarios?: string;
+  caminhoAutomacoes?: string;
   /**
    * false em modo mock: os dispositivos são de mentira e gravá-los apagaria o
    * cadastro real se alguém rodasse `npm run dev` na máquina da igreja.
@@ -63,13 +80,22 @@ export interface OpcoesContexto {
 
 export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
   let dispositivos = opcoes.dispositivos;
+  let cenarios = opcoes.cenarios;
+  let automacoes = opcoes.automacoes ?? arquivoAutomacoesSchema.parse({});
   const persistir = opcoes.persistir !== false;
+
+  async function gravarAutomacoes(): Promise<void> {
+    if (persistir && opcoes.caminhoAutomacoes) await salvarAutomacoes(opcoes.caminhoAutomacoes, automacoes);
+  }
+
+  async function gravarCenarios(): Promise<void> {
+    if (persistir && opcoes.caminhoCenarios) await salvarCenarios(opcoes.caminhoCenarios, cenarios);
+  }
 
   return {
     config: opcoes.config,
     drivers: opcoes.drivers,
     store: opcoes.store,
-    cenarios: opcoes.cenarios,
     modoDemo: !persistir,
 
     dispositivos: () => dispositivos,
@@ -109,6 +135,37 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
       Object.assign(opcoes.config, validada);
       if (persistir) await salvarConfigHub(opcoes.caminhoHub, validada);
       return validada;
+    },
+
+    cenarios: () => cenarios,
+
+    async salvarCenario(cenario) {
+      const validado = cenarioSchema.parse(cenario);
+      const indice = cenarios.findIndex((c) => c.id === validado.id);
+      const proximos = [...cenarios];
+      if (indice === -1) proximos.push(validado);
+      else proximos[indice] = validado;
+      cenarios = proximos;
+      await gravarCenarios();
+      return validado;
+    },
+
+    async removerCenario(id) {
+      cenarios = cenarios.filter((c) => c.id !== id);
+      const restantes = automacoes.agendamentos.filter((a) => a.cenarioId !== id);
+      await gravarCenarios();
+      if (restantes.length !== automacoes.agendamentos.length) {
+        automacoes = { ...automacoes, agendamentos: restantes };
+        await gravarAutomacoes();
+      }
+    },
+
+    automacoes: () => automacoes,
+
+    async salvarAutomacoes(novas) {
+      automacoes = arquivoAutomacoesSchema.parse(novas);
+      await gravarAutomacoes();
+      return automacoes;
     },
 
     publicar(resultado) {

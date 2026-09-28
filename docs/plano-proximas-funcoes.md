@@ -75,7 +75,7 @@ Com isso as quatro fases combinadas em 2026-09-21 estão entregues.
 ## Como retomar
 
 `git log` conta o que já foi feito; cada fase acima entra como um commit próprio.
-O estado atual de cada máquina da igreja aparece na aba **Versões** do painel —
+O estado atual de cada máquina da igreja aparece em **Sistema › Versões**, no menu do painel —
 depois de mexer aqui, publique com `npm run publicar` e atualize as máquinas por
 lá.
 
@@ -83,7 +83,7 @@ lá.
 
 Página `/compartilhar`, aberta a quem está na rede: um item só (texto ou
 arquivo de até 100 MB), colar de novo substitui e reiniciar o hub apaga. QR na
-aba Sistema e atalho "Maestro - Compartilhar" criado pelo instalador.
+menu **Compartilhar › Links e arquivos** e atalho "Maestro - Compartilhar" criado pelo instalador.
 
 Falta testar no Windows: o atalho na área de trabalho (inclusive com a área de
 trabalho redirecionada pelo OneDrive) e o botão Copiar num navegador aberto

@@ -82,3 +82,11 @@ export function apiPost<T>(caminho: string, corpo?: unknown): Promise<T> {
     body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
   });
 }
+
+export function apiPut<T>(caminho: string, corpo: unknown): Promise<T> {
+  return requisitar<T>(caminho, { method: 'PUT', body: JSON.stringify(corpo) });
+}
+
+export function apiDelete<T>(caminho: string): Promise<T> {
+  return requisitar<T>(caminho, { method: 'DELETE' });
+}

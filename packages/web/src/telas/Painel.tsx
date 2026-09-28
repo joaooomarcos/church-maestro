@@ -1,105 +1,174 @@
 import { useEffect, useState } from 'react';
-import type { Cenario, EstadoDispositivo } from '@maestro/shared';
-import { ROTAS } from '@maestro/shared';
+import { NOMES_APLICATIVOS, ROTAS, type Cenario, type EstadoDispositivo, type ResultadoCenario } from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
 import { apiGet, apiPost } from '../nucleo/cliente';
 import { Semaforo, type EstadoSemaforo } from '../componentes/Semaforo';
 import { ControleApps } from '../componentes/ControleApps';
 import { Icone, type NomeIcone } from '../componentes/Icone';
+import { IconeCenario } from '../componentes/IconeCenario';
 import { vibrar } from '../nucleo/vibrar';
 
-/**
- * Os cenários vêm do scenarios.json, que a equipe edita e onde os ícones são
- * emoji. Os mais usados viram ícone de traço; o que não estiver aqui continua
- * aparecendo como a equipe escreveu.
- */
-const ICONES_CENARIO: Record<string, NomeIcone> = {
-  '🕐': 'relogio',
-  '🕒': 'relogio',
-  '⏰': 'relogio',
-  '🎵': 'musica',
-  '🎶': 'musica',
-  '🎤': 'musica',
-  '🌙': 'lua',
-  '🌚': 'lua',
-  '📺': 'ndi',
-  '📖': 'holyrics',
-  '📊': 'powerpoint',
-  '🎥': 'camera',
-  '📹': 'camera',
-  '▶': 'play',
-  '▶️': 'play',
-};
+type Tom = 'normal' | 'ok' | 'alerta' | 'apagado';
 
-function estadoSemaforoDispositivo(d: EstadoDispositivo): EstadoSemaforo {
+interface Bloco {
+  chave: string;
+  icone: NomeIcone;
+  titulo: string;
+  valor: string;
+  detalhe?: string;
+  tom: Tom;
+}
+
+function estadoSemaforo(d: EstadoDispositivo): EstadoSemaforo {
   if (d.ultimoContato === null) return 'nao-configurado';
   return d.online ? 'online' : 'offline';
 }
 
-function resumoHolyrics(d: EstadoDispositivo): string | null {
-  if (!d.holyrics) return null;
-  if (!d.holyrics.online) return d.holyrics.erro ?? 'Sem conexão com o Holyrics';
-  const apresentacao = d.holyrics.apresentacao;
-  if (!apresentacao) return 'Sem apresentação';
-  return `${apresentacao.nome} — slide ${apresentacao.slide ?? '?'}/${apresentacao.totalSlides ?? '?'}`;
-}
-
-function resumoPowerPoint(d: EstadoDispositivo): string | null {
-  if (!d.powerpoint) return null;
-  if (!d.powerpoint.online) return d.powerpoint.erro ?? 'PowerPoint fechado';
-  if (!d.powerpoint.emApresentacao) return 'Fora do modo apresentação';
-  return `Slide ${d.powerpoint.slide ?? '?'} de ${d.powerpoint.totalSlides ?? '?'}`;
-}
-
-/**
- * Quais programas a máquina tem abertos. Vale mesmo para o Note Som, que não
- * tem projeção nenhuma — saber que o agente responde já diz que a máquina está
- * ligada e pronta.
- */
-const NOMES_APLICATIVOS: Record<string, string> = {
-  obs: 'OBS',
-  holyrics: 'Holyrics',
-  powerpoint: 'PowerPoint',
-  'ndi-studio-monitor': 'Studio Monitor',
-  'ndi-screen-capture': 'Screen Capture',
+const ROTULO_ESTADO: Record<EstadoSemaforo, string> = {
+  online: 'Online',
+  offline: 'Offline',
+  'nao-configurado': 'Sem contato',
 };
 
-function resumoAgente(d: EstadoDispositivo): string | null {
-  if (!d.agente) return null;
-  if (!d.agente.online) return d.agente.erro ?? 'Agente sem resposta';
-  const abertos = Object.entries(d.agente.processos)
-    .filter(([, aberto]) => aberto)
-    .map(([chave]) => NOMES_APLICATIVOS[chave] ?? chave);
-  return abertos.length > 0 ? abertos.join(', ') : 'nenhum programa aberto';
+/** Um bloco para cada coisa que a máquina faz, com o valor que importa em destaque. */
+function montarBlocos(d: EstadoDispositivo): Bloco[] {
+  const blocos: Bloco[] = [];
+
+  if (d.obs) {
+    const obs = d.obs;
+    if (!obs.online) {
+      blocos.push({ chave: 'obs', icone: 'transmitir', titulo: 'OBS', valor: 'Sem conexão', tom: 'apagado' });
+    } else if (obs.transmitindo) {
+      const perdendo = obs.percFramesPerdidos > 1;
+      blocos.push({
+        chave: 'obs',
+        icone: 'transmitir',
+        titulo: 'OBS',
+        valor: perdendo ? 'Ao vivo · perdendo frames' : 'Ao vivo',
+        detalhe: `${Math.round(obs.bitrateKbps)} kbps${obs.cenaAtual ? ` · ${obs.cenaAtual}` : ''}`,
+        tom: perdendo ? 'alerta' : 'ok',
+      });
+    } else {
+      blocos.push({
+        chave: 'obs',
+        icone: 'transmitir',
+        titulo: 'OBS',
+        valor: 'Fora do ar',
+        ...(obs.cenaAtual ? { detalhe: obs.cenaAtual } : {}),
+        tom: 'normal',
+      });
+    }
+  }
+
+  if (d.holyrics) {
+    const holyrics = d.holyrics;
+    const apresentacao = holyrics.apresentacao;
+    blocos.push(
+      !holyrics.online
+        ? { chave: 'holyrics', icone: 'holyrics', titulo: 'Holyrics', valor: 'Sem conexão', tom: 'apagado' }
+        : apresentacao
+          ? {
+              chave: 'holyrics',
+              icone: 'holyrics',
+              titulo: 'Holyrics',
+              valor: apresentacao.nome,
+              detalhe: `slide ${apresentacao.slide ?? '?'} de ${apresentacao.totalSlides ?? '?'}`,
+              tom: 'normal',
+            }
+          : { chave: 'holyrics', icone: 'holyrics', titulo: 'Holyrics', valor: 'Nada no ar', tom: 'apagado' },
+    );
+  }
+
+  // O status do PowerPoint diz "fora da exibição" mesmo com ele fechado; quem
+  // sabe se ele está aberto é a lista de programas do agente.
+  if (d.powerpoint && d.agente?.capacidades.includes('powerpoint')) {
+    const ppt = d.powerpoint;
+    const aberto = d.agente.processos.powerpoint === true;
+    blocos.push(
+      !aberto
+        ? { chave: 'ppt', icone: 'powerpoint', titulo: 'PowerPoint', valor: 'Fechado', tom: 'apagado' }
+        : ppt.emApresentacao
+          ? {
+              chave: 'ppt',
+              icone: 'powerpoint',
+              titulo: 'PowerPoint',
+              valor: `Slide ${ppt.slide ?? '?'} de ${ppt.totalSlides ?? '?'}`,
+              ...(ppt.arquivo ? { detalhe: ppt.arquivo } : {}),
+              tom: 'normal',
+            }
+          : {
+              chave: 'ppt',
+              icone: 'powerpoint',
+              titulo: 'PowerPoint',
+              valor: 'Aberto',
+              detalhe: ppt.arquivo ?? 'fora da exibição',
+              tom: 'normal',
+            },
+    );
+  }
+
+  for (const janela of d.ndi) {
+    blocos.push({
+      chave: `ndi-${janela.porta}`,
+      icone: 'ndi',
+      titulo: `NDI ${janela.porta}`,
+      valor: !janela.online ? 'Sem conexão' : (janela.fonteAtual ?? 'Nenhuma fonte'),
+      tom: !janela.online || !janela.fonteAtual ? 'apagado' : 'normal',
+    });
+  }
+
+  return blocos;
 }
 
-/** Qual janela está na frente naquela máquina — o que está indo para a tela. */
-function resumoPrimeiroPlano(d: EstadoDispositivo): string | null {
+/** O que está na frente naquela máquina — é o que está indo para a tela. */
+function primeiroPlano(d: EstadoDispositivo): string | null {
   const janela = d.agente?.emPrimeiroPlano;
   if (!janela) return null;
-  const nome = janela.app ? (NOMES_APLICATIVOS[janela.app] ?? janela.processo) : janela.processo;
+  const nome = janela.app ? NOMES_APLICATIVOS[janela.app] : janela.processo;
   if (!janela.titulo) return nome;
-  // O título da janela quase sempre já traz o nome do programa ("Louvor - PowerPoint").
-  return janela.titulo.toLowerCase().includes(nome.toLowerCase())
-    ? janela.titulo
-    : `${nome} — ${janela.titulo}`;
+  return janela.titulo.toLowerCase().includes(nome.toLowerCase()) ? janela.titulo : `${nome} — ${janela.titulo}`;
 }
 
-function resumoObs(d: EstadoDispositivo): { texto: string; alerta: boolean } | null {
-  if (!d.obs) return null;
-  if (!d.obs.online) return { texto: d.obs.erro ?? 'Sem conexão com o OBS', alerta: false };
-  if (!d.obs.transmitindo) return { texto: 'Não transmitindo', alerta: false };
-  return {
-    texto: `Transmitindo · ${Math.round(d.obs.bitrateKbps)} kbps`,
-    alerta: d.obs.percFramesPerdidos > 1,
-  };
-}
+function CartaoMaquina({ dispositivo }: { dispositivo: EstadoDispositivo }) {
+  const estado = estadoSemaforo(dispositivo);
+  const blocos = montarBlocos(dispositivo);
+  const naFrente = primeiroPlano(dispositivo);
 
-function resumoNdi(d: EstadoDispositivo): Array<{ porta: number; texto: string }> {
-  return d.ndi.map((janela) => ({
-    porta: janela.porta,
-    texto: `janela ${janela.porta}: ${janela.fonteAtual ?? 'nenhuma fonte'}`,
-  }));
+  return (
+    <article className={`cartao-maquina${estado === 'online' ? '' : ' cartao-maquina--fora'}`}>
+      <header className="cartao-maquina__cabecalho">
+        <Semaforo estado={estado} />
+        <h2 className="cartao-maquina__nome">{dispositivo.nome}</h2>
+        <span className={`cartao-maquina__estado cartao-maquina__estado--${estado}`}>{ROTULO_ESTADO[estado]}</span>
+      </header>
+
+      {naFrente ? (
+        <p className="cartao-maquina__frente">
+          <span className="cartao-maquina__frente-rotulo">Na frente</span>
+          <span className="cartao-maquina__frente-valor">{naFrente}</span>
+        </p>
+      ) : null}
+
+      {blocos.length > 0 ? (
+        <div className="blocos">
+          {blocos.map((bloco) => (
+            <div key={bloco.chave} className={`bloco bloco--${bloco.tom}`}>
+              <p className="bloco__titulo">
+                <Icone nome={bloco.icone} tamanho={16} />
+                {bloco.titulo}
+              </p>
+              <p className="bloco__valor">{bloco.valor}</p>
+              {bloco.detalhe ? <p className="bloco__detalhe">{bloco.detalhe}</p> : null}
+            </div>
+          ))}
+        </div>
+      ) : dispositivo.agente && !dispositivo.agente.online ? (
+        <p className="cartao-maquina__aviso">{dispositivo.agente.erro ?? 'Agente sem resposta.'}</p>
+      ) : null}
+
+      <ControleApps dispositivo={dispositivo} />
+    </article>
+  );
 }
 
 export function Painel() {
@@ -108,8 +177,8 @@ export function Painel() {
   const [executando, setExecutando] = useState<string | null>(null);
 
   useEffect(() => {
-    apiGet<Cenario[] | { cenarios: Cenario[] }>(ROTAS.cenarios)
-      .then((resposta) => setCenarios(Array.isArray(resposta) ? resposta : resposta.cenarios))
+    apiGet<{ cenarios: Cenario[] }>(ROTAS.cenarios)
+      .then((resposta) => setCenarios(resposta.cenarios))
       .catch(() => {
         // erro já virou toast pelo cliente de API.
       });
@@ -119,8 +188,13 @@ export function Painel() {
     vibrar(15);
     setExecutando(cenario.id);
     try {
-      await apiPost(ROTAS.executarCenario, { cenarioId: cenario.id });
-      notificar(`Cenário "${cenario.nome}" aplicado.`, 'info');
+      const resultado = await apiPost<ResultadoCenario>(ROTAS.executarCenario, { cenarioId: cenario.id });
+      if (resultado.ok) {
+        notificar(`"${cenario.nome}" aplicado.`, 'info');
+      } else {
+        const falhas = resultado.acoes.filter((a) => !a.ok).map((a) => `${a.descricao}: ${a.erro ?? 'falhou'}`);
+        notificar(`"${cenario.nome}" teve falhas — ${falhas.join('; ')}`, 'alerta');
+      }
     } catch {
       // erro já virou toast pelo cliente de API.
     } finally {
@@ -131,78 +205,29 @@ export function Painel() {
   return (
     <div className="painel">
       {cenarios.length > 0 ? (
-        <section className="painel__cenarios">
+        <section className="atalhos-cenarios" aria-label="Cenários">
           {cenarios.map((cenario) => (
             <button
               key={cenario.id}
               type="button"
-              className="botao-cenario"
+              className="atalho-cenario"
               disabled={executando === cenario.id}
               onClick={() => void executarCenario(cenario)}
             >
-              <span className="botao-cenario__icone" aria-hidden="true">
-                {(() => {
-                  const desenhado = cenario.icone ? ICONES_CENARIO[cenario.icone] : 'play';
-                  if (desenhado) return <Icone nome={desenhado} tamanho={26} />;
-                  return cenario.icone;
-                })()}
-              </span>
+              <IconeCenario icone={cenario.icone} tamanho={22} />
               <span>{executando === cenario.id ? 'Aplicando…' : cenario.nome}</span>
             </button>
           ))}
         </section>
       ) : null}
 
-      <section className="painel__dispositivos">
+      <section className="painel__maquinas">
         {!snapshot ? (
-          <p className="painel__vazio">Carregando dispositivos…</p>
+          <p className="painel__vazio">Carregando máquinas…</p>
         ) : snapshot.dispositivos.length === 0 ? (
-          <p className="painel__vazio">Nenhum dispositivo cadastrado.</p>
+          <p className="painel__vazio">Nenhuma máquina cadastrada. Rode o instalador em cada uma.</p>
         ) : (
-          snapshot.dispositivos.map((dispositivo) => {
-            const obs = resumoObs(dispositivo);
-            const holyrics = resumoHolyrics(dispositivo);
-            const powerpoint = resumoPowerPoint(dispositivo);
-            const ndi = resumoNdi(dispositivo);
-            const agente = resumoAgente(dispositivo);
-            const primeiroPlano = resumoPrimeiroPlano(dispositivo);
-            return (
-              <article key={dispositivo.id} className="cartao-dispositivo">
-                <header className="cartao-dispositivo__cabecalho">
-                  <Semaforo estado={estadoSemaforoDispositivo(dispositivo)} />
-                  <h2>{dispositivo.nome}</h2>
-                </header>
-                {holyrics === null &&
-                powerpoint === null &&
-                ndi.length === 0 &&
-                obs === null &&
-                agente === null ? (
-                  <p className="cartao-dispositivo__sem-integracao">Sem integrações configuradas.</p>
-                ) : (
-                  <ul className="cartao-dispositivo__integracoes">
-                    {agente !== null ? <li>Aberto: {agente}</li> : null}
-                    {primeiroPlano !== null ? <li>Na frente: {primeiroPlano}</li> : null}
-                    {holyrics !== null ? <li>Holyrics: {holyrics}</li> : null}
-                    {powerpoint !== null ? <li>PowerPoint: {powerpoint}</li> : null}
-                    {ndi.map((janela) => (
-                      <li key={janela.porta}>NDI — {janela.texto}</li>
-                    ))}
-                    {obs !== null ? (
-                      <li className={obs.alerta ? 'cartao-dispositivo__alerta' : ''}>
-                        OBS: {obs.texto}
-                        {obs.alerta ? (
-                          <span className="cartao-dispositivo__aviso">
-                            <Icone nome="aviso" tamanho={16} /> perda de frames
-                          </span>
-                        ) : null}
-                      </li>
-                    ) : null}
-                  </ul>
-                )}
-                <ControleApps dispositivo={dispositivo} />
-              </article>
-            );
-          })
+          snapshot.dispositivos.map((dispositivo) => <CartaoMaquina key={dispositivo.id} dispositivo={dispositivo} />)
         )}
       </section>
     </div>

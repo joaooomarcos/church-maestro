@@ -70,3 +70,52 @@ export const resultadoCenarioSchema = z.object({
 });
 
 export type ResultadoCenario = z.infer<typeof resultadoCenarioSchema>;
+
+/** Criar ou editar: sem `id`, o hub gera um a partir do nome. */
+export const salvarCenarioSchema = cenarioSchema.extend({ id: z.string().min(1).optional() });
+
+export type CenarioParaSalvar = z.infer<typeof salvarCenarioSchema>;
+
+/** Domingo = 0, como o `Date.getDay()` do JavaScript. */
+export const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] as const;
+
+/**
+ * Agendamento semanal de um cenário: "todo domingo às 18:50, Pré-culto". Roda
+ * no relógio da máquina do hub, e só se ela estiver ligada naquela hora.
+ */
+export const agendamentoSchema = z.object({
+  id: z.string().min(1),
+  cenarioId: z.string().min(1),
+  dias: z.array(z.number().int().min(0).max(6)).min(1),
+  hora: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'hora no formato HH:MM'),
+  ativo: z.boolean().default(true),
+});
+
+export type Agendamento = z.infer<typeof agendamentoSchema>;
+
+export const arquivoAutomacoesSchema = z.object({
+  /** Liga/desliga geral: desligado, nenhum agendamento roda. */
+  ativo: z.boolean().default(true),
+  agendamentos: z.array(agendamentoSchema).default([]),
+});
+
+export type ArquivoAutomacoes = z.infer<typeof arquivoAutomacoesSchema>;
+
+export const execucaoAgendadaSchema = z.object({
+  agendamentoId: z.string(),
+  cenarioId: z.string(),
+  cenarioNome: z.string(),
+  ts: z.number(),
+  ok: z.boolean(),
+  resumo: z.string(),
+});
+
+export type ExecucaoAgendada = z.infer<typeof execucaoAgendadaSchema>;
+
+export const respostaAutomacoesSchema = arquivoAutomacoesSchema.extend({
+  historico: z.array(execucaoAgendadaSchema).default([]),
+  /** Próxima execução de cada agendamento ativo (timestamp), para a tela mostrar. */
+  proximas: z.record(z.string(), z.number()).default({}),
+});
+
+export type RespostaAutomacoes = z.infer<typeof respostaAutomacoesSchema>;

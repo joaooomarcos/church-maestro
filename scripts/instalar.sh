@@ -7,7 +7,7 @@ set -euo pipefail
 REPO="joaooomarcos/church-maestro"
 BRANCH="${MAESTRO_BRANCH:-main}"
 DESTINO="${MAESTRO_DIR:-$HOME/maestro}"
-PRESERVAR=(config/hub.json config/agent.json config/devices.json config/scenarios.json data)
+PRESERVAR=(config/hub.json config/agent.json config/devices.json config/scenarios.json config/automacoes.json data)
 
 TMP="$(mktemp -d)"
 BACKUP="$TMP/preservado"
@@ -124,7 +124,7 @@ UNIT
   loginctl enable-linger "$USER" >/dev/null 2>&1 || true
   echo "serviço maestro-agent ativado"
 
-  # Atualização é decisão de quem opera, tomada na aba Versões do painel — nada
+  # Atualização é decisão de quem opera, tomada em Sistema › Versões, no painel — nada
   # de descobrir uma versão nova sozinho no domingo de manhã.
   if [ -f "$HOME/.config/systemd/user/maestro-update.service" ]; then
     systemctl --user disable --now maestro-update >/dev/null 2>&1 || true
@@ -145,7 +145,7 @@ echo "Pasta: $DESTINO"
 echo
 echo "Reconfigurar:     cd $DESTINO && npm run setup"
 echo "Ver o log:        journalctl --user -u maestro-agent -n 30"
-echo "Atualizações:     pela aba Versões do painel"
+echo "Atualizações:     em Sistema > Versões, no painel"
 echo "(se o terminal estava dentro da pasta antiga, rode 'cd $DESTINO' antes)"
 echo
 echo "Para atualizar depois, rode o mesmo comando de instalação."

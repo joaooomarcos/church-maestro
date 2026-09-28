@@ -2,7 +2,7 @@
  * Libera para as máquinas da igreja a versão que está em HEAD.
  *
  * Marca no `canal.json` qual commit é o recomendado. O painel destaca essa
- * versão como "(aprovada)" na aba Versões, e o instalador usa ela em máquina
+ * versão como "(aprovada)" em Sistema › Versões, e o instalador usa ela em máquina
  * nova — mas nada é aplicado sozinho: quem atualiza é quem opera, pelo painel.
  *
  * Uso:
@@ -63,5 +63,5 @@ if (!desligar) {
   console.log(`anterior: ${anterior?.slice(0, 7) ?? '—'}`);
   console.log(`agora:    ${sha.slice(0, 7)} — ${notas}`);
 }
-console.log('\nNenhuma máquina pega isso sozinha: aplique pela aba Versões do painel,');
+console.log('\nNenhuma máquina pega isso sozinha: aplique em Sistema › Versões, no painel,');
 console.log('uma máquina de cada vez. Para desmarcar: npm run publicar -- <sha-anterior>');
