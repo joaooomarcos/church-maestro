@@ -8,7 +8,6 @@ import { raizRepo } from './config.js';
 const REPO = 'joaooomarcos/church-maestro';
 const CACHE_MS = 60_000;
 const TIMEOUT_MS = 8000;
-const QUANTAS_VERSOES = 10;
 
 /** Só aceitamos sha de commit — este valor vira argumento de processo. */
 export const SHA_VALIDO = /^[0-9a-f]{7,40}$/i;
@@ -34,63 +33,58 @@ export interface VersoesDisponiveis {
 
 let cache: { ts: number; dados: VersoesDisponiveis } | undefined;
 
-async function buscarJson<T>(url: string): Promise<T> {
-  const resposta = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+interface Canal {
+  ativo?: boolean;
+  versao?: string;
+  sha?: string;
+  notas?: string;
+  liberadoEm?: string;
+  versoes?: Array<{ versao?: string; sha?: string; notas?: string; data?: string }>;
+}
+
+async function buscarCanal(): Promise<Canal> {
+  // O parâmetro fura o cache do raw.githubusercontent, que segura o arquivo ~5 min.
+  const resposta = await fetch(`https://raw.githubusercontent.com/${REPO}/main/canal.json?t=${Date.now()}`, {
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
   if (!resposta.ok) throw new Error(`GitHub respondeu ${resposta.status}`);
-  return (await resposta.json()) as T;
+  return (await resposta.json()) as Canal;
 }
 
 /**
- * Lista o que dá para instalar: a versão aprovada (canal.json, escrita por
- * `npm run publicar`) e os commits recentes do main. Cacheado por um minuto —
- * a API do GitHub sem token permite poucas chamadas por hora.
+ * O que dá para instalar: as versões liberadas por `npm run publicar`, da mais
+ * nova para a mais antiga, com a aprovada marcada. Vem tudo do `canal.json`,
+ * um arquivo só — sem a API do GitHub, que limita as chamadas sem token.
  */
 export async function obterVersoesDisponiveis(): Promise<VersoesDisponiveis> {
   if (cache && Date.now() - cache.ts < CACHE_MS) return cache.dados;
 
-  let aprovada: VersaoDisponivel | null = null;
-  let disponiveis: VersaoDisponivel[] = [];
-  let aviso: string | undefined;
-
+  let dados: VersoesDisponiveis;
   try {
-    const marca = Date.now();
-    const canal = await buscarJson<{ ativo?: boolean; sha?: string; notas?: string; liberadoEm?: string }>(
-      `https://raw.githubusercontent.com/${REPO}/main/canal.json?t=${marca}`,
-    );
-    if (canal.sha) {
-      aprovada = {
-        sha: canal.sha,
-        notas: canal.notas ?? '',
-        ...(canal.liberadoEm ? { data: canal.liberadoEm } : {}),
-        aprovada: true,
-      };
-    }
+    const canal = await buscarCanal();
+    const disponiveis: VersaoDisponivel[] = (canal.versoes ?? [])
+      .filter((v): v is { versao: string; sha: string; notas?: string; data?: string } => Boolean(v.versao && v.sha))
+      .map((v) => ({
+        versao: v.versao,
+        sha: v.sha,
+        notas: v.notas ?? '',
+        ...(v.data ? { data: v.data } : {}),
+        aprovada: v.sha === canal.sha,
+      }));
+    const aprovada = disponiveis.find((v) => v.aprovada) ?? null;
+    dados = { aprovada, disponiveis };
   } catch {
-    aviso = 'Não consegui consultar a versão aprovada (sem internet?).';
+    dados = { aprovada: null, disponiveis: [], aviso: 'Não consegui consultar as versões no GitHub (sem internet?).' };
   }
 
-  try {
-    const commits = await buscarJson<
-      Array<{ sha: string; commit: { message: string; author?: { date?: string } } }>
-    >(`https://api.github.com/repos/${REPO}/commits?per_page=${QUANTAS_VERSOES}`);
-    disponiveis = commits.map((commit) => ({
-      sha: commit.sha,
-      notas: commit.commit.message.split('\n')[0] ?? '',
-      ...(commit.commit.author?.date ? { data: commit.commit.author.date } : {}),
-      aprovada: commit.sha === aprovada?.sha,
-    }));
-  } catch {
-    aviso ??= 'Não consegui listar as versões no GitHub (sem internet?).';
-  }
-
-  // A aprovada pode ser antiga demais para aparecer entre os commits recentes.
-  if (aprovada && !disponiveis.some((v) => v.sha === aprovada?.sha)) {
-    disponiveis = [aprovada, ...disponiveis];
-  }
-
-  const dados: VersoesDisponiveis = { aprovada, disponiveis, ...(aviso ? { aviso } : {}) };
   cache = { ts: Date.now(), dados };
   return dados;
+}
+
+/** Número da versão de um commit instalado, se ele foi liberado. */
+export function numeroDaVersao(sha: string | null, disponiveis: VersaoDisponivel[]): string | null {
+  if (!sha) return null;
+  return disponiveis.find((v) => v.sha.startsWith(sha) || sha.startsWith(v.sha))?.versao ?? null;
 }
 
 /** IPv4 desta máquina — usado para saber qual dispositivo é a máquina do hub. */

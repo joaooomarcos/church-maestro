@@ -16,6 +16,12 @@ function curto(sha: string | null): string {
   return sha ? sha.slice(0, 7) : '—';
 }
 
+/** "0.2.0"; um commit que não é versão liberada aparece pelo hash, para dar para reconhecer. */
+function nomeDaVersao(maquina: MaquinaVersao): string {
+  if (maquina.versao) return maquina.versao;
+  return maquina.sha ? `sem número · ${curto(maquina.sha)}` : '—';
+}
+
 function estaAtualizando(maquina: MaquinaVersao): boolean {
   const estado = maquina.atualizacao?.estado;
   return estado === 'baixando' || estado === 'compilando' || estado === 'trocando';
@@ -57,12 +63,14 @@ export function Versoes() {
     return () => window.clearTimeout(timer.current);
   }, [dados, carregar]);
 
+  const escolhida = dados?.disponiveis.find((v) => v.sha === shaEscolhido);
+
   async function atualizar(maquina: MaquinaVersao): Promise<void> {
     if (!shaEscolhido || enviando) return;
     const alvo = maquina.id === ALVO_HUB ? ALVO_HUB : maquina.id;
     const aviso = maquina.ehMaquinaDoHub
       ? `Atualizar ${maquina.nome} tira o painel do ar por cerca de um minuto. Continuar?`
-      : `Atualizar ${maquina.nome} para ${curto(shaEscolhido)}?`;
+      : `Atualizar ${maquina.nome} para a versão ${escolhida?.versao ?? curto(shaEscolhido)}?`;
     if (!window.confirm(aviso)) return;
 
     vibrar(15);
@@ -79,8 +87,6 @@ export function Versoes() {
 
   if (!dados) return <p className="painel__vazio">Carregando versões…</p>;
 
-  const escolhida = dados.disponiveis.find((v) => v.sha === shaEscolhido);
-
   return (
     <div className="versoes">
       <section className="versoes__alvo">
@@ -92,16 +98,18 @@ export function Versoes() {
         >
           {dados.disponiveis.map((versao) => (
             <option key={versao.sha} value={versao.sha}>
-              {curto(versao.sha)}
+              {versao.versao}
               {versao.aprovada ? ' (aprovada)' : ''} — {versao.notas}
             </option>
           ))}
         </select>
-        {escolhida?.aprovada ? (
+        {dados.disponiveis.length === 0 ? (
+          <p className="versoes__dica">Nenhuma versão liberada ainda.</p>
+        ) : escolhida?.aprovada ? (
           <p className="versoes__dica">Esta é a versão aprovada para as igrejas.</p>
         ) : (
           <p className="versoes__dica versoes__dica--alerta">
-            Atenção: esta não é a versão aprovada. Use em ensaio, não em dia de culto.
+            Atenção: esta não é a versão aprovada. Use para voltar atrás se a nova deu problema.
           </p>
         )}
         {dados.avisoRede ? <p className="versoes__dica versoes__dica--alerta">{dados.avisoRede}</p> : null}
@@ -120,7 +128,7 @@ export function Versoes() {
                   {maquina.ehMaquinaDoHub ? <span className="cartao-versao__marca">painel</span> : null}
                 </h3>
                 <span className={`cartao-versao__sha${igual ? ' cartao-versao__sha--ok' : ''}`}>
-                  {curto(maquina.sha)}
+                  {nomeDaVersao(maquina)}
                 </span>
               </header>
 

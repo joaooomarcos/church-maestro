@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
 /**
- * Versão é o commit instalado na máquina, lido de `versao.txt` (o instalador e
- * o atualizador escrevem ali "<sha> <notas>"). O `package.json` continua
- * existindo, mas ele muda pouco — quem diz "esta máquina está velha" é o sha.
+ * O que a máquina tem instalado é um commit, lido de `versao.txt` (o instalador
+ * e o atualizador escrevem ali "<sha> <notas>"). O número que a equipe vê
+ * (0.2.0, 0.2.1...) vem do histórico do `canal.json`, que liga cada número ao
+ * seu commit — ver `npm run publicar`.
  */
 export const versaoInstaladaSchema = z.object({
   sha: z.string(),
@@ -32,6 +33,8 @@ export const estadoAtualizacaoSchema = z.object({
 export type EstadoAtualizacao = z.infer<typeof estadoAtualizacaoSchema>;
 
 export const versaoDisponivelSchema = z.object({
+  /** Número da versão, ex.: "0.2.0". */
+  versao: z.string(),
   sha: z.string(),
   notas: z.string().default(''),
   data: z.string().optional(),
@@ -47,6 +50,8 @@ export const maquinaVersaoSchema = z.object({
   online: z.boolean(),
   /** null quando o agente não respondeu ou não sabe a própria versão. */
   sha: z.string().nullable().default(null),
+  /** Número da versão; null quando o commit instalado não é uma versão liberada. */
+  versao: z.string().nullable().default(null),
   notas: z.string().default(''),
   /** true na máquina que roda o painel — atualizar ela derruba o painel por um minuto. */
   ehMaquinaDoHub: z.boolean().default(false),

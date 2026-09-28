@@ -11,6 +11,7 @@ import {
   dispararAtualizacaoLocal,
   ipsLocais,
   lerVersaoInstalada,
+  numeroDaVersao,
   obterVersoesDisponiveis,
 } from '../versoes.js';
 import type { ContextoApp } from './contexto.js';
@@ -41,6 +42,7 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
         nome: dispositivo.nome,
         online: Boolean(agente?.online) || ehMaquinaDoHub,
         sha,
+        versao: numeroDaVersao(sha, disponivel.disponiveis),
         notas,
         ehMaquinaDoHub,
         ...(agente?.atualizacao ? { atualizacao: agente.atualizacao } : {}),
@@ -54,6 +56,7 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
         nome: 'Esta máquina (painel)',
         online: true,
         sha: instaladaAqui?.sha ?? null,
+        versao: numeroDaVersao(instaladaAqui?.sha ?? null, disponivel.disponiveis),
         notas: instaladaAqui?.notas ?? '',
         ehMaquinaDoHub: true,
       });
