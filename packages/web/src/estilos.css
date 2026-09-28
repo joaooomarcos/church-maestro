@@ -140,6 +140,8 @@ p {
   pointer-events: none;
 }
 
+/* Cada tom é uma cor translúcida sobre o fundo opaco: só a translúcida deixava
+   o título da tela aparecer através do toast. */
 .toast {
   pointer-events: auto;
   text-align: left;
@@ -154,17 +156,17 @@ p {
 
 .toast--erro {
   border-color: var(--cor-perigo);
-  background: var(--cor-perigo-fundo);
+  background: linear-gradient(var(--cor-perigo-fundo), var(--cor-perigo-fundo)), var(--cor-fundo-elevado);
 }
 
 .toast--alerta {
   border-color: var(--cor-aviso);
-  background: var(--cor-aviso-fundo);
+  background: linear-gradient(var(--cor-aviso-fundo), var(--cor-aviso-fundo)), var(--cor-fundo-elevado);
 }
 
 .toast--info {
   border-color: var(--cor-primaria);
-  background: rgba(47, 125, 216, 0.16);
+  background: linear-gradient(rgba(47, 125, 216, 0.16), rgba(47, 125, 216, 0.16)), var(--cor-fundo-elevado);
 }
 
 .controles-contextuais {
