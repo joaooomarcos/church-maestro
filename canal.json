@@ -1,6 +1,6 @@
 {
   "ativo": true,
-  "sha": "10a2393684b2e15fd3b87886df063d4dfe3039ad",
-  "notas": "Menu Avisos: mandar um aviso na hora, sem cenário",
+  "sha": "dcb58b760d81f1b7c7450004d0a0c8b0f312809f",
+  "notas": "Toast com fundo opaco: o título da tela aparecia através dele",
   "liberadoEm": "2026-09-28"
 }
