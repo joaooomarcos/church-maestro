@@ -78,6 +78,14 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
     if (!SHA_VALIDO.test(sha)) {
       return responderRequisicaoInvalida(reply, 'Versão inválida.');
     }
+    // Em demonstração o hub roda dentro da pasta do projeto: atualizar "esta
+    // máquina" espelharia uma versão baixada por cima dela, apagando o .git.
+    if (ctx.modoDemo) {
+      return responderRequisicaoInvalida(
+        reply,
+        'Modo de demonstração: nenhuma máquina é atualizada de verdade.',
+      );
+    }
 
     if (alvo === ALVO_HUB) {
       dispararAtualizacaoLocal(sha);

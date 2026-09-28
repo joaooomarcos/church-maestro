@@ -21,6 +21,8 @@ export interface ContextoApp {
   readonly drivers: Drivers;
   readonly store: Store;
   readonly cenarios: Cenario[];
+  /** Hub rodando com dados de demonstração (npm run dev): nada de mexer em máquina de verdade. */
+  readonly modoDemo: boolean;
   dispositivos(): DispositivoConfig[];
   obterDispositivo(id: string): DispositivoConfig | undefined;
   /** Substitui o dispositivo pelo `id` dele (PUT completo) e persiste em config/devices.json. */
@@ -68,6 +70,7 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
     drivers: opcoes.drivers,
     store: opcoes.store,
     cenarios: opcoes.cenarios,
+    modoDemo: !persistir,
 
     dispositivos: () => dispositivos,
 
