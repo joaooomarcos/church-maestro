@@ -1921,6 +1921,126 @@ p {
 }
 
 /* Depois da regra base do painel, senão ela vence: no computador, cartões lado a lado. */
+/* ======================================================================
+ * Avisos da equipe: o aviso no painel e a escolha do monitor em Ajustes.
+ * ====================================================================== */
+
+.seletor-dias--livre {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.seletor-dias--livre .seletor-dias__dia {
+  padding: 0 14px;
+}
+
+.campo__entrada--texto {
+  min-height: 72px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.alerta-equipe {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 8, 12, 0.72);
+}
+
+.alerta-equipe__caixa {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 20px 20px;
+  border-radius: var(--raio-grande);
+  border: 1px solid var(--cor-aviso);
+  border-top-width: 6px;
+  background: var(--cor-fundo-elevado);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+}
+
+.alerta-equipe__cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cor-aviso);
+}
+
+.alerta-equipe__fila {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--cor-aviso-fundo);
+}
+
+.alerta-equipe__texto {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.alerta-equipe__botao {
+  border-color: var(--cor-aviso);
+  background: var(--cor-aviso);
+  color: #111;
+}
+
+.ajustes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.monitores-avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.monitor-avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.monitor-avisos__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.monitor-avisos__nome {
+  margin: 0;
+  font-weight: 600;
+}
+
+.monitor-avisos__testar {
+  width: auto;
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 0 16px;
+}
+
 @media (min-width: 960px) {
   .painel__maquinas {
     display: grid;

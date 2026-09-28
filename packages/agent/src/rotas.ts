@@ -7,6 +7,7 @@ import Fastify, {
 } from 'fastify';
 import {
   comandoAppSchema,
+  comandoAvisoSchema,
   comandoTeclaSchema,
   comandoPptSchema,
   pedidoAtualizarAgenteSchema,
@@ -15,6 +16,7 @@ import {
   type ErroApi,
 } from '@maestro/shared';
 import { ErroApp, enviarTecla, executarAcaoApp, situacaoDosApps } from './apps/index.js';
+import { mostrarAviso } from './avisos/index.js';
 import { montarHeartbeat } from './heartbeat.js';
 import { SHA_VALIDO, dispararAtualizacao, lerEstadoAtualizacao } from './versao.js';
 import { listarProcessos } from './processos.js';
@@ -112,6 +114,28 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
     } catch (err) {
       if (err instanceof ErroApp) {
         const corpo: ErroApi = { erro: 'falha-app', mensagem: err.message, detalhe: err.causaTecnica };
+        reply.code(502).send(corpo);
+        return;
+      }
+      throw err;
+    }
+  });
+
+  /** Janela de aviso por cima de tudo. Responde assim que ela abre, sem esperar o "Ok". */
+  app.post('/aviso', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const analisado = comandoAvisoSchema.safeParse(req.body);
+    if (!analisado.success) {
+      const corpo: ErroApi = { erro: 'comando-invalido', mensagem: 'Aviso inválido.' };
+      reply.code(400).send(corpo);
+      return;
+    }
+
+    try {
+      await mostrarAviso(analisado.data);
+      return { ok: true };
+    } catch (err) {
+      if (err instanceof ErroApp) {
+        const corpo: ErroApi = { erro: 'falha-aviso', mensagem: err.message, detalhe: err.causaTecnica };
         reply.code(502).send(corpo);
         return;
       }

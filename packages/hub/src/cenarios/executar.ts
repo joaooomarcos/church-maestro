@@ -1,5 +1,13 @@
-import type { AcaoCenario, Cenario, ResultadoCenario } from '@maestro/shared';
+import { NOMES_APLICATIVOS, type AcaoCenario, type AcaoApp, type Cenario, type ResultadoCenario } from '@maestro/shared';
 import type { ContextoApp } from '../rotas/contexto.js';
+import { enviarAviso } from '../avisos/enviar.js';
+
+const VERBOS_APP: Record<AcaoApp, string> = {
+  abrir: 'abrir',
+  fechar: 'fechar',
+  reiniciar: 'reiniciar',
+  frente: 'trazer para frente',
+};
 
 /** Texto de cada passo, para o resultado e o histórico dos agendamentos. */
 export function descreverAcao(acao: AcaoCenario, ctx?: Pick<ContextoApp, 'obterDispositivo'>): string {
@@ -13,6 +21,13 @@ export function descreverAcao(acao: AcaoCenario, ctx?: Pick<ContextoApp, 'obterD
       return `Holyrics ${nome(acao.dispositivo)} → plano de fundo ${acao.ativar ? 'ligado' : 'desligado'}`;
     case 'holyrics.encerrarApresentacao':
       return `Holyrics ${nome(acao.dispositivo)} → fechar apresentação`;
+    case 'app.acao':
+      return `${nome(acao.dispositivo)} → ${VERBOS_APP[acao.acao]} o ${NOMES_APLICATIVOS[acao.app]}`;
+    case 'aviso.mostrar': {
+      const destinos = acao.dispositivos.map(nome);
+      if (acao.noPainel) destinos.push('painel');
+      return `Aviso "${acao.mensagem}" → ${destinos.join(', ') || 'ninguém'}`;
+    }
     case 'espera':
       return `Esperar ${acao.ms} ms`;
   }
@@ -25,6 +40,11 @@ function esperar(ms: number): Promise<void> {
 async function executarAcao(ctx: ContextoApp, acao: AcaoCenario): Promise<void> {
   if (acao.tipo === 'espera') {
     await esperar(acao.ms);
+    return;
+  }
+  if (acao.tipo === 'aviso.mostrar') {
+    const { falhas } = await enviarAviso(ctx, acao);
+    if (falhas.length > 0) throw new Error(falhas.join('; '));
     return;
   }
   const dispositivo = ctx.obterDispositivo(acao.dispositivo);
@@ -42,6 +62,9 @@ async function executarAcao(ctx: ContextoApp, acao: AcaoCenario): Promise<void> 
       return;
     case 'holyrics.encerrarApresentacao':
       await ctx.drivers.holyrics.encerrarApresentacao(dispositivo);
+      return;
+    case 'app.acao':
+      await ctx.drivers.agente.acaoApp(dispositivo, { app: acao.app, acao: acao.acao });
       return;
   }
 }

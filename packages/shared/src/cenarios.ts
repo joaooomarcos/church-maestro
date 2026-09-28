@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ACOES_APP, APLICATIVOS } from './dispositivos.js';
 
 /**
  * Um cenário é uma lista de ações declarativas que põe a operação inteira num
@@ -28,6 +29,21 @@ export const acaoCenarioSchema = z.discriminatedUnion('tipo', [
   z.object({
     tipo: z.literal('holyrics.encerrarApresentacao'),
     dispositivo: z.string(),
+  }),
+  z.object({
+    tipo: z.literal('app.acao'),
+    dispositivo: z.string(),
+    app: z.enum(APLICATIVOS),
+    /** "abrir" não abre uma segunda cópia se o programa já estiver aberto. */
+    acao: z.enum(ACOES_APP),
+  }),
+  z.object({
+    tipo: z.literal('aviso.mostrar'),
+    /** Máquinas onde a janela de aviso aparece. Pode ficar vazio se `noPainel`. */
+    dispositivos: z.array(z.string()).default([]),
+    mensagem: z.string().trim().min(1).max(300),
+    /** Também mostra no painel de quem estiver com o celular aberto. */
+    noPainel: z.boolean().default(true),
   }),
   z.object({
     tipo: z.literal('espera'),

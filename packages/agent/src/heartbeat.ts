@@ -15,6 +15,7 @@ import {
 import { listarProcessos } from './processos.js';
 import { lerVersaoInstalada } from './versao.js';
 import { appsJaConhecidos } from './apps/index.js';
+import { monitoresConhecidos } from './avisos/index.js';
 import type { PontePowerPoint } from './ppt/tipos.js';
 
 const INTERVALO_MAXIMO_BACKOFF_MS = 60_000;
@@ -81,6 +82,7 @@ export async function montarHeartbeat(config: ConfigAgente, ponte: PontePowerPoi
     processos,
     emPrimeiroPlano: janela ? { ...janela, app: appDoProcesso(janela.processo) } : null,
     appsInstalados: appsJaConhecidos(config),
+    monitores: monitoresConhecidos(),
     capacidades: ponte.disponivel ? ['powerpoint'] : [],
   });
 }

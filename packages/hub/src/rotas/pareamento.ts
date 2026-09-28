@@ -55,11 +55,16 @@ export function registrarRotasPareamento(app: FastifyInstance, ctx: ContextoApp)
       }
 
       const id = escolherId(ctx, pedido.nome, pedido.host, pedido.dispositivoIdAnterior);
+      // Rodar o assistente de novo não pode apagar o que foi escolhido no
+      // painel: o link do convidado e o monitor dos avisos continuam.
+      const existente = ctx.obterDispositivo(pedido.dispositivoIdAnterior ?? id) ?? ctx.obterDispositivo(id);
       const dispositivo = dispositivoConfigSchema.parse({
         id,
         nome: pedido.nome,
         host: pedido.host,
         fixarHost: false,
+        ...(existente?.tokenConvidado ? { tokenConvidado: existente.tokenConvidado } : {}),
+        ...(existente?.monitorAvisos ? { monitorAvisos: existente.monitorAvisos } : {}),
         servicos: { agente: { porta: pedido.porta }, ...pedido.servicos },
       });
 

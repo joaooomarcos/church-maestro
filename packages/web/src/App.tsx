@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppProvider, useAppContexto } from './contexto/AppContext';
 import { FaixaReconectando } from './componentes/FaixaReconectando';
 import { Toasts } from './componentes/Toasts';
+import { AlertasEquipe } from './componentes/AlertasEquipe';
 import { TelaPin } from './componentes/TelaPin';
 import { Icone } from './componentes/Icone';
 import { MenuLateral, ehTela, tituloDaTela, type TelaId } from './componentes/MenuLateral';
@@ -69,6 +70,7 @@ function ConteudoPrincipal() {
       <div className="app__corpo">
         {reconectando ? <FaixaReconectando /> : null}
         <Toasts />
+        <AlertasEquipe />
         <header className="app__cabecalho">
           <button
             type="button"

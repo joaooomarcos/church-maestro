@@ -198,6 +198,8 @@ export async function executarAcaoApp(
 ): Promise<void> {
   switch (acao) {
     case 'abrir':
+      // Um cenário "Pré-culto" rodado duas vezes não pode abrir dois Holyrics.
+      if ((await listarProcessos())[app]) return;
       await abrir(app, config);
       return;
     case 'fechar':

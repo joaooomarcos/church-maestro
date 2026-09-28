@@ -86,6 +86,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           atualizacao?: EstadoAgente['atualizacao'];
           emPrimeiroPlano?: EstadoAgente['emPrimeiroPlano'];
           appsInstalados?: EstadoAgente['appsInstalados'];
+          monitores?: EstadoAgente['monitores'];
         }>(dispositivo, '/health', { method: 'GET' }, op, tokenPadrao);
 
         return {
@@ -100,6 +101,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           processos: saude.processos as EstadoAgente['processos'],
           emPrimeiroPlano: saude.emPrimeiroPlano ?? null,
           ...(saude.appsInstalados ? { appsInstalados: saude.appsInstalados } : {}),
+          ...(saude.monitores ? { monitores: saude.monitores } : {}),
           capacidades: saude.capacidades as EstadoAgente['capacidades'],
         };
       } catch (err) {
@@ -138,6 +140,21 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
         },
         // Abrir um programa pesado (o Holyrics, por exemplo) passa do timeout curto.
         { timeoutMs: 30_000, ...(op ?? {}) },
+        tokenPadrao,
+      );
+    },
+
+    async mostrarAviso(dispositivo, comando, op): Promise<void> {
+      await pedir<{ ok: boolean }>(
+        dispositivo,
+        '/aviso',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(comando),
+        },
+        // O agente espera uns segundos para ter certeza de que a janela abriu.
+        { timeoutMs: 10_000, ...(op ?? {}) },
         tokenPadrao,
       );
     },

@@ -88,3 +88,21 @@ menu **Compartilhar › Links e arquivos** e atalho "Maestro - Compartilhar" cri
 Falta testar no Windows: o atalho na área de trabalho (inclusive com a área de
 trabalho redirecionada pelo OneDrive) e o botão Copiar num navegador aberto
 pelo IP da rede.
+
+## Avisos na tela e programas nos cenários (2026-09-28) ✔ feita
+
+Dois passos novos no editor de cenários:
+
+- **Abrir ou fechar um programa** (abrir, fechar, reiniciar, trazer para
+  frente). "Abrir" não abre uma segunda cópia se o programa já estiver aberto.
+- **Mostrar um aviso na tela**: janela por cima de tudo no Windows, notificação
+  no Linux e aviso no painel com vibração. Fica até alguém clicar em "Ok".
+
+O monitor do aviso é escolhido por máquina em **Sistema › Ajustes**, com um
+botão **Testar** (o agente informa os monitores no heartbeat). Rodar o
+assistente de novo preserva essa escolha e o link do convidado.
+
+Falta testar no Windows: se a janela aparece mesmo com o agente rodando
+escondido (o `ShowWindow` extra no `Shown` existe por isso), se abre no monitor
+certo com escala de tela diferente de 100%, e o `notify-send` no Note Som
+rodando como serviço do usuário.

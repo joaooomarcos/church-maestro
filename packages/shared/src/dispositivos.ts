@@ -98,6 +98,8 @@ export const dispositivoConfigSchema = z.object({
   observacao: z.string().optional(),
   /** Segredo do link de convidado desta máquina (o QR code). */
   tokenConvidado: z.string().optional(),
+  /** Monitor onde os avisos aparecem (id de `Monitor`). Ausente = o principal. */
+  monitorAvisos: z.string().optional(),
   servicos: z
     .object({
       agente: servicoAgenteSchema.optional(),

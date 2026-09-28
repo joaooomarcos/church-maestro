@@ -229,13 +229,38 @@ Regras que valem a pena saber:
 
 Um **cenário** deixa várias coisas prontas de uma vez: trocar a fonte de um
 datashow, trocar a cena do OBS, ligar o plano de fundo do Holyrics, fechar a
-apresentação, esperar um pouco entre um passo e outro. Eles ficam em
+apresentação, abrir ou fechar um programa, mostrar um aviso na tela, esperar um
+pouco entre um passo e outro. Eles ficam em
 **Automação › Cenários**, no menu ☰, e aparecem como atalhos no alto do Painel.
 
 - **Novo cenário:** dê um nome, escolha um ícone e adicione os passos. Máquina,
   janela e fonte são escolhidas em listas, com os nomes reais — não tem como
   errar a digitação.
 - Se um passo falhar, os outros continuam, e o painel avisa qual falhou.
+- **Abrir um programa** não abre uma segunda cópia se ele já estiver aberto —
+  pode rodar o "Pré-culto" duas vezes sem medo. Programa pesado (o Holyrics)
+  leva alguns segundos para abrir: se o passo seguinte depende dele, ponha um
+  "Esperar" no meio.
+
+### Avisos na tela
+
+O passo **Mostrar um aviso na tela** manda uma mensagem ("Faltam 10 minutos,
+hora de iniciar a transmissão") para as máquinas escolhidas e, se marcado, para
+o painel de quem estiver com o celular aberto.
+
+- **Windows:** abre uma janela amarela por cima de tudo, com um som, que fica
+  até alguém clicar em **Ok, visto**.
+- **Linux (Note Som):** notificação do sistema. Se não aparecer, instale o
+  `notify-send`: `sudo apt install libnotify-bin`.
+- **Painel:** o aviso cobre a tela e o celular vibra; some ao tocar em **Ok,
+  visto**.
+
+**Antes de usar, escolha o monitor** em **Sistema › Ajustes › Onde os avisos
+aparecem**. As máquinas têm mais de uma tela, e um aviso no telão aparece para a
+igreja; um aviso na tela que o NDI Screen Capture envia vai para a live. Para
+cada máquina, escolha a tela de quem opera e toque em **Testar**: o aviso de
+teste abre naquela tela, e dá para conferir na hora. "Tela 2" é o mesmo número
+que o Windows mostra em Configurações › Sistema › Tela.
 
 Em **Automação › Agendamentos** um cenário roda sozinho: escolha o cenário, os
 dias da semana e a hora (por exemplo, "Pré-culto, domingo, 18:50"). O botão no
@@ -262,6 +287,8 @@ Faça com calma, num dia que não seja domingo:
 6. No menu **Testes**, rode **Testar legendas** com o OBS aberto — o texto de
    teste deve aparecer e sumir sozinho.
 7. Rode um **cenário** e confira se tudo foi para o estado esperado.
+8. Em **Sistema › Ajustes**, escolha o monitor dos avisos de cada máquina e toque
+   em **Testar** — o aviso não pode abrir no telão nem na tela transmitida.
 
 Só depois de tudo isso passar vale usar o Maestro num culto — e ainda assim,
 deixe os checklists impressos à mão nas primeiras semanas.

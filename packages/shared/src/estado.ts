@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { APLICATIVOS } from './dispositivos.js';
-import { janelaPrimeiroPlanoSchema } from './agente.js';
+import { janelaPrimeiroPlanoSchema, monitorSchema } from './agente.js';
 import { estadoAtualizacaoSchema } from './versoes.js';
 
 /**
@@ -25,6 +25,7 @@ export const estadoAgenteSchema = z.object({
   processos: z.record(z.enum(APLICATIVOS), z.boolean()).default({}),
   emPrimeiroPlano: janelaPrimeiroPlanoSchema.nullable().default(null),
   appsInstalados: z.array(z.enum(APLICATIVOS)).optional(),
+  monitores: z.array(monitorSchema).optional(),
   capacidades: z.array(z.enum(['powerpoint', 'abrir-app', 'desligar'])).default([]),
 });
 
@@ -121,4 +122,6 @@ export type Snapshot = z.infer<typeof snapshotSchema>;
 export type MensagemHub =
   | { tipo: 'snapshot'; dados: Snapshot }
   | { tipo: 'check'; dados: import('./checks.js').ResultadoCheck }
-  | { tipo: 'aviso'; nivel: 'info' | 'alerta' | 'erro'; texto: string };
+  | { tipo: 'aviso'; nivel: 'info' | 'alerta' | 'erro'; texto: string }
+  /** Aviso para a equipe (passo de cenário): fica na tela até alguém fechar. */
+  | { tipo: 'alerta'; texto: string; ts: number };

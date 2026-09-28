@@ -41,7 +41,8 @@ export type NomeIcone =
   | 'editar'
   | 'subir'
   | 'descer'
-  | 'transmitir';
+  | 'transmitir'
+  | 'sino';
 
 const CAMINHOS: Record<NomeIcone, JSX.Element> = {
   painel: (
@@ -208,6 +209,12 @@ const CAMINHOS: Record<NomeIcone, JSX.Element> = {
       <circle cx="12" cy="12" r="2" />
       <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6" />
       <path d="M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4" />
+    </>
+  ),
+  sino: (
+    <>
+      <path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z" />
+      <path d="M10.2 20.2a2 2 0 0 0 3.6 0" />
     </>
   ),
 };

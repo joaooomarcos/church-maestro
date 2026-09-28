@@ -10,6 +10,7 @@ import {
 import type { MensagemHub, ResultadoCheck, Snapshot } from '@maestro/shared';
 import { ROTAS } from '@maestro/shared';
 import { apiGet, apiPost, definirOuvinteNaoAutenticado, ouvirErros } from '../nucleo/cliente';
+import { vibrar } from '../nucleo/vibrar';
 
 type NivelToast = 'info' | 'alerta' | 'erro';
 
@@ -17,6 +18,13 @@ interface Toast {
   id: string;
   mensagem: string;
   nivel: NivelToast;
+}
+
+/** Aviso para a equipe vindo de um cenário: fica na tela até alguém fechar. */
+export interface AlertaEquipe {
+  id: string;
+  texto: string;
+  ts: number;
 }
 
 interface RespostaSessao {
@@ -33,6 +41,8 @@ interface AppContextoValor {
   /** Resultados de checks em andamento/concluídos, por id, vindos do WS. */
   resultadosCheck: Record<string, ResultadoCheck>;
   toasts: Toast[];
+  alertas: AlertaEquipe[];
+  fecharAlerta: (id: string) => void;
   removerToast: (id: string) => void;
   notificar: (mensagem: string, nivel?: NivelToast) => void;
   controlesRodape: ReactNode | null;
@@ -65,6 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [reconectando, setReconectando] = useState(false);
   const [resultadosCheck, setResultadosCheck] = useState<Record<string, ResultadoCheck>>({});
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [alertas, setAlertas] = useState<AlertaEquipe[]>([]);
   const [controlesRodape, setControlesRodape] = useState<ReactNode | null>(null);
 
   const revisaoRef = useRef(-1);
@@ -85,6 +96,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [removerToast],
   );
+
+  const fecharAlerta = useCallback((id: string) => {
+    setAlertas((atuais) => atuais.filter((a) => a.id !== id));
+  }, []);
 
   const definirControlesRodape = useCallback((node: ReactNode | null) => {
     setControlesRodape(node);
@@ -165,6 +180,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setResultadosCheck((atuais) => ({ ...atuais, [resultado.id]: resultado }));
         } else if (mensagem.tipo === 'aviso') {
           notificar(mensagem.texto, mensagem.nivel);
+        } else if (mensagem.tipo === 'alerta') {
+          const alerta = { id: `${mensagem.ts}-${Math.random().toString(36).slice(2)}`, texto: mensagem.texto, ts: mensagem.ts };
+          setAlertas((atuais) => [...atuais, alerta]);
+          vibrar([300, 150, 300]);
         }
       };
 
@@ -208,6 +227,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     reconectando,
     resultadosCheck,
     toasts,
+    alertas,
+    fecharAlerta,
     removerToast,
     notificar,
     controlesRodape,

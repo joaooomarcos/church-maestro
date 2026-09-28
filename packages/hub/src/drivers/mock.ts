@@ -188,6 +188,9 @@ export function criarDriversMock(): Drivers {
     async teclaApp(dispositivo, app, direcao) {
       console.log(`[mock] tecla ${direcao} para ${app} em ${dispositivo.nome}`);
     },
+    async mostrarAviso(dispositivo, comando) {
+      console.log(`[mock] aviso em ${dispositivo.nome} (${comando.monitor ?? 'monitor principal'}): ${comando.mensagem}`);
+    },
     async acaoApp(dispositivo, comando) {
       console.log(`[mock] ${comando.acao} ${comando.app} em ${dispositivo.nome}`);
     },
@@ -258,6 +261,14 @@ function estadoAgenteMock(dispositivo: DispositivoConfig, inicioProcesso: number
       : dispositivo.servicos.obs
         ? ['obs', 'holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture']
         : ['holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture'],
+    ...(ehLinux
+      ? {}
+      : {
+          monitores: [
+            { id: '\\\\.\\DISPLAY1', principal: true, largura: 1920, altura: 1080 },
+            { id: '\\\\.\\DISPLAY2', principal: false, largura: 1280, altura: 720 },
+          ],
+        }),
     emPrimeiroPlano: ehLinux
       ? null
       : { processo: 'holyrics', titulo: 'Holyrics — Culto de Domingo', app: 'holyrics' },

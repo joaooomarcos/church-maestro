@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
+  ACOES_APP,
+  APLICATIVOS,
+  NOMES_APLICATIVOS,
   ROTAS,
+  type AcaoApp,
   type AcaoCenario,
+  type Aplicativo,
   type Cenario,
   type CenarioParaSalvar,
   type EstadoDispositivo,
@@ -20,7 +25,16 @@ const NOMES_PASSOS: Record<TipoPasso, string> = {
   'obs.definirCena': 'Trocar a cena do OBS',
   'holyrics.f8': 'Plano de fundo do Holyrics (F8)',
   'holyrics.encerrarApresentacao': 'Fechar a apresentação do Holyrics',
+  'app.acao': 'Abrir ou fechar um programa',
+  'aviso.mostrar': 'Mostrar um aviso na tela',
   espera: 'Esperar um pouco',
+};
+
+const NOMES_ACOES_APP: Record<AcaoApp, string> = {
+  abrir: 'Abrir (se estiver fechado)',
+  fechar: 'Fechar',
+  reiniciar: 'Reiniciar',
+  frente: 'Trazer para frente',
 };
 
 const ESPERAS_MS = [300, 500, 1000, 2000, 5000, 10_000];
@@ -33,6 +47,13 @@ function comObs(dispositivos: EstadoDispositivo[]) {
 }
 function comHolyrics(dispositivos: EstadoDispositivo[]) {
   return dispositivos.filter((d) => d.holyrics !== undefined);
+}
+function comAgente(dispositivos: EstadoDispositivo[]) {
+  return dispositivos.filter((d) => d.agente !== undefined);
+}
+/** Programas instalados na máquina; agente antigo não informa, então vão todos. */
+function appsDa(dispositivo: EstadoDispositivo | undefined): Aplicativo[] {
+  return [...(dispositivo?.agente?.appsInstalados ?? APLICATIVOS)];
 }
 
 /** Passo novo já preenchido com a primeira opção que faz sentido. */
@@ -50,6 +71,13 @@ function passoPadrao(tipo: TipoPasso, dispositivos: EstadoDispositivo[]): AcaoCe
       return { tipo, dispositivo: comHolyrics(dispositivos)[0]?.id ?? '', ativar: true };
     case 'holyrics.encerrarApresentacao':
       return { tipo, dispositivo: comHolyrics(dispositivos)[0]?.id ?? '' };
+    case 'app.acao': {
+      const primeiro = comAgente(dispositivos)[0];
+      const apps = appsDa(primeiro);
+      return { tipo, dispositivo: primeiro?.id ?? '', app: apps.includes('holyrics') ? 'holyrics' : (apps[0] ?? 'holyrics'), acao: 'abrir' };
+    }
+    case 'aviso.mostrar':
+      return { tipo, dispositivos: [], mensagem: '', noPainel: true };
     case 'espera':
       return { tipo, ms: 500 };
   }
@@ -188,6 +216,108 @@ function EditorPasso({
     campos = seletorMaquina(comHolyrics(dispositivos), passo.dispositivo, (id) =>
       aoMudar({ ...passo, dispositivo: id }),
     );
+  } else if (passo.tipo === 'app.acao') {
+    const maquina = dispositivos.find((d) => d.id === passo.dispositivo);
+    const apps = appsDa(maquina);
+    if (!apps.includes(passo.app)) apps.unshift(passo.app);
+    campos = (
+      <>
+        {seletorMaquina(comAgente(dispositivos), passo.dispositivo, (id) => {
+          const disponiveis = appsDa(dispositivos.find((d) => d.id === id));
+          aoMudar({ ...passo, dispositivo: id, app: disponiveis.includes(passo.app) ? passo.app : (disponiveis[0] ?? passo.app) });
+        })}
+        <label className="campo">
+          <span className="campo__rotulo">Programa</span>
+          <select
+            className="versoes__select"
+            value={passo.app}
+            onChange={(e) => aoMudar({ ...passo, app: e.target.value as typeof passo.app })}
+          >
+            {apps.map((app) => (
+              <option key={app} value={app}>
+                {NOMES_APLICATIVOS[app]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="campo">
+          <span className="campo__rotulo">O que fazer</span>
+          <select
+            className="versoes__select"
+            value={passo.acao}
+            onChange={(e) => aoMudar({ ...passo, acao: e.target.value as AcaoApp })}
+          >
+            {ACOES_APP.map((acao) => (
+              <option key={acao} value={acao}>
+                {NOMES_ACOES_APP[acao]}
+              </option>
+            ))}
+          </select>
+        </label>
+        {passo.acao === 'abrir' || passo.acao === 'reiniciar' ? (
+          <p className="versoes__dica">
+            Programa pesado demora a abrir: se o próximo passo depende dele, ponha um "Esperar" antes.
+          </p>
+        ) : null}
+      </>
+    );
+  } else if (passo.tipo === 'aviso.mostrar') {
+    // As escolhidas continuam na lista mesmo com a máquina fora do ar.
+    const maquinas = comAgente(dispositivos).map((d) => d.id);
+    for (const id of passo.dispositivos) if (!maquinas.includes(id)) maquinas.push(id);
+    const alternar = (id: string) =>
+      aoMudar({
+        ...passo,
+        dispositivos: passo.dispositivos.includes(id)
+          ? passo.dispositivos.filter((d) => d !== id)
+          : [...passo.dispositivos, id],
+      });
+    campos = (
+      <>
+        <label className="campo">
+          <span className="campo__rotulo">Mensagem</span>
+          <textarea
+            className="campo__entrada campo__entrada--texto"
+            rows={2}
+            maxLength={300}
+            value={passo.mensagem}
+            placeholder="Ex.: Faltam 10 minutos, hora de iniciar a transmissão"
+            onChange={(e) => aoMudar({ ...passo, mensagem: e.target.value })}
+          />
+        </label>
+        <div className="campo">
+          <span className="campo__rotulo">Onde aparece</span>
+          <div className="seletor-dias seletor-dias--livre">
+            {maquinas.map((id) => {
+              const marcado = passo.dispositivos.includes(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={marcado}
+                  className={`seletor-dias__dia${marcado ? ' seletor-dias__dia--marcado' : ''}`}
+                  onClick={() => alternar(id)}
+                >
+                  {nomeDe(id)}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              aria-pressed={passo.noPainel}
+              className={`seletor-dias__dia${passo.noPainel ? ' seletor-dias__dia--marcado' : ''}`}
+              onClick={() => aoMudar({ ...passo, noPainel: !passo.noPainel })}
+            >
+              Painel (celulares)
+            </button>
+          </div>
+        </div>
+        <p className="versoes__dica">
+          Nas máquinas, abre uma janela por cima de tudo que fica até alguém clicar em "Ok". O monitor em que
+          ela aparece se escolhe em Sistema › Ajustes.
+        </p>
+      </>
+    );
   } else {
     campos = (
       <label className="campo">
@@ -246,6 +376,11 @@ function problemaNoRascunho(rascunho: CenarioParaSalvar): string | null {
   if (!rascunho.nome.trim()) return 'Dê um nome ao cenário.';
   if (rascunho.acoes.length === 0) return 'Adicione pelo menos um passo.';
   for (const [indice, passo] of rascunho.acoes.entries()) {
+    if (passo.tipo === 'aviso.mostrar') {
+      if (!passo.mensagem.trim()) return `Escreva a mensagem do aviso no passo ${indice + 1}.`;
+      if (passo.dispositivos.length === 0 && !passo.noPainel) return `Escolha onde o aviso do passo ${indice + 1} aparece.`;
+      continue;
+    }
     if (passo.tipo !== 'espera' && !passo.dispositivo) return `Escolha a máquina do passo ${indice + 1}.`;
     if (passo.tipo === 'obs.definirCena' && !passo.cena) return `Escolha a cena do passo ${indice + 1}.`;
   }

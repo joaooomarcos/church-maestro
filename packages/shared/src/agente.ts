@@ -30,6 +30,29 @@ export const comandoTeclaSchema = z.object({
   direcao: z.enum(['proximo', 'anterior']),
 });
 
+/**
+ * Um monitor da máquina. O aviso precisa abrir na tela de quem opera — nunca
+ * no telão nem na que o NDI Screen Capture transmite.
+ */
+export const monitorSchema = z.object({
+  /** Nome do Windows para a tela, ex.: `\\.\DISPLAY2`. Estável entre reinícios. */
+  id: z.string().min(1),
+  principal: z.boolean(),
+  largura: z.number().int(),
+  altura: z.number().int(),
+});
+
+export type Monitor = z.infer<typeof monitorSchema>;
+
+/** Aviso na tela da máquina: janela por cima de tudo, até alguém clicar em "Ok". */
+export const comandoAvisoSchema = z.object({
+  mensagem: z.string().trim().min(1).max(300),
+  /** id do monitor; ausente ou null = o principal. */
+  monitor: z.string().nullable().optional(),
+});
+
+export type ComandoAviso = z.infer<typeof comandoAvisoSchema>;
+
 /** Um aplicativo conhecido na máquina: está aberto? o agente sabe abri-lo? */
 export const situacaoAppSchema = z.object({
   app: z.enum(APLICATIVOS),
@@ -65,6 +88,8 @@ export const heartbeatAgenteSchema = z.object({
    * quando o agente é antigo ou ainda está procurando — aí a tela mostra todos.
    */
   appsInstalados: z.array(z.enum(APLICATIVOS)).optional(),
+  /** Ausente em agente antigo ou fora do Windows. */
+  monitores: z.array(monitorSchema).optional(),
   capacidades: z.array(z.enum(['powerpoint', 'abrir-app', 'desligar'])).default([]),
 });
 

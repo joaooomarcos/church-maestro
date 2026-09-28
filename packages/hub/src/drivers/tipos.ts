@@ -98,6 +98,12 @@ export interface DriverAgente {
     direcao: 'proximo' | 'anterior',
     op?: OpcoesRequisicao,
   ): Promise<void>;
+  /** Janela de aviso por cima de tudo, no monitor escolhido. Volta quando ela abre. */
+  mostrarAviso(
+    dispositivo: DispositivoConfig,
+    comando: import('@maestro/shared').ComandoAviso,
+    op?: OpcoesRequisicao,
+  ): Promise<void>;
   /** Abre, fecha, reinicia ou traz para frente um aplicativo daquela máquina. */
   acaoApp(
     dispositivo: DispositivoConfig,

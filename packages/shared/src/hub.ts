@@ -56,6 +56,8 @@ export const ROTAS = {
   versoes: '/api/versoes',
   atualizar: '/api/atualizar',
   appAcao: '/api/apps/acao',
+  aviso: '/api/aviso',
+  monitorAvisos: '/api/dispositivos/:id/monitor-avisos',
   ajustes: '/api/ajustes',
   convidadoLink: '/api/convidado/link',
   convidadoEntrar: '/api/convidado/entrar',
@@ -106,6 +108,20 @@ export const acaoAppSchema = z.object({
   dispositivo: z.string(),
   app: z.enum(APLICATIVOS),
   acao: z.enum(ACOES_APP),
+});
+
+/** Mandar um aviso agora — o mesmo que o passo de cenário, usado pelo "Testar". */
+export const pedidoAvisoSchema = z.object({
+  dispositivos: z.array(z.string()).default([]),
+  mensagem: z.string().trim().min(1).max(300),
+  noPainel: z.boolean().default(false),
+});
+
+export type PedidoAviso = z.infer<typeof pedidoAvisoSchema>;
+
+export const definirMonitorAvisosSchema = z.object({
+  /** null volta para o monitor principal. */
+  monitor: z.string().min(1).nullable(),
 });
 
 export const acaoPptSchema = z.object({

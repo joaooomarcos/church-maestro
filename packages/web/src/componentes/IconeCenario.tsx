@@ -4,6 +4,7 @@ import { Icone, type NomeIcone } from './Icone';
 export const ICONES_CENARIO: NomeIcone[] = [
   'play',
   'relogio',
+  'sino',
   'musica',
   'lua',
   'raio',
@@ -19,6 +20,7 @@ const EMOJI_PARA_ICONE: Record<string, NomeIcone> = {
   '🕐': 'relogio',
   '🕒': 'relogio',
   '⏰': 'relogio',
+  '🔔': 'sino',
   '🎵': 'musica',
   '🎶': 'musica',
   '🎤': 'musica',
