@@ -9,7 +9,7 @@ export function registrarRotasHolyrics(app: FastifyInstance, ctx: ContextoApp): 
     if (!corpo.success) {
       return responderRequisicaoInvalida(reply, `Requisição inválida: ${corpo.error.message}`);
     }
-    const { dispositivo: dispositivoId, acao, indice, ativar } = corpo.data;
+    const { dispositivo: dispositivoId, acao, indice, ativar, letraId } = corpo.data;
     const dispositivo = ctx.obterDispositivo(dispositivoId);
     if (!dispositivo) {
       return responderDispositivoNaoEncontrado(reply, dispositivoId);
@@ -32,6 +32,12 @@ export function registrarRotasHolyrics(app: FastifyInstance, ctx: ContextoApp): 
         case 'encerrar':
           await ctx.drivers.holyrics.encerrarApresentacao(dispositivo);
           break;
+        case 'mostrarLetra':
+          if (!letraId) {
+            return responderRequisicaoInvalida(reply, 'Ação "mostrarLetra" exige o campo "letraId".');
+          }
+          await ctx.drivers.holyrics.mostrarLetra(dispositivo, letraId);
+          break;
         case 'f8':
           await ctx.drivers.holyrics.definirF(dispositivo, 8, ativar ?? true);
           break;
@@ -43,6 +49,25 @@ export function registrarRotasHolyrics(app: FastifyInstance, ctx: ContextoApp): 
           break;
       }
       return reply.send({ ok: true });
+    } catch (erro) {
+      return responderErroDriver(reply, erro);
+    }
+  });
+
+  app.get(ROTAS.holyricsPlaylist, async (req, reply) => {
+    const { dispositivo: dispositivoId } = req.query as { dispositivo?: string };
+    if (!dispositivoId) {
+      return responderRequisicaoInvalida(reply, 'Informe o dispositivo na consulta.');
+    }
+    const dispositivo = ctx.obterDispositivo(dispositivoId);
+    if (!dispositivo) {
+      return responderDispositivoNaoEncontrado(reply, dispositivoId);
+    }
+
+    try {
+      // Pode haver muitas músicas e o Holyrics demora mais para listar do que para responder ao estado.
+      const itens = await ctx.drivers.holyrics.listarPlaylist(dispositivo, { timeoutMs: 4000 });
+      return reply.send({ itens });
     } catch (erro) {
       return responderErroDriver(reply, erro);
     }

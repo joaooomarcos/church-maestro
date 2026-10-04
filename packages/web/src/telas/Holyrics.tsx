@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ROTAS } from '@maestro/shared';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ROTAS, type ItemPlaylistHolyrics, type RespostaPlaylistHolyrics } from '@maestro/shared';
 import { useAppContexto, useControlesRodape } from '../contexto/AppContext';
-import { apiPost } from '../nucleo/cliente';
+import { apiGet, apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
 
 type ModoTela = 'f8' | 'f9' | 'f10';
+
+/** A lista de músicas muda pouco; reler de tempos em tempos pega o que a equipe mexeu no Holyrics. */
+const INTERVALO_PLAYLIST_MS = 20_000;
 
 const MODOS_TELA: ReadonlyArray<{ acao: ModoTela; rotulo: string; tecla: string }> = [
   { acao: 'f8', rotulo: 'Plano de fundo', tecla: 'F8' },
@@ -38,6 +41,44 @@ export function Holyrics() {
   const atual = dispositivos.find((d) => d.id === selecionadoId) ?? null;
   const apresentacao = atual?.holyrics?.apresentacao ?? null;
   const online = atual?.holyrics?.online ?? false;
+
+  const [playlist, setPlaylist] = useState<ItemPlaylistHolyrics[] | null>(null);
+  const [erroPlaylist, setErroPlaylist] = useState(false);
+
+  const carregarPlaylist = useCallback(async (id: string): Promise<void> => {
+    try {
+      const resposta = await apiGet<RespostaPlaylistHolyrics>(
+        `${ROTAS.holyricsPlaylist}?dispositivo=${encodeURIComponent(id)}`,
+      );
+      setPlaylist(resposta.itens);
+      setErroPlaylist(false);
+    } catch {
+      setErroPlaylist(true);
+    }
+  }, []);
+
+  const atualId = atual?.id;
+  useEffect(() => {
+    setPlaylist(null);
+    setErroPlaylist(false);
+    if (!atualId || !online) return undefined;
+    void carregarPlaylist(atualId);
+    const timer = window.setInterval(() => void carregarPlaylist(atualId), INTERVALO_PLAYLIST_MS);
+    return () => window.clearInterval(timer);
+  }, [atualId, online, carregarPlaylist]);
+
+  async function mostrarMusica(item: ItemPlaylistHolyrics): Promise<void> {
+    if (!atual || enviando) return;
+    vibrar(15);
+    setEnviando(true);
+    try {
+      await apiPost(ROTAS.holyricsAcao, { dispositivo: atual.id, acao: 'mostrarLetra', letraId: item.id });
+    } catch {
+      // erro já virou toast pelo cliente de API.
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   async function agir(acao: 'proximo' | 'anterior'): Promise<void> {
     if (!atual) return;
@@ -159,6 +200,36 @@ export function Holyrics() {
               <span className="holyrics__tecla">ESC</span>
             </button>
           </div>
+          <section className="holyrics__playlist">
+            <h3 className="holyrics__playlist-titulo">Lista de reprodução</h3>
+            {playlist === null ? (
+              <p className="versoes__dica">
+                {erroPlaylist ? 'Não consegui ler a lista de reprodução do Holyrics.' : 'Carregando a lista…'}
+              </p>
+            ) : playlist.length === 0 ? (
+              <p className="versoes__dica">A lista de reprodução está vazia no Holyrics.</p>
+            ) : (
+              <ul className="holyrics__musicas">
+                {playlist.map((item) => {
+                  const noAr = apresentacao?.id === item.id;
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className={`holyrics__musica${noAr ? ' holyrics__musica--no-ar' : ''}`}
+                        aria-current={noAr ? 'true' : undefined}
+                        disabled={enviando}
+                        onClick={() => void mostrarMusica(item)}
+                      >
+                        <span>{item.titulo}</span>
+                        {item.artista ? <span className="holyrics__tecla">{item.artista}</span> : null}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
           <p className="versoes__dica">
             F8, F9 e F10 funcionam como no teclado do Holyrics: toque de novo para desligar. Se
             alguém apertar a tecla direto na máquina, o botão aceso pode ficar trocado.

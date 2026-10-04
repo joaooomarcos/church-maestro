@@ -1,6 +1,7 @@
 import type {
   DispositivoConfig,
   EstadoHolyrics,
+  ItemPlaylistHolyrics,
   EstadoNdiMonitor,
   EstadoObs,
   EstadoAgente,
@@ -48,6 +49,9 @@ export interface DriverHolyrics {
   anterior(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
   irPara(dispositivo: DispositivoConfig, indice: number, op?: OpcoesRequisicao): Promise<void>;
   encerrarApresentacao(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
+  /** Lista de reprodução de músicas (letras) do Holyrics, na ordem em que está montada. */
+  listarPlaylist(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<ItemPlaylistHolyrics[]>;
+  mostrarLetra(dispositivo: DispositivoConfig, letraId: string, op?: OpcoesRequisicao): Promise<void>;
   definirF(
     dispositivo: DispositivoConfig,
     tecla: 8 | 9 | 10,

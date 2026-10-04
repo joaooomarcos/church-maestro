@@ -1,8 +1,28 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import type { DispositivoConfig } from '@maestro/shared';
-import { criarDriverHolyrics, normalizarApresentacao } from './holyrics.js';
+import { criarDriverHolyrics, normalizarApresentacao, normalizarPlaylist } from './holyrics.js';
 import { ErroDriver } from './tipos.js';
+
+describe('normalizarPlaylist', () => {
+  it('mapeia a resposta de GetLyricsPlaylist e ignora o que não tem id', () => {
+    const itens = normalizarPlaylist([
+      { id: '1', title: 'Grande é o Senhor', artist: 'Hinário' },
+      { id: 2, title: '' },
+      { title: 'sem id' },
+      null,
+    ]);
+    expect(itens).toEqual([
+      { id: '1', titulo: 'Grande é o Senhor', artista: 'Hinário' },
+      { id: '2', titulo: 'Sem título' },
+    ]);
+  });
+
+  it('devolve lista vazia quando a resposta não é uma lista', () => {
+    expect(normalizarPlaylist(undefined)).toEqual([]);
+    expect(normalizarPlaylist({})).toEqual([]);
+  });
+});
 
 describe('normalizarApresentacao', () => {
   it('mapeia a resposta de GetCurrentPresentation', () => {

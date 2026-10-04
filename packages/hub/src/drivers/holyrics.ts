@@ -1,5 +1,10 @@
 import { ErroDriver, type DriverHolyrics, type OpcoesRequisicao } from './tipos.js';
-import type { DispositivoConfig, EstadoHolyrics, ApresentacaoHolyrics } from '@maestro/shared';
+import type {
+  DispositivoConfig,
+  EstadoHolyrics,
+  ApresentacaoHolyrics,
+  ItemPlaylistHolyrics,
+} from '@maestro/shared';
 
 /**
  * API Server do Holyrics (Arquivo › Configurações › API Server), porta 8091 por
@@ -110,6 +115,28 @@ export function normalizarApresentacao(bruta: unknown): ApresentacaoHolyrics | n
   };
 }
 
+interface ItemPlaylistBruto {
+  id?: string | number;
+  title?: string;
+  artist?: string;
+}
+
+/** A API devolve a lista como array de `{ id, title, ... }`; o que não tem id não dá para tocar. */
+export function normalizarPlaylist(bruta: unknown): ItemPlaylistHolyrics[] {
+  if (!Array.isArray(bruta)) return [];
+  const itens: ItemPlaylistHolyrics[] = [];
+  for (const elemento of bruta as ItemPlaylistBruto[]) {
+    if (elemento === null || typeof elemento !== 'object') continue;
+    if (elemento.id === undefined || elemento.id === null || elemento.id === '') continue;
+    itens.push({
+      id: String(elemento.id),
+      titulo: elemento.title && elemento.title.length > 0 ? elemento.title : 'Sem título',
+      ...(elemento.artist ? { artista: elemento.artist } : {}),
+    });
+  }
+  return itens;
+}
+
 function rotularSemNome(tipo: string | undefined): string {
   switch (tipo) {
     case 'verse':
@@ -156,6 +183,15 @@ export function criarDriverHolyrics(): DriverHolyrics {
 
     async encerrarApresentacao(dispositivo, op) {
       await chamar(dispositivo, 'CloseCurrentPresentation', {}, op);
+    },
+
+    async listarPlaylist(dispositivo, op) {
+      const bruta = await chamar<unknown>(dispositivo, 'GetLyricsPlaylist', {}, op);
+      return normalizarPlaylist(bruta);
+    },
+
+    async mostrarLetra(dispositivo, letraId, op) {
+      await chamar(dispositivo, 'ShowLyrics', { id: letraId }, op);
     },
 
     async definirF(dispositivo, tecla, ativar, op) {

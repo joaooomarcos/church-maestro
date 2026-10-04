@@ -6,6 +6,7 @@ import type {
   EstadoNdiMonitor,
   EstadoObs,
   EstadoPowerPoint,
+  ItemPlaylistHolyrics,
   StatusPpt,
 } from '@maestro/shared';
 import type { Drivers } from './tipos.js';
@@ -23,7 +24,15 @@ const FONTES_NDI_MOCK = [
   'PC-FUNDO (Screen Capture)',
 ];
 
+const PLAYLIST_MOCK: ItemPlaylistHolyrics[] = [
+  { id: 'mock-musica-1', titulo: 'Grandioso És Tu', artista: 'Hinário' },
+  { id: 'mock-musica-2', titulo: 'Castelo Forte', artista: 'Hinário' },
+  { id: 'mock-musica-3', titulo: 'Rocha Eterna' },
+  { id: 'mock-musica-4', titulo: 'Em Espírito e em Verdade' },
+];
+
 interface ApresentacaoMock {
+  id?: string;
   nome: string;
   tipo: string;
   slide: number;
@@ -127,6 +136,21 @@ export function criarDriversMock(): Drivers {
     async encerrarApresentacao(dispositivo) {
       apresentacoesPorDispositivo.set(dispositivo.id, null);
     },
+    async listarPlaylist() {
+      return PLAYLIST_MOCK;
+    },
+    async mostrarLetra(dispositivo, letraId) {
+      const musica = PLAYLIST_MOCK.find((item) => item.id === letraId);
+      if (!musica) return;
+      apresentacoesPorDispositivo.set(dispositivo.id, {
+        id: musica.id,
+        nome: musica.titulo,
+        tipo: 'lyrics',
+        slide: 1,
+        totalSlides: 4,
+        tipoSlide: 'verse',
+      });
+    },
     async definirF() {
       // Mock: F8/F9/F10 não têm efeito observável no schema de estado — só precisa não falhar.
     },
@@ -207,7 +231,7 @@ function estadoHolyricsMock(apresentacao: ApresentacaoMock | null): EstadoHolyri
     online: true,
     erro: null,
     apresentacao: {
-      id: 'mock-1',
+      id: apresentacao.id ?? 'mock-1',
       tipo: apresentacao.tipo,
       nome: apresentacao.nome,
       slide: apresentacao.slide,

@@ -69,6 +69,7 @@ export const ROTAS = {
   compartilharLink: '/api/compartilhar/link',
   ndiFonte: '/api/ndi/fonte',
   holyricsAcao: '/api/holyrics/acao',
+  holyricsPlaylist: '/api/holyrics/playlist',
   pptAcao: '/api/powerpoint/acao',
   cenarios: '/api/cenarios',
   cenario: '/api/cenarios/:id',
@@ -91,10 +92,27 @@ export const definirFonteNdiSchema = z.object({
 
 export const acaoHolyricsSchema = z.object({
   dispositivo: z.string(),
-  acao: z.enum(['proximo', 'anterior', 'irPara', 'encerrar', 'f8', 'f9', 'f10']),
+  acao: z.enum(['proximo', 'anterior', 'irPara', 'encerrar', 'f8', 'f9', 'f10', 'mostrarLetra']),
   indice: z.number().int().nonnegative().optional(),
   ativar: z.boolean().optional(),
+  /** Id da música da lista de reprodução, para a ação "mostrarLetra". */
+  letraId: z.string().min(1).optional(),
 });
+
+/** Uma música da lista de reprodução do Holyrics. */
+export const itemPlaylistHolyricsSchema = z.object({
+  id: z.string(),
+  titulo: z.string(),
+  artista: z.string().optional(),
+});
+
+export type ItemPlaylistHolyrics = z.infer<typeof itemPlaylistHolyricsSchema>;
+
+export const respostaPlaylistHolyricsSchema = z.object({
+  itens: z.array(itemPlaylistHolyricsSchema).default([]),
+});
+
+export type RespostaPlaylistHolyrics = z.infer<typeof respostaPlaylistHolyricsSchema>;
 
 /** Ajustes que a equipe pode mudar pelo painel, sem mexer em arquivo. */
 export const ajustesSchema = z.object({
