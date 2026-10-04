@@ -26,7 +26,7 @@ export function descreverAcao(acao: AcaoCenario, ctx?: Pick<ContextoApp, 'obterD
     case 'aviso.mostrar': {
       const destinos = acao.dispositivos.map(nome);
       if (acao.noPainel) destinos.push('painel');
-      return `Aviso "${acao.mensagem}" → ${destinos.join(', ') || 'ninguém'}`;
+      return `Aviso "${acao.mensagem}" → ${destinos.join(', ') || 'ninguém'}${acao.segundos ? ` (some em ${acao.segundos} s)` : ''}`;
     }
     case 'espera':
       return `Esperar ${acao.ms} ms`;

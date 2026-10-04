@@ -57,6 +57,7 @@ export const ROTAS = {
   atualizar: '/api/atualizar',
   appAcao: '/api/apps/acao',
   aviso: '/api/aviso',
+  avisoFechar: '/api/aviso/fechar',
   monitorAvisos: '/api/dispositivos/:id/monitor-avisos',
   ajustes: '/api/ajustes',
   convidadoLink: '/api/convidado/link',
@@ -142,6 +143,13 @@ export const pedidoAvisoSchema = z.object({
    * é o que os cenários agendados usam, já que ninguém escolhe na hora.
    */
   monitores: z.record(z.string(), z.string().nullable()).default({}),
+  /** Fecha sozinho depois de tantos segundos; null = fica até alguém clicar em "Ok". */
+  segundos: z.number().int().min(1).max(600).nullable().default(null),
+});
+
+/** Fecha os avisos que estiverem abertos nas máquinas (vazio = em todas). */
+export const pedidoFecharAvisosSchema = z.object({
+  dispositivos: z.array(z.string()).default([]),
 });
 
 export type PedidoAviso = z.infer<typeof pedidoAvisoSchema>;

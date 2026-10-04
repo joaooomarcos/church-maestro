@@ -44,6 +44,10 @@ export const acaoCenarioSchema = z.discriminatedUnion('tipo', [
     mensagem: z.string().trim().min(1).max(300),
     /** Também mostra no painel de quem estiver com o celular aberto. */
     noPainel: z.boolean().default(true),
+    /** Monitor por máquina (id, "*" para todos); sem escolha vale o padrão da máquina. */
+    monitores: z.record(z.string(), z.string().nullable()).default({}),
+    /** Fecha sozinho depois de tantos segundos; null = até alguém clicar em "Ok". */
+    segundos: z.number().int().min(1).max(600).nullable().default(null),
   }),
   z.object({
     tipo: z.literal('espera'),

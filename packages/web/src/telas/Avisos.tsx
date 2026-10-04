@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { MONITOR_TODOS, ROTAS, type EstadoDispositivo } from '@maestro/shared';
+import { ROTAS } from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
 import { apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
 import { Icone } from '../componentes/Icone';
-import { nomeDoMonitor } from '../nucleo/monitores';
+import { OpcoesAviso, monitorPrincipal } from '../componentes/OpcoesAviso';
 
 const CHAVE_RECENTES = 'maestro:avisos-recentes';
 const CHAVE_DESTINOS = 'maestro:avisos-destinos';
@@ -38,7 +38,10 @@ export function Avisos() {
   const [enviando, setEnviando] = useState(false);
   // Escolhido na hora do envio e não lembrado: um aviso no telão aparece para a
   // igreja, então cada envio parte do monitor principal da máquina.
-  const [monitores, setMonitores] = useState<Record<string, string>>({});
+  const [monitores, setMonitores] = useState<Record<string, string | null>>({});
+  // Também não é lembrado: cada aviso decide se some sozinho ou fica até o "Ok".
+  const [segundos, setSegundos] = useState<number | null>(null);
+  const [fechando, setFechando] = useState(false);
 
   function alternar(id: string): void {
     setDestinos((atuais) => {
@@ -54,14 +57,6 @@ export function Avisos() {
     gravar(CHAVE_RECENTES, novos);
   }
 
-  /** O monitor em que o aviso vai abrir nesta máquina: o escolhido, senão o principal. */
-  function monitorDe(maquina: EstadoDispositivo): string | null {
-    const lista = maquina.agente?.monitores ?? [];
-    const escolhido = monitores[maquina.id];
-    if (escolhido === MONITOR_TODOS || lista.some((m) => m.id === escolhido)) return escolhido ?? null;
-    return lista.find((m) => m.principal)?.id ?? null;
-  }
-
   const dispositivos = destinos.filter((d) => d !== PAINEL && maquinas.some((m) => m.id === d));
   const noPainel = destinos.includes(PAINEL);
   const texto = mensagem.trim();
@@ -73,13 +68,14 @@ export function Avisos() {
     setEnviando(true);
     try {
       const escolhas = Object.fromEntries(
-        maquinas.filter((m) => dispositivos.includes(m.id)).map((m) => [m.id, monitorDe(m)]),
+        maquinas.filter((m) => dispositivos.includes(m.id)).map((m) => [m.id, monitores[m.id] ?? monitorPrincipal(m)]),
       );
       const { falhas } = await apiPost<{ falhas: string[] }>(ROTAS.aviso, {
         dispositivos,
         mensagem: texto,
         noPainel,
         monitores: escolhas,
+        segundos,
       });
       const novos = [texto, ...recentes.filter((r) => r !== texto)].slice(0, MAXIMO_RECENTES);
       setRecentes(novos);
@@ -91,6 +87,20 @@ export function Avisos() {
       // erro já virou toast
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function fecharAvisos(ids: string[]): Promise<void> {
+    vibrar(15);
+    setFechando(true);
+    try {
+      const { falhas } = await apiPost<{ falhas: string[] }>(ROTAS.avisoFechar, { dispositivos: ids });
+      if (falhas.length > 0) notificar(`Não consegui fechar em: ${falhas.join('; ')}`, 'alerta');
+      else notificar('Avisos fechados.', 'info');
+    } catch {
+      // erro já virou toast
+    } finally {
+      setFechando(false);
     }
   }
 
@@ -137,40 +147,45 @@ export function Avisos() {
           </div>
         </div>
 
-        {maquinas
-          .filter((m) => dispositivos.includes(m.id) && (m.agente?.monitores?.length ?? 0) > 1)
-          .map((maquina) => {
-            const atual = monitorDe(maquina);
-            return (
-              <div key={maquina.id} className="campo">
-                <span className="campo__rotulo">Tela em {maquina.nome}</span>
-                <div className="seletor-dias seletor-dias--livre">
-                  {[
-                    ...(maquina.agente?.monitores ?? []).map((m) => ({ id: m.id, nome: nomeDoMonitor(m) })),
-                    { id: MONITOR_TODOS, nome: 'Todas as telas' },
-                  ].map((opcao) => (
-                    <button
-                      key={opcao.id}
-                      type="button"
-                      aria-pressed={atual === opcao.id}
-                      className={`seletor-dias__dia${atual === opcao.id ? ' seletor-dias__dia--marcado' : ''}`}
-                      onClick={() => setMonitores((atuais) => ({ ...atuais, [maquina.id]: opcao.id }))}
-                    >
-                      {opcao.nome}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        <OpcoesAviso
+          maquinas={maquinas.filter((m) => dispositivos.includes(m.id))}
+          monitores={monitores}
+          aoEscolherMonitor={(id, monitor) => setMonitores((atuais) => ({ ...atuais, [id]: monitor ?? null }))}
+          segundos={segundos}
+          aoEscolherSegundos={setSegundos}
+        />
 
         <button type="button" className="botao-acao" disabled={enviando} onClick={() => void enviar()}>
           <Icone nome="sino" tamanho={20} /> {enviando ? 'Enviando…' : 'Enviar aviso'}
         </button>
         <p className="versoes__dica">
-          Nas máquinas, abre uma janela por cima de tudo até alguém clicar em "Ok". Máquina com mais de uma tela
+          Nas máquinas, abre uma janela por cima de tudo. Máquina com mais de uma tela
           pergunta em qual delas; cuidado com a do telão e com a que vai para a live.
         </p>
+      </section>
+
+      <section className="versoes__alvo">
+        <h2 className="versoes__titulo">Aviso preso na tela?</h2>
+        <p className="versoes__dica">
+          Fecha as janelas de aviso que estiverem abertas, sem precisar chegar perto da máquina (no telão, por
+          exemplo).
+        </p>
+        <div className="seletor-dias seletor-dias--livre">
+          <button type="button" className="botao-secundario" disabled={fechando} onClick={() => void fecharAvisos([])}>
+            Fechar em todas as máquinas
+          </button>
+          {maquinas.map((maquina) => (
+            <button
+              key={maquina.id}
+              type="button"
+              className="botao-secundario"
+              disabled={fechando || !maquina.agente?.online}
+              onClick={() => void fecharAvisos([maquina.id])}
+            >
+              {maquina.nome}
+            </button>
+          ))}
+        </div>
       </section>
 
       {recentes.length > 0 ? (

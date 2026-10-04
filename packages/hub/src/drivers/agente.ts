@@ -159,6 +159,16 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
       );
     },
 
+    async fecharAvisos(dispositivo, op): Promise<void> {
+      await pedir<{ ok: boolean }>(
+        dispositivo,
+        '/aviso/fechar',
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' },
+        { timeoutMs: 10_000, ...(op ?? {}) },
+        tokenPadrao,
+      );
+    },
+
     async teclaApp(dispositivo, app, direcao, op): Promise<void> {
       await pedir<{ ok: boolean }>(
         dispositivo,

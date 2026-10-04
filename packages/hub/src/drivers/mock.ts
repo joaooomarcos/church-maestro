@@ -215,6 +215,9 @@ export function criarDriversMock(): Drivers {
     async mostrarAviso(dispositivo, comando) {
       console.log(`[mock] aviso em ${dispositivo.nome} (${comando.monitor ?? 'monitor principal'}): ${comando.mensagem}`);
     },
+    async fecharAvisos(dispositivo) {
+      console.log(`[mock] fechar avisos em ${dispositivo.nome}`);
+    },
     async acaoApp(dispositivo, comando) {
       console.log(`[mock] ${comando.acao} ${comando.app} em ${dispositivo.nome}`);
     },

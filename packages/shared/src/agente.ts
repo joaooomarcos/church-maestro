@@ -49,6 +49,8 @@ export const comandoAvisoSchema = z.object({
   mensagem: z.string().trim().min(1).max(300),
   /** id do monitor; ausente ou null = o principal. */
   monitor: z.string().nullable().optional(),
+  /** Fecha sozinho depois de tantos segundos; ausente ou null = fica até alguém clicar em "Ok". */
+  segundos: z.number().int().min(1).max(600).nullable().optional(),
 });
 
 export type ComandoAviso = z.infer<typeof comandoAvisoSchema>;

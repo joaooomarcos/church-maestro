@@ -55,7 +55,7 @@ describe('passos de aviso e de programa', () => {
     const resultado = await executarCenario(ctx, {
       id: 'aviso',
       nome: 'Aviso',
-      acoes: [{ tipo: 'aviso.mostrar', dispositivos: ['transmissao', 'fundo'], mensagem: 'Faltam 10 minutos', noPainel: true }],
+      acoes: [{ tipo: 'aviso.mostrar', dispositivos: ['transmissao', 'fundo'], mensagem: 'Faltam 10 minutos', noPainel: true, monitores: {}, segundos: null }],
     });
 
     expect(resultado.ok).toBe(true);
@@ -80,6 +80,14 @@ describe('passos de aviso e de programa', () => {
       { id: 'transmissao', comando: { mensagem: 'Podem começar', monitor: null } },
       { id: 'fundo', comando: { mensagem: 'Podem começar', monitor: '\\\\.\\DISPLAY3' } },
     ]);
+  });
+
+  it('o aviso com tempo leva os segundos para a máquina; sem tempo, não leva nada', async () => {
+    const { ctx, avisos } = montar();
+    await enviarAviso(ctx, { dispositivos: ['fundo'], mensagem: 'Com tempo', noPainel: false, segundos: 15 });
+    await enviarAviso(ctx, { dispositivos: ['fundo'], mensagem: 'Sem tempo', noPainel: false, segundos: null });
+
+    expect(avisos.map((a) => a.comando.segundos)).toEqual([15, undefined]);
   });
 
   it('"todas as telas" manda um aviso para cada monitor que a máquina informou', async () => {
@@ -115,7 +123,7 @@ describe('passos de aviso e de programa', () => {
     const resultado = await executarCenario(ctx, {
       id: 'aviso',
       nome: 'Aviso',
-      acoes: [{ tipo: 'aviso.mostrar', dispositivos: ['transmissao', 'fundo'], mensagem: 'Oi', noPainel: false }],
+      acoes: [{ tipo: 'aviso.mostrar', dispositivos: ['transmissao', 'fundo'], mensagem: 'Oi', noPainel: false, monitores: {}, segundos: null }],
     });
 
     expect(avisos.map((a) => a.id)).toEqual(['transmissao']);

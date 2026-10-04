@@ -70,6 +70,7 @@ function mostrarNoWindows(comando: ComandoAviso): Promise<void> {
   const mensagemB64 = Buffer.from(comando.mensagem, 'utf8').toString('base64');
   const extras = ['-Acao', 'mostrar', '-MensagemB64', mensagemB64];
   if (comando.monitor) extras.push('-Monitor', comando.monitor);
+  if (comando.segundos) extras.push('-Segundos', String(comando.segundos));
 
   return new Promise((resolver, rejeitar) => {
     const filho = spawn('powershell.exe', ['-Sta', ...argumentosPowerShell(...extras)], {
@@ -104,7 +105,8 @@ function mostrarNoWindows(comando: ComandoAviso): Promise<void> {
 async function mostrarNoLinux(comando: ComandoAviso): Promise<void> {
   try {
     // "critical" fica na tela até alguém fechar, como a janela do Windows.
-    await execFileAsync('notify-send', ['-u', 'critical', '-a', 'Maestro', 'Maestro', comando.mensagem], {
+    const duracao = comando.segundos ? ['-u', 'normal', '-t', String(comando.segundos * 1000)] : ['-u', 'critical'];
+    await execFileAsync('notify-send', [...duracao, '-a', 'Maestro', 'Maestro', comando.mensagem], {
       timeout: 5000,
     });
   } catch (erro) {
@@ -133,4 +135,23 @@ export async function mostrarAviso(comando: ComandoAviso): Promise<void> {
   if (so === 'win32') return mostrarNoWindows(comando);
   if (so === 'darwin') return mostrarNoMac(comando);
   return mostrarNoLinux(comando);
+}
+
+/**
+ * Fecha as janelas de aviso que estiverem abertas, inclusive a que ficou no
+ * telão sem ninguém por perto para clicar em "Ok". Só o Windows tem a janela.
+ */
+export async function fecharAvisos(): Promise<void> {
+  if (platform() !== 'win32') return;
+  try {
+    await execFileAsync('powershell.exe', argumentosPowerShell('-Acao', 'fechar'), {
+      timeout: 15_000,
+      windowsHide: true,
+    });
+  } catch (erro) {
+    throw new ErroApp(
+      'Não consegui fechar os avisos desta máquina.',
+      erro instanceof Error ? erro.message : String(erro),
+    );
+  }
 }

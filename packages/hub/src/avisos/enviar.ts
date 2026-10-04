@@ -13,7 +13,7 @@ export interface ResultadoAviso {
  */
 export async function enviarAviso(
   ctx: ContextoApp,
-  pedido: Omit<PedidoAviso, 'monitores'> & Partial<Pick<PedidoAviso, 'monitores'>>,
+  pedido: Omit<PedidoAviso, 'monitores' | 'segundos'> & Partial<Pick<PedidoAviso, 'monitores' | 'segundos'>>,
 ): Promise<ResultadoAviso> {
   const monitoresEscolhidos = pedido.monitores ?? {};
   if (pedido.dispositivos.length === 0 && !pedido.noPainel) {
@@ -37,7 +37,11 @@ export async function enviarAviso(
         // "Todos" numa máquina que não informou os monitores cai no principal.
         const alvos: Array<string | null> = monitores?.length ? monitores : [escolhido === MONITOR_TODOS ? null : escolhido];
         await Promise.all(
-          alvos.map((monitor) => ctx.drivers.agente.mostrarAviso(dispositivo, { mensagem: pedido.mensagem, monitor })),
+          alvos.map((monitor) => ctx.drivers.agente.mostrarAviso(dispositivo, {
+              mensagem: pedido.mensagem,
+              monitor,
+              ...(pedido.segundos ? { segundos: pedido.segundos } : {}),
+            })),
         );
         return null;
       } catch (erro) {

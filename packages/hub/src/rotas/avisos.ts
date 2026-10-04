@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { ROTAS, definirMonitorAvisosSchema, pedidoAvisoSchema } from '@maestro/shared';
+import { ROTAS, definirMonitorAvisosSchema, pedidoAvisoSchema, pedidoFecharAvisosSchema } from '@maestro/shared';
 import type { ContextoApp } from './contexto.js';
 import { enviarAviso } from '../avisos/enviar.js';
 import { responderDispositivoNaoEncontrado, responderRequisicaoInvalida } from './erros.js';
@@ -16,6 +16,29 @@ export function registrarRotasAvisos(app: FastifyInstance, ctx: ContextoApp): vo
     } catch (erro) {
       return responderRequisicaoInvalida(reply, erro instanceof Error ? erro.message : 'Aviso inválido.');
     }
+  });
+
+  /** Aviso que ficou preso na tela (no telão, sem mouse por perto): fecha de qualquer lugar. */
+  app.post(ROTAS.avisoFechar, async (req, reply) => {
+    const corpo = pedidoFecharAvisosSchema.safeParse(req.body ?? {});
+    if (!corpo.success) return responderRequisicaoInvalida(reply, 'Pedido inválido.');
+    const alvos = (
+      corpo.data.dispositivos.length > 0
+        ? corpo.data.dispositivos.map((id) => ctx.obterDispositivo(id))
+        : ctx.dispositivos().filter((d) => d.servicos.agente)
+    ).filter((d): d is NonNullable<typeof d> => d !== undefined);
+
+    const resultados = await Promise.all(
+      alvos.map(async (dispositivo): Promise<string | null> => {
+        try {
+          await ctx.drivers.agente.fecharAvisos(dispositivo);
+          return null;
+        } catch (erro) {
+          return `${dispositivo.nome}: ${erro instanceof Error ? erro.message : 'não respondeu'}`;
+        }
+      }),
+    );
+    return reply.send({ falhas: resultados.filter((f): f is string => f !== null) });
   });
 
   app.put<{ Params: { id: string } }>(ROTAS.monitorAvisos, async (req, reply) => {

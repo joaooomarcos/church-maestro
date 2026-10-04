@@ -108,6 +108,8 @@ export interface DriverAgente {
     comando: import('@maestro/shared').ComandoAviso,
     op?: OpcoesRequisicao,
   ): Promise<void>;
+  /** Fecha qualquer janela de aviso aberta na máquina (a que ficou presa no telão, por exemplo). */
+  fecharAvisos(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
   /** Abre, fecha, reinicia ou traz para frente um aplicativo daquela máquina. */
   acaoApp(
     dispositivo: DispositivoConfig,

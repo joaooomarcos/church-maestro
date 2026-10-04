@@ -13,6 +13,7 @@ import {
   type ResultadoCenario,
 } from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
+import { OpcoesAviso } from '../componentes/OpcoesAviso';
 import { apiDelete, apiGet, apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
 import { Icone } from '../componentes/Icone';
@@ -77,7 +78,7 @@ function passoPadrao(tipo: TipoPasso, dispositivos: EstadoDispositivo[]): AcaoCe
       return { tipo, dispositivo: primeiro?.id ?? '', app: apps.includes('holyrics') ? 'holyrics' : (apps[0] ?? 'holyrics'), acao: 'abrir' };
     }
     case 'aviso.mostrar':
-      return { tipo, dispositivos: [], mensagem: '', noPainel: true };
+      return { tipo, dispositivos: [], mensagem: '', noPainel: true, monitores: {}, segundos: null };
     case 'espera':
       return { tipo, ms: 500 };
   }
@@ -312,9 +313,22 @@ function EditorPasso({
             </button>
           </div>
         </div>
+        <OpcoesAviso
+          comPadrao
+          maquinas={passo.dispositivos
+            .map((id) => dispositivos.find((d) => d.id === id))
+            .filter((d): d is EstadoDispositivo => d !== undefined)}
+          monitores={passo.monitores}
+          aoEscolherMonitor={(id, monitor) => {
+            const { [id]: _anterior, ...resto } = passo.monitores;
+            aoMudar({ ...passo, monitores: monitor === undefined ? resto : { ...resto, [id]: monitor } });
+          }}
+          segundos={passo.segundos}
+          aoEscolherSegundos={(segundos) => aoMudar({ ...passo, segundos })}
+        />
         <p className="versoes__dica">
-          Nas máquinas, abre uma janela por cima de tudo que fica até alguém clicar em "Ok". O monitor em que
-          ela aparece se escolhe em Sistema › Ajustes.
+          Nas máquinas abre uma janela por cima de tudo. Sem escolher a tela, vale o padrão da máquina (Sistema ›
+          Ajustes). Cuidado com a tela do telão e com a que vai para a live.
         </p>
       </>
     );

@@ -16,7 +16,7 @@ import {
   type ErroApi,
 } from '@maestro/shared';
 import { ErroApp, enviarTecla, executarAcaoApp, situacaoDosApps } from './apps/index.js';
-import { mostrarAviso } from './avisos/index.js';
+import { fecharAvisos, mostrarAviso } from './avisos/index.js';
 import { montarHeartbeat } from './heartbeat.js';
 import { SHA_VALIDO, dispararAtualizacao, lerEstadoAtualizacao } from './versao.js';
 import { listarProcessos } from './processos.js';
@@ -132,6 +132,20 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
 
     try {
       await mostrarAviso(analisado.data);
+      return { ok: true };
+    } catch (err) {
+      if (err instanceof ErroApp) {
+        const corpo: ErroApi = { erro: 'falha-aviso', mensagem: err.message, detalhe: err.causaTecnica };
+        reply.code(502).send(corpo);
+        return;
+      }
+      throw err;
+    }
+  });
+
+  app.post('/aviso/fechar', { preHandler: comToken }, async (_req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      await fecharAvisos();
       return { ok: true };
     } catch (err) {
       if (err instanceof ErroApp) {

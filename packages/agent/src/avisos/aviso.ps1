@@ -9,10 +9,11 @@
 # na linha de comando nao sobrevivem a todas as paginas de codigo.
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('monitores', 'mostrar')]
+    [ValidateSet('monitores', 'mostrar', 'fechar')]
     [string]$Acao,
     [string]$MensagemB64 = '',
-    [string]$Monitor = ''
+    [string]$Monitor = '',
+    [int]$Segundos = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -60,7 +61,7 @@ function Fonte-QueCabe($texto, $largura, $altura) {
     return New-Object System.Drawing.Font('Segoe UI', 11)
 }
 
-function Mostrar-Aviso($texto, $idMonitor) {
+function Mostrar-Aviso($texto, $idMonitor, $segundos) {
     $tela = [System.Windows.Forms.Screen]::AllScreens | Where-Object { $_.DeviceName -eq $idMonitor } | Select-Object -First 1
     # Monitor desconectado desde que foi escolhido: melhor o principal do que nada.
     if (-not $tela) { $tela = [System.Windows.Forms.Screen]::PrimaryScreen }
@@ -120,6 +121,28 @@ function Mostrar-Aviso($texto, $idMonitor) {
     $botao.Add_Click({ $form.Close() })
     $form.Controls.Add($botao)
 
+    # Esc fecha tambem: o aviso pode estar num telao com o teclado por perto e o mouse longe.
+    $form.KeyPreview = $true
+    $form.Add_KeyDown({ if ($_.KeyCode -eq 'Escape') { $form.Close() } })
+
+    # Com tempo definido o aviso some sozinho, e o botao mostra quanto falta.
+    $restante = [int]$segundos
+    if ($restante -gt 0) {
+        $botao.Text = 'Ok, visto (fecha em ' + $restante + ' s)'
+        $relogio = New-Object System.Windows.Forms.Timer
+        $relogio.Interval = 1000
+        $relogio.Add_Tick({
+            $restante = $restante - 1
+            if ($restante -le 0) {
+                $relogio.Stop()
+                $form.Close()
+            } else {
+                $botao.Text = 'Ok, visto (fecha em ' + $restante + ' s)'
+            }
+        })
+        $form.Add_Shown({ $relogio.Start() })
+    }
+
     $form.Add_Shown({
         # O agente roda escondido, e o Windows aplica esse "escondido" ao
         # primeiro ShowWindow do processo: sem este segundo, a janela pode
@@ -145,7 +168,15 @@ try {
         'mostrar' {
             if (-not $MensagemB64) { throw 'mensagem-vazia' }
             $texto = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($MensagemB64))
-            Mostrar-Aviso $texto $Monitor
+            Mostrar-Aviso $texto $Monitor $Segundos
+        }
+        'fechar' {
+            # Cada aviso e um powershell separado rodando este script; o proprio
+            # processo (que tambem tem "aviso.ps1" na linha de comando) fica de fora.
+            $alvos = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" |
+                Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -match 'aviso\.ps1' -and $_.CommandLine -match 'mostrar' })
+            foreach ($alvo in $alvos) { Stop-Process -Id $alvo.ProcessId -Force -ErrorAction SilentlyContinue }
+            [Console]::Out.WriteLine((@{ ok = $true; dados = @{ fechados = $alvos.Count } } | ConvertTo-Json -Compress -Depth 5))
         }
     }
 } catch {
