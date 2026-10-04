@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "5f3210b231dc18ffb546d7f7f9569feaa171774a",
-  "notas": "Atualizador não apaga mais a config da máquina; painel acompanha a atualização",
+  "sha": "d488ae7333e255364f798184fd01e4286f812ef5",
+  "notas": "Trazer para frente funciona de verdade; carregando nos botões dos programas; tela do aviso escolhida no envio; Holyrics: lista de reprodução na tela, para tr…",
   "liberadoEm": "2026-10-04",
-  "versao": "0.1.1",
+  "versao": "0.2.0",
   "versoes": [
+    {
+      "versao": "0.2.0",
+      "sha": "d488ae7333e255364f798184fd01e4286f812ef5",
+      "notas": "Trazer para frente funciona de verdade; carregando nos botões dos programas; tela do aviso escolhida no envio; Holyrics: lista de reprodução na tela, para tr…",
+      "data": "2026-10-04"
+    },
     {
       "versao": "0.1.1",
       "sha": "5f3210b231dc18ffb546d7f7f9569feaa171774a",
