@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "c1a33fe061918dc49409a6018e68bfdd6e9b689e",
-  "notas": "Primeira versão numerada: cenários com editor, agendamentos, avisos na tela, menu lateral",
-  "liberadoEm": "2026-09-28",
-  "versao": "0.1.0",
+  "sha": "5f3210b231dc18ffb546d7f7f9569feaa171774a",
+  "notas": "Atualizador não apaga mais a config da máquina; painel acompanha a atualização",
+  "liberadoEm": "2026-10-04",
+  "versao": "0.1.1",
   "versoes": [
+    {
+      "versao": "0.1.1",
+      "sha": "5f3210b231dc18ffb546d7f7f9569feaa171774a",
+      "notas": "Atualizador não apaga mais a config da máquina; painel acompanha a atualização",
+      "data": "2026-10-04"
+    },
     {
       "versao": "0.1.0",
       "sha": "c1a33fe061918dc49409a6018e68bfdd6e9b689e",
