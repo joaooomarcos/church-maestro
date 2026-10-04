@@ -81,6 +81,8 @@ export const heartbeatAgenteSchema = z.object({
   so: z.enum(['windows', 'linux', 'darwin']),
   /** IPv4 das interfaces não-loopback, para o hub saber onde responder. */
   ips: z.array(z.string()).default([]),
+  /** Endereço físico da placa de rede principal, para o hub poder acordar a máquina. */
+  mac: z.string().optional(),
   porta: z.number().int().positive(),
   uptimeS: z.number(),
   processos: z.record(z.enum(APLICATIVOS), z.boolean()).default({}),

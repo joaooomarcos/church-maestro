@@ -77,6 +77,7 @@ function estadoDispositivoSemHost(dispositivo: DispositivoConfig): EstadoDisposi
     host: dispositivo.host,
     online: false,
     ultimoContato: null,
+    apps: dispositivo.apps,
     ndi: [],
   };
 }
@@ -89,6 +90,7 @@ function estadoDispositivoFalhaTotal(dispositivo: DispositivoConfig, erro: strin
     host: dispositivo.host,
     online: false,
     ultimoContato: null,
+    apps: dispositivo.apps,
     ndi: [],
     agente: dispositivo.servicos.agente ? estadoAgenteFalha(erro) : undefined,
     holyrics: dispositivo.servicos.holyrics ? estadoHolyricsFalha(erro) : undefined,
@@ -202,6 +204,7 @@ async function lerDispositivo(
       host: dispositivo.host,
       online,
       ultimoContato,
+      apps: dispositivo.apps,
       agente,
       powerpoint,
       holyrics,
@@ -221,6 +224,8 @@ export interface OpcoesPoller {
   drivers: Drivers;
   store: Store;
   intervaloMs: number;
+  /** O agente informou o MAC da máquina; quem chama grava, para dar para acordá-la desligada. */
+  aoVerMac?: (idDispositivo: string, mac: string) => void;
 }
 
 export class Poller {
@@ -258,6 +263,10 @@ export class Poller {
         return estadoDispositivoFalhaTotal(dispositivo as DispositivoConfig, mensagemErro(resultado.reason));
       });
       this.opcoes.store.atualizarDispositivos(estados);
+      for (const estado of estados) {
+        const mac = estado.agente?.mac;
+        if (mac) this.opcoes.aoVerMac?.(estado.id, mac);
+      }
     } finally {
       this.executando = false;
     }

@@ -18,6 +18,7 @@ export const estadoAgenteSchema = z.object({
   versao: z.string().optional(),
   versaoSha: z.string().optional(),
   versaoNotas: z.string().optional(),
+  mac: z.string().optional(),
   atualizacao: estadoAtualizacaoSchema.optional(),
   so: z.enum(['windows', 'linux', 'darwin']).optional(),
   uptimeS: z.number().optional(),
@@ -96,6 +97,8 @@ export const estadoDispositivoSchema = z.object({
   /** true se qualquer integração da máquina respondeu na última varredura. */
   online: z.boolean(),
   ultimoContato: z.number().nullable().default(null),
+  /** Programas que a equipe marcou como usados nesta máquina; ausente = não escolheu ainda. */
+  apps: z.array(z.enum(APLICATIVOS)).optional(),
   agente: estadoAgenteSchema.optional(),
   powerpoint: estadoPowerPointSchema.optional(),
   holyrics: estadoHolyricsSchema.optional(),

@@ -2167,3 +2167,13 @@ p {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* --- Cartão da máquina: acordar ---------------------------------------- */
+
+.cartao-maquina__acordar {
+  align-self: flex-start;
+  width: auto;
+  min-height: 40px;
+  padding: 0 16px;
+  margin-top: 4px;
+}

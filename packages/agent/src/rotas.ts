@@ -15,7 +15,7 @@ import {
   type ConfigAgente,
   type ErroApi,
 } from '@maestro/shared';
-import { ErroApp, enviarTecla, executarAcaoApp, situacaoDosApps } from './apps/index.js';
+import { ErroApp, acordarMaquina, enviarTecla, executarAcaoApp, situacaoDosApps } from './apps/index.js';
 import { fecharAvisos, mostrarAviso } from './avisos/index.js';
 import { montarHeartbeat } from './heartbeat.js';
 import { SHA_VALIDO, dispararAtualizacao, lerEstadoAtualizacao } from './versao.js';
@@ -136,6 +136,21 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
     } catch (err) {
       if (err instanceof ErroApp) {
         const corpo: ErroApi = { erro: 'falha-aviso', mensagem: err.message, detalhe: err.causaTecnica };
+        reply.code(502).send(corpo);
+        return;
+      }
+      throw err;
+    }
+  });
+
+  /** Acorda a tela da máquina (monitor em repouso). Não destrava a tela de bloqueio. */
+  app.post('/acordar', { preHandler: comToken }, async (_req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      await acordarMaquina();
+      return { ok: true };
+    } catch (err) {
+      if (err instanceof ErroApp) {
+        const corpo: ErroApi = { erro: 'falha-acordar', mensagem: err.message, detalhe: err.causaTecnica };
         reply.code(502).send(corpo);
         return;
       }

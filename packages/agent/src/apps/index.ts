@@ -194,6 +194,15 @@ export async function enviarTecla(app: Aplicativo, direcao: 'proximo' | 'anterio
   await rodarScript(['-Acao', 'tecla', '-Processos', processosDe(app), '-Tecla', tecla], app);
 }
 
+/**
+ * Acorda a tela da máquina (monitor em repouso por inatividade). Fora do
+ * Windows não há o que fazer: devolve sem erro.
+ */
+export async function acordarMaquina(): Promise<void> {
+  if (platform() !== 'win32') return;
+  await rodarScript(['-Acao', 'acordar'], 'obs');
+}
+
 export async function executarAcaoApp(
   app: Aplicativo,
   acao: AcaoApp,

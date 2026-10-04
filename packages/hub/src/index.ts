@@ -91,6 +91,13 @@ async function principal(): Promise<void> {
     drivers,
     store,
     intervaloMs: configuracao.hub.intervaloPollingMs,
+    aoVerMac: (id, mac) => {
+      const dispositivo = ctx.obterDispositivo(id);
+      if (!dispositivo || dispositivo.mac === mac) return;
+      ctx.atualizarDispositivo({ ...dispositivo, mac }).catch(() => {
+        // sem gravar, só não dá para acordá-la desligada; tenta de novo no próximo ciclo
+      });
+    },
   });
   poller.iniciar();
   agendador.iniciar();

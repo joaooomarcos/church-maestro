@@ -79,6 +79,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           versao: string;
           versaoSha?: string;
           versaoNotas?: string;
+          mac?: string;
           so: 'windows' | 'linux' | 'darwin';
           uptimeS: number;
           processos: Record<string, boolean>;
@@ -95,6 +96,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           versao: saude.versao,
           ...(saude.versaoSha ? { versaoSha: saude.versaoSha } : {}),
           ...(saude.versaoNotas ? { versaoNotas: saude.versaoNotas } : {}),
+          ...(saude.mac ? { mac: saude.mac } : {}),
           ...(saude.atualizacao ? { atualizacao: saude.atualizacao } : {}),
           so: saude.so,
           uptimeS: saude.uptimeS,
@@ -154,6 +156,16 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           body: JSON.stringify(comando),
         },
         // O agente espera uns segundos para ter certeza de que a janela abriu.
+        { timeoutMs: 10_000, ...(op ?? {}) },
+        tokenPadrao,
+      );
+    },
+
+    async acordar(dispositivo, op): Promise<void> {
+      await pedir<{ ok: boolean }>(
+        dispositivo,
+        '/acordar',
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' },
         { timeoutMs: 10_000, ...(op ?? {}) },
         tokenPadrao,
       );

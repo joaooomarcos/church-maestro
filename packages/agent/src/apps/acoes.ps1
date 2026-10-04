@@ -7,7 +7,7 @@
 # como ANSI, e acentos aqui viram lixo. Texto para o usuario fica no TypeScript.
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('localizar', 'abrir', 'fechar', 'frente', 'tecla')]
+    [ValidateSet('localizar', 'abrir', 'fechar', 'frente', 'tecla', 'acordar')]
     [string]$Acao,
     [string]$Caminho = '',
     [string]$Processos = '',
@@ -40,6 +40,8 @@ public class MaestroApps {
   [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr hWnd);
   [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
   [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+  [DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);
+  [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, UIntPtr dwExtraInfo);
 
   // Janelas de topo, visiveis e com titulo, do processo. Process.MainWindowHandle
   // erra com programas que abrem uma janela auxiliar antes da principal (Java,
@@ -230,6 +232,20 @@ try {
             # Antes devolvia ok mesmo sem conseguir, e o botao parecia ter funcionado.
             if (-not (Trazer-ParaFrente $alvos)) { throw "nao-consegui-focar" }
             $dados = @{ trouxe = $true }
+        }
+        'acordar' {
+            # Tela apagada por inatividade: um movimento de mouse de 1 pixel (e de
+            # volta) e o pedido explicito de "tela ligada" acordam o monitor. Nao
+            # destrava a tela de bloqueio: isso exige senha.
+            # 3 = ES_SYSTEM_REQUIRED + ES_DISPLAY_REQUIRED, sem ES_CONTINUOUS: so zera o
+            # relogio de inatividade, nao segura a tela ligada para sempre.
+            [void][MaestroApps]::SetThreadExecutionState(3)
+            [MaestroApps]::mouse_event(1, 1, 0, 0, [UIntPtr]::Zero)
+            Start-Sleep -Milliseconds 120
+            [MaestroApps]::mouse_event(1, -1, 0, 0, [UIntPtr]::Zero)
+            [MaestroApps]::keybd_event(0x10, 0, 0, [UIntPtr]::Zero)
+            [MaestroApps]::keybd_event(0x10, 0, 2, [UIntPtr]::Zero)
+            $dados = @{ acordou = $true }
         }
         'tecla' {
             if (-not $Tecla) { throw "tecla-invalida" }

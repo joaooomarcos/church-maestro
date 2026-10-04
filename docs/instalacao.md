@@ -441,6 +441,28 @@ Depois, instale de novo a partir da **seção 1**, com o PC Transmissão primeir
   dele e suba a tarefa `maestro-agent`), senão ele segue com o token antigo e o
   painel diz que o agente "recusou o token".
 
+### O botão "Acordar"
+
+No cartão de cada máquina. Faz duas coisas juntas: pede para o agente acordar a
+**tela** (monitor em repouso por inatividade) e manda o sinal de **ligar pela
+rede** (Wake-on-LAN), para a máquina que está dormindo.
+
+- A tela de bloqueio do Windows **não** é destravada: isso pede senha.
+- O sinal pela rede só funciona se a máquina aceitar: na BIOS, ligar "Wake on
+  LAN"; no Windows, Gerenciador de Dispositivos › placa de rede › Gerenciamento
+  de energia › "Permitir que este dispositivo ative o computador". Funciona melhor
+  no cabo do que no wi-fi.
+- O endereço de rede (MAC) da máquina o Maestro aprende sozinho, quando ela está
+  ligada com o agente no ar. Máquina nunca vista assim não pode ser acordada
+  desligada.
+
+### Programas que cada máquina usa
+
+Em Sistema › Ajustes › "Programas de cada máquina". O que não estiver marcado
+some do quadro da máquina no painel e do "Alterar" (Abrir, Reiniciar, Fechar).
+Os quadros do painel só aparecem para o que está **aberto**; quem está fechado
+já aparece nas bolinhas.
+
 ### "Trazer para frente" não traz a janela
 
 O Windows só deixa trazer uma janela para frente a quem acabou de receber um

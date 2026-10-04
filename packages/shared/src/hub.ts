@@ -57,6 +57,8 @@ export const ROTAS = {
   atualizar: '/api/atualizar',
   appAcao: '/api/apps/acao',
   aviso: '/api/aviso',
+  acordar: '/api/acordar',
+  appsDaMaquina: '/api/dispositivos/:id/apps',
   avisoFechar: '/api/aviso/fechar',
   monitorAvisos: '/api/dispositivos/:id/monitor-avisos',
   ajustes: '/api/ajustes',
@@ -153,6 +155,21 @@ export const pedidoFecharAvisosSchema = z.object({
 });
 
 export type PedidoAviso = z.infer<typeof pedidoAvisoSchema>;
+
+export const definirAppsSchema = z.object({
+  apps: z.array(z.enum(APLICATIVOS)),
+});
+
+export const pedidoAcordarSchema = z.object({ dispositivo: z.string().min(1) });
+
+export interface ResultadoAcordar {
+  /** O agente da máquina respondeu e pediu para a tela acordar. */
+  telaAcordada: boolean;
+  /** O sinal de ligar pela rede (Wake-on-LAN) foi enviado. */
+  sinalEnviado: boolean;
+  /** Frase pronta para mostrar na tela. */
+  mensagem: string;
+}
 
 export const definirMonitorAvisosSchema = z.object({
   /** null volta para o monitor principal. */

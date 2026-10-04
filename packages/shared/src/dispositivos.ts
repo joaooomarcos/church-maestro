@@ -100,6 +100,13 @@ export const dispositivoConfigSchema = z.object({
   tokenConvidado: z.string().optional(),
   /** Monitor onde os avisos aparecem (id de `Monitor`). Ausente = o principal. */
   monitorAvisos: z.string().optional(),
+  /**
+   * Programas que esta máquina usa. Só eles aparecem no painel e em "Programas".
+   * Ausente = ainda não foi escolhido: vale o que o agente achou instalado.
+   */
+  apps: z.array(z.enum(APLICATIVOS)).optional(),
+  /** Endereço físico (MAC), aprendido do agente, para acordar a máquina pela rede. */
+  mac: z.string().optional(),
   servicos: z
     .object({
       agente: servicoAgenteSchema.optional(),

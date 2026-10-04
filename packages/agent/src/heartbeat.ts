@@ -63,6 +63,20 @@ function ipsLocais(): string[] {
   return ips;
 }
 
+/**
+ * MAC da placa de rede que está na rede da igreja (a primeira com IPv4 não
+ * loopback e MAC de verdade). É o que o hub precisa para acordar a máquina.
+ */
+function macPrincipal(): string | undefined {
+  for (const enderecos of Object.values(networkInterfaces())) {
+    for (const info of enderecos ?? []) {
+      const ehIpv4 = info.family === 'IPv4' || (info.family as unknown) === 4;
+      if (ehIpv4 && !info.internal && info.mac && info.mac !== '00:00:00:00:00:00') return info.mac;
+    }
+  }
+  return undefined;
+}
+
 /** Também usado pela rota `/health`, que expõe os mesmos dados + timestamp. */
 export async function montarHeartbeat(config: ConfigAgente, ponte: PontePowerPoint): Promise<HeartbeatAgente> {
   const [processos, instalada, janela] = await Promise.all([
@@ -77,6 +91,7 @@ export async function montarHeartbeat(config: ConfigAgente, ponte: PontePowerPoi
     ...(instalada ? { versaoSha: instalada.sha, versaoNotas: instalada.notas } : {}),
     so: soAtual(),
     ips: ipsLocais(),
+    ...(macPrincipal() ? { mac: macPrincipal() } : {}),
     porta: config.porta,
     uptimeS: process.uptime(),
     processos,

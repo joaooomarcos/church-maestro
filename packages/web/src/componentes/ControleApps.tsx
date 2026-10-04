@@ -109,12 +109,16 @@ export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }
 
   if (!agente?.online) return null;
 
-  // Programa não instalado não aparece. Aberto aparece mesmo sem caminho
-  // conhecido, para dar para fechar ou trazer para frente. Agente antigo (sem a
-  // lista) mostra todos, como antes.
+  // Só os programas que a equipe marcou como usados nesta máquina (Sistema ›
+  // Ajustes). Sem escolha ainda, vale o que o agente achou instalado — e o que
+  // está aberto, para dar para fechar ou trazer para frente. Agente antigo (sem
+  // a lista) mostra todos.
   const instalados = agente.appsInstalados;
-  const visiveis = APLICATIVOS.filter(
-    (app) => !instalados || instalados.includes(app) || agente.processos[app] === true,
+  const escolhidos = dispositivo.apps;
+  const visiveis = APLICATIVOS.filter((app) =>
+    escolhidos
+      ? escolhidos.includes(app)
+      : !instalados || instalados.includes(app) || agente.processos[app] === true,
   );
   if (visiveis.length === 0) return null;
 
@@ -147,7 +151,7 @@ export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }
             aria-expanded={expandido}
             onClick={() => setExpandido((atual) => !atual)}
           >
-            {expandido ? 'Fechar' : 'Gerenciar'}
+            {expandido ? 'Pronto' : 'Alterar'}
           </button>
         </div>
         <ul className="pilulas" aria-label="Programas desta máquina">

@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { NOMES_APLICATIVOS, ROTAS, type Cenario, type EstadoDispositivo, type ResultadoCenario } from '@maestro/shared';
+import {
+  NOMES_APLICATIVOS,
+  ROTAS,
+  type Aplicativo,
+  type Cenario,
+  type EstadoDispositivo,
+  type ResultadoAcordar,
+  type ResultadoCenario,
+} from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
 import { apiGet, apiPost } from '../nucleo/cliente';
 import { Semaforo, type EstadoSemaforo } from '../componentes/Semaforo';
@@ -30,11 +38,22 @@ const ROTULO_ESTADO: Record<EstadoSemaforo, string> = {
   'nao-configurado': 'Sem contato',
 };
 
+/**
+ * Bloco só para programa que a máquina usa e que está aberto: quem está fechado
+ * já aparece nas bolinhas dos programas, e um quadro "fechado" só ocupa lugar.
+ * Aberto mas sem responder continua aparecendo, porque aí há algo a resolver.
+ */
+function aparece(d: EstadoDispositivo, app: Aplicativo, respondendo: boolean): boolean {
+  if (d.apps && !d.apps.includes(app)) return false;
+  const processo = d.agente?.processos[app];
+  return respondendo || processo === true;
+}
+
 /** Um bloco para cada coisa que a máquina faz, com o valor que importa em destaque. */
 function montarBlocos(d: EstadoDispositivo): Bloco[] {
   const blocos: Bloco[] = [];
 
-  if (d.obs) {
+  if (d.obs && aparece(d, 'obs', d.obs.online)) {
     const obs = d.obs;
     if (!obs.online) {
       blocos.push({ chave: 'obs', icone: 'transmitir', titulo: 'OBS', valor: 'Sem conexão', tom: 'apagado' });
@@ -60,7 +79,7 @@ function montarBlocos(d: EstadoDispositivo): Bloco[] {
     }
   }
 
-  if (d.holyrics) {
+  if (d.holyrics && aparece(d, 'holyrics', d.holyrics.online)) {
     const holyrics = d.holyrics;
     const apresentacao = holyrics.apresentacao;
     blocos.push(
@@ -81,13 +100,15 @@ function montarBlocos(d: EstadoDispositivo): Bloco[] {
 
   // O status do PowerPoint diz "fora da exibição" mesmo com ele fechado; quem
   // sabe se ele está aberto é a lista de programas do agente.
-  if (d.powerpoint && d.agente?.capacidades.includes('powerpoint')) {
+  if (
+    d.powerpoint &&
+    d.agente?.capacidades.includes('powerpoint') &&
+    d.agente.processos.powerpoint === true &&
+    aparece(d, 'powerpoint', true)
+  ) {
     const ppt = d.powerpoint;
-    const aberto = d.agente.processos.powerpoint === true;
     blocos.push(
-      !aberto
-        ? { chave: 'ppt', icone: 'powerpoint', titulo: 'PowerPoint', valor: 'Fechado', tom: 'apagado' }
-        : ppt.emApresentacao
+      ppt.emApresentacao
           ? {
               chave: 'ppt',
               icone: 'powerpoint',
@@ -108,6 +129,7 @@ function montarBlocos(d: EstadoDispositivo): Bloco[] {
   }
 
   for (const janela of d.ndi) {
+    if (!aparece(d, 'ndi-studio-monitor', janela.online)) continue;
     blocos.push({
       chave: `ndi-${janela.porta}`,
       icone: 'ndi',
@@ -130,9 +152,24 @@ function primeiroPlano(d: EstadoDispositivo): string | null {
 }
 
 function CartaoMaquina({ dispositivo }: { dispositivo: EstadoDispositivo }) {
+  const { notificar } = useAppContexto();
+  const [acordando, setAcordando] = useState(false);
   const estado = estadoSemaforo(dispositivo);
   const blocos = montarBlocos(dispositivo);
   const naFrente = primeiroPlano(dispositivo);
+
+  async function acordar(): Promise<void> {
+    vibrar(15);
+    setAcordando(true);
+    try {
+      const resultado = await apiPost<ResultadoAcordar>(ROTAS.acordar, { dispositivo: dispositivo.id });
+      notificar(resultado.mensagem, resultado.telaAcordada || resultado.sinalEnviado ? 'info' : 'alerta');
+    } catch {
+      // erro já virou toast pelo cliente de API.
+    } finally {
+      setAcordando(false);
+    }
+  }
 
   return (
     <article className={`cartao-maquina${estado === 'online' ? '' : ' cartao-maquina--fora'}`}>
@@ -167,6 +204,17 @@ function CartaoMaquina({ dispositivo }: { dispositivo: EstadoDispositivo }) {
       ) : null}
 
       <ControleApps dispositivo={dispositivo} />
+
+      {dispositivo.agente ? (
+        <button
+          type="button"
+          className="botao-secundario cartao-maquina__acordar"
+          disabled={acordando}
+          onClick={() => void acordar()}
+        >
+          {acordando ? 'Acordando…' : 'Acordar'}
+        </button>
+      ) : null}
     </article>
   );
 }

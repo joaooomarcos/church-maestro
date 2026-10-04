@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
+  APLICATIVOS,
+  NOMES_APLICATIVOS,
   ROTAS,
+  type Aplicativo,
   type Ajustes as AjustesHub,
   type DispositivoConfig,
   type EstadoDispositivo,
@@ -176,10 +179,68 @@ function MonitoresDosAvisos() {
   );
 }
 
+/** Quais programas cada máquina usa: só eles aparecem no painel e em "Alterar". */
+function ProgramasDasMaquinas() {
+  const { snapshot } = useAppContexto();
+  // Vale na hora; o painel confirma na leitura seguinte.
+  const [locais, setLocais] = useState<Record<string, Aplicativo[]>>({});
+  const maquinas = (snapshot?.dispositivos ?? []).filter((d) => d.agente !== undefined);
+  if (maquinas.length === 0) return null;
+
+  function usados(maquina: EstadoDispositivo): Aplicativo[] {
+    return locais[maquina.id] ?? maquina.apps ?? maquina.agente?.appsInstalados ?? [...APLICATIVOS];
+  }
+
+  async function alternar(maquina: EstadoDispositivo, app: Aplicativo): Promise<void> {
+    const atuais = usados(maquina);
+    const novos = atuais.includes(app) ? atuais.filter((a) => a !== app) : [...atuais, app];
+    setLocais((todos) => ({ ...todos, [maquina.id]: novos }));
+    try {
+      await apiPut(ROTAS.appsDaMaquina.replace(':id', encodeURIComponent(maquina.id)), { apps: novos });
+    } catch {
+      setLocais((todos) => ({ ...todos, [maquina.id]: atuais }));
+    }
+  }
+
+  return (
+    <section className="versoes__alvo">
+      <h2 className="versoes__titulo">Programas de cada máquina</h2>
+      <p className="versoes__dica">
+        Marque o que se usa em cada computador. O que não estiver marcado some do painel: do quadro da máquina
+        e de "Alterar", onde ficam Abrir, Reiniciar e Fechar.
+      </p>
+      <ul className="monitores-avisos">
+        {maquinas.map((maquina) => (
+          <li key={maquina.id} className="monitor-avisos">
+            <p className="monitor-avisos__nome">{maquina.nome}</p>
+            <div className="seletor-dias seletor-dias--livre">
+              {APLICATIVOS.map((app) => {
+                const marcado = usados(maquina).includes(app);
+                return (
+                  <button
+                    key={app}
+                    type="button"
+                    aria-pressed={marcado}
+                    className={`seletor-dias__dia${marcado ? ' seletor-dias__dia--marcado' : ''}`}
+                    onClick={() => void alternar(maquina, app)}
+                  >
+                    {NOMES_APLICATIVOS[app]}
+                  </button>
+                );
+              })}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** Ajustes da operação que a equipe muda pelo painel. */
 export function Ajustes() {
   return (
     <div className="ajustes">
+      <ProgramasDasMaquinas />
       <MonitoresDosAvisos />
       <IntervaloHeartbeat />
     </div>
