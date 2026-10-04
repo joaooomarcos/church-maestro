@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "d488ae7333e255364f798184fd01e4286f812ef5",
-  "notas": "Trazer para frente funciona de verdade; carregando nos botões dos programas; tela do aviso escolhida no envio; Holyrics: lista de reprodução na tela, para tr…",
+  "sha": "94e094de43a7e9012b3c4f73d62aa20f8877bb40",
+  "notas": "Programas por máquina, quadros só do que está aberto, 'Alterar' e botão Acordar; Aviso: tela e tempo escolhidos no envio e no passo do cenário; fechar aviso …",
   "liberadoEm": "2026-10-04",
-  "versao": "0.2.0",
+  "versao": "0.3.0",
   "versoes": [
+    {
+      "versao": "0.3.0",
+      "sha": "94e094de43a7e9012b3c4f73d62aa20f8877bb40",
+      "notas": "Programas por máquina, quadros só do que está aberto, 'Alterar' e botão Acordar; Aviso: tela e tempo escolhidos no envio e no passo do cenário; fechar aviso …",
+      "data": "2026-10-04"
+    },
     {
       "versao": "0.2.0",
       "sha": "d488ae7333e255364f798184fd01e4286f812ef5",
