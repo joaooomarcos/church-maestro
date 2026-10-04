@@ -321,6 +321,17 @@ coisa. Se não compilar, nada é trocado e ela continua rodando como estava. Se 
 painel ou o agente não voltarem depois da troca, ela **volta sozinha para a
 versão anterior**. `config/` e `data/` nunca são tocados.
 
+> **Do 0.1.0 para a 0.1.1:** o atualizador que roda é o que já está na máquina, e
+> o da 0.1.0 apagava `config/agent.json` (o pareamento) e, no painel, o
+> `hub.json` e o `devices.json`. Antes de atualizar uma máquina que está na
+> 0.1.0, troque o script dela pelo corrigido (comando abaixo). Quem já passou
+> pelo problema: restaure o `agent.json` da cópia de segurança ou rode
+> `npm run setup`.
+
+```powershell
+cd ~\maestro; Invoke-WebRequest "https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/scripts/atualizar.ps1" -OutFile .\scripts\atualizar.ps1
+```
+
 Atualize **uma máquina de cada vez** e confira se ela volta verde antes da
 próxima. A máquina marcada como **painel** é a que roda o hub: atualizar ela
 tira o painel do ar por cerca de um minuto — espere e recarregue a página.

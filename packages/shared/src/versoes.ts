@@ -56,6 +56,12 @@ export const maquinaVersaoSchema = z.object({
   /** true na máquina que roda o painel — atualizar ela derruba o painel por um minuto. */
   ehMaquinaDoHub: z.boolean().default(false),
   atualizacao: estadoAtualizacaoSchema.optional(),
+  /** true quando a máquina não responde e o sha/notas são os da última vez que ela respondeu. */
+  ultimaConhecida: z.boolean().default(false),
+  /** Versão (sha) que o painel mandou instalar e que a máquina ainda não confirmou. */
+  alvoSha: z.string().optional(),
+  /** Quando o painel mandou atualizar (ms), para mostrar há quanto tempo está nisso. */
+  pedidoEm: z.number().optional(),
 });
 
 export type MaquinaVersao = z.infer<typeof maquinaVersaoSchema>;

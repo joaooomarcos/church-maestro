@@ -184,13 +184,15 @@ function InstalarSha([string]$sha, [string]$notas) {
     PararMaestro
 
     # /MIR deixa a pasta igual a da versao nova (some arquivo velho), menos
-    # config e data. Os arquivos que mantem a maquina capaz de se atualizar
+    # config e data (tanto o da maquina quanto o que vem na versao nova: sem
+    # excluir os dois, o /MIR trata o config da versao como "o certo" e apaga
+    # agent.json, hub.json e devices.json da maquina). Os arquivos que mantem a maquina capaz de se atualizar
     # tambem ficam de fora: voltar para uma versao anterior ao atualizador
     # deixaria a maquina sem saida, so resolvida com visita presencial. Ficar de
     # fora tambem evita que o .ps1 em execucao derrube a copia inteira.
     $codigo = RodarComando 'robocopy' @(
       $origem, $destino, '/MIR',
-      '/XD', (Join-Path $destino 'config'), (Join-Path $destino 'data'),
+      '/XD', (Join-Path $destino 'config'), (Join-Path $destino 'data'), (Join-Path $origem 'config'), (Join-Path $origem 'data'),
       '/XF', 'versao.txt', 'atualizar.ps1', 'atualizar.sh', 'iniciar-oculto.vbs',
       '/MT:16', '/R:2', '/W:2', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'
     ) $null
@@ -198,6 +200,16 @@ function InstalarSha([string]$sha, [string]$notas) {
       Registrar "FALHA: nao consegui copiar os arquivos (robocopy $codigo)"
       SubirMaestro
       return $false
+    }
+
+    # Arquivos de config que a versao nova traz e a maquina ainda nao tem
+    # (cenarios e checklists de exemplo): so entram os que faltam, nada e
+    # sobrescrito nem apagado.
+    if (Test-Path (Join-Path $origem 'config')) {
+      RodarComando 'robocopy' @(
+        (Join-Path $origem 'config'), (Join-Path $destino 'config'), '/E', '/XC', '/XN', '/XO',
+        '/R:2', '/W:2', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'
+      ) $null | Out-Null
     }
 
     # Quando a versao nova traz esses arquivos, eles sao atualizados tambem.

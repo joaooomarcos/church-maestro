@@ -27,6 +27,20 @@ function estaAtualizando(maquina: MaquinaVersao): boolean {
   return estado === 'baixando' || estado === 'compilando' || estado === 'trocando';
 }
 
+const ETAPAS = ['baixando', 'compilando', 'trocando'] as const;
+
+function etapaDe(maquina: MaquinaVersao): string | null {
+  const indice = ETAPAS.findIndex((etapa) => etapa === maquina.atualizacao?.estado);
+  return indice >= 0 ? `Etapa ${indice + 1} de ${ETAPAS.length}` : null;
+}
+
+function haQuanto(desde: number | undefined): string | null {
+  if (!desde) return null;
+  const segundos = Math.max(0, Math.round((Date.now() - desde) / 1000));
+  if (segundos < 60) return `há ${segundos} s`;
+  return `há ${Math.floor(segundos / 60)} min ${segundos % 60} s`;
+}
+
 function rotuloEstado(maquina: MaquinaVersao): string | null {
   const atualizacao = maquina.atualizacao;
   if (!atualizacao) return null;
@@ -57,7 +71,7 @@ export function Versoes() {
 
   // Enquanto alguma máquina estiver trocando de versão, olha mais de perto.
   useEffect(() => {
-    const alguemAtualizando = dados?.maquinas.some(estaAtualizando) ?? false;
+    const alguemAtualizando = dados?.maquinas.some((m) => estaAtualizando(m) || m.alvoSha) ?? false;
     const intervalo = alguemAtualizando ? INTERVALO_ATUALIZANDO_MS : INTERVALO_NORMAL_MS;
     timer.current = window.setTimeout(() => void carregar(), intervalo);
     return () => window.clearTimeout(timer.current);
@@ -132,9 +146,21 @@ export function Versoes() {
                 </span>
               </header>
 
-              <p className="cartao-versao__notas">{maquina.notas || 'versão desconhecida'}</p>
+              <p className="cartao-versao__notas">
+                {maquina.notas || 'versão desconhecida'}
+                {maquina.ultimaConhecida ? ' (última versão vista antes de sair do ar)' : ''}
+              </p>
+              {maquina.alvoSha ? (
+                <p className="cartao-versao__estado">
+                  Instalando {curto(maquina.alvoSha)}
+                  {haQuanto(maquina.pedidoEm) ? ` · pedido ${haQuanto(maquina.pedidoEm)}` : ''}
+                  {etapaDe(maquina) ? ` · ${etapaDe(maquina)}` : ''}
+                </p>
+              ) : null}
               {estado ? <p className="cartao-versao__estado">{estado}</p> : null}
-              {!maquina.online ? <p className="cartao-versao__estado">Máquina offline.</p> : null}
+              {!maquina.online && !maquina.alvoSha ? (
+                <p className="cartao-versao__estado">Máquina offline.</p>
+              ) : null}
 
               <button
                 type="button"
