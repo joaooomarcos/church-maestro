@@ -4,21 +4,14 @@ import {
   type Ajustes as AjustesHub,
   type DispositivoConfig,
   type EstadoDispositivo,
-  type Monitor,
 } from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
 import { apiGet, apiPost, apiPut } from '../nucleo/cliente';
+import { nomeDoMonitor } from '../nucleo/monitores';
 
 const INTERVALOS_HEARTBEAT = [5, 10, 20, 30, 60];
 
 const MENSAGEM_TESTE = 'Teste do Maestro: os avisos desta máquina vão aparecer aqui.';
-
-/** "\\.\DISPLAY2" vira "Tela 2", que é o número que o Windows mostra em Configurações › Tela. */
-function nomeDoMonitor(monitor: Monitor): string {
-  const numero = /DISPLAY(\d+)/i.exec(monitor.id)?.[1];
-  const nome = numero ? `Tela ${numero}` : monitor.id;
-  return `${nome} · ${monitor.largura}×${monitor.altura}${monitor.principal ? ' (principal)' : ''}`;
-}
 
 function IntervaloHeartbeat() {
   const [segundos, setSegundos] = useState<number | null>(null);
@@ -167,9 +160,10 @@ function MonitoresDosAvisos() {
 
   return (
     <section className="versoes__alvo">
-      <h2 className="versoes__titulo">Onde os avisos aparecem</h2>
+      <h2 className="versoes__titulo">Avisos dos cenários</h2>
       <p className="versoes__dica">
-        Os avisos dos cenários abrem por cima de tudo. Escolha a tela de quem opera — nunca a do telão nem a
+        Ao mandar um aviso pela tela Avisos, você escolhe o monitor na hora. Este é só o padrão dos avisos que
+        saem sozinhos, em cenários e agendamentos. Escolha a tela de quem opera — nunca a do telão nem a
         que o NDI Screen Capture envia, senão o aviso aparece para a igreja ou na live. Use "Testar" para ver
         qual é qual.
       </p>

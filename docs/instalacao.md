@@ -431,6 +431,24 @@ Depois, instale de novo a partir da **seção 1**, com o PC Transmissão primeir
 - "revertido: a máquina voltou para a versão anterior" significa que a versão
   nova não subiu e a máquina se protegeu sozinha. Avise quem desenvolve.
 - Se o botão estiver apagado, a máquina está offline ou já está naquela versão.
+- O painel mostra "Instalando…" e há quanto tempo o pedido foi feito, mesmo com a
+  máquina fora do ar durante a troca. Passando de 10 minutos sem a máquina voltar,
+  o cartão avisa que falhou.
+- **`config\agent.json` sumiu depois de atualizar** (o agente diz "ainda não foi
+  configurada"): foi o atualizador da 0.1.0, que apagava a config. Está corrigido
+  na 0.1.1; para quem passou por isso, restaure o arquivo de uma cópia ou rode
+  `npm run setup`. Depois do setup, reinicie o agente de verdade (mate o `node`
+  dele e suba a tarefa `maestro-agent`), senão ele segue com o token antigo e o
+  painel diz que o agente "recusou o token".
+
+### "Trazer para frente" não traz a janela
+
+O Windows só deixa trazer uma janela para frente a quem acabou de receber um
+toque do usuário; um processo solto, como o agente, só faz o ícone piscar na
+barra de tarefas. O Maestro contorna isso, e confere se a janela de fato ficou na
+frente: se não ficou, o painel avisa em vez de fingir que deu certo. Se o programa
+estiver aberto **como administrador**, o Windows bloqueia de qualquer jeito: abra
+o programa sem administrador, ou rode o Maestro também como administrador.
 
 ### Sistema › Versões não lista nada
 

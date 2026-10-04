@@ -700,6 +700,37 @@ p {
   opacity: 0.5;
 }
 
+/* O botão que está esperando a máquina confirmar continua legível; os outros apagam. */
+.controle-apps__acao--carregando:disabled {
+  opacity: 1;
+  border-color: var(--cor-primaria);
+  cursor: progress;
+}
+
+.controle-apps__espera {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-right: 8px;
+  vertical-align: -0.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: controle-apps-girar 0.7s linear infinite;
+}
+
+@keyframes controle-apps-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .controle-apps__espera {
+    animation-duration: 2s;
+  }
+}
+
 /* --- convite e página do convidado ----------------------------------- */
 
 .convite {

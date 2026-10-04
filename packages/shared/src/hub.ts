@@ -129,10 +129,19 @@ export const acaoAppSchema = z.object({
 });
 
 /** Mandar um aviso agora — o mesmo que o passo de cenário, usado pelo "Testar". */
+/** No lugar do id de um monitor: mostra o aviso em todos os monitores da máquina. */
+export const MONITOR_TODOS = '*';
+
 export const pedidoAvisoSchema = z.object({
   dispositivos: z.array(z.string()).default([]),
   mensagem: z.string().trim().min(1).max(300),
   noPainel: z.boolean().default(false),
+  /**
+   * Em que monitor o aviso abre, por máquina (id do monitor, `MONITOR_TODOS` ou
+   * null para o principal). Máquina que não aparece aqui usa o padrão dela, que
+   * é o que os cenários agendados usam, já que ninguém escolhe na hora.
+   */
+  monitores: z.record(z.string(), z.string().nullable()).default({}),
 });
 
 export type PedidoAviso = z.infer<typeof pedidoAvisoSchema>;

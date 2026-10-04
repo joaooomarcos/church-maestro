@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ComandoApp, ComandoAviso, DispositivoConfig, MensagemHub } from '@maestro/shared';
 import { executarCenario } from './executar.js';
+import { enviarAviso } from '../avisos/enviar.js';
 import { criarContexto } from '../rotas/contexto.js';
 import { Store } from '../estado/store.js';
 import type { Drivers } from '../drivers/tipos.js';
@@ -63,6 +64,50 @@ describe('passos de aviso e de programa', () => {
       { id: 'fundo', comando: { mensagem: 'Faltam 10 minutos', monitor: null } },
     ]);
     expect(mensagens).toEqual([expect.objectContaining({ tipo: 'alerta', texto: 'Faltam 10 minutos' })]);
+  });
+
+  it('o monitor escolhido na hora do envio vale mais que o padrão da máquina', async () => {
+    const { ctx, avisos } = montar();
+    const { falhas } = await enviarAviso(ctx, {
+      dispositivos: ['transmissao', 'fundo'],
+      mensagem: 'Podem começar',
+      noPainel: false,
+      monitores: { transmissao: null, fundo: '\\\\.\\DISPLAY3' },
+    });
+
+    expect(falhas).toEqual([]);
+    expect(avisos).toEqual([
+      { id: 'transmissao', comando: { mensagem: 'Podem começar', monitor: null } },
+      { id: 'fundo', comando: { mensagem: 'Podem começar', monitor: '\\\\.\\DISPLAY3' } },
+    ]);
+  });
+
+  it('"todas as telas" manda um aviso para cada monitor que a máquina informou', async () => {
+    const { ctx, avisos } = montar();
+    ctx.store.atualizarDispositivos([
+      {
+        id: 'fundo',
+        nome: 'FUNDO',
+        host: '10.0.0.1',
+        online: true,
+        ultimoContato: null,
+        ndi: [],
+        agente: {
+          online: true,
+          erro: null,
+          processos: {},
+          emPrimeiroPlano: null,
+          capacidades: [],
+          monitores: [
+            { id: '\\\\.\\DISPLAY1', principal: true, largura: 1920, altura: 1080 },
+            { id: '\\\\.\\DISPLAY2', principal: false, largura: 1920, altura: 1080 },
+          ],
+        },
+      },
+    ]);
+    await enviarAviso(ctx, { dispositivos: ['fundo'], mensagem: 'Oi', noPainel: false, monitores: { fundo: '*' } });
+
+    expect(avisos.map((a) => a.comando.monitor).sort()).toEqual(['\\\\.\\DISPLAY1', '\\\\.\\DISPLAY2']);
   });
 
   it('uma máquina fora do ar não impede o aviso nas outras, mas o passo acusa a falha', async () => {

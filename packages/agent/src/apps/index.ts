@@ -57,6 +57,9 @@ interface RespostaPs {
 function mensagemDoErro(bruto: string | undefined, app: Aplicativo): string {
   const nome = NOMES_APLICATIVOS[app];
   if (bruto?.includes('nao-esta-aberto')) return `O ${nome} não está aberto nesta máquina.`;
+  if (bruto?.includes('nao-consegui-focar')) {
+    return `O Windows não deixou trazer o ${nome} para frente. Se ele estiver aberto como administrador, o Maestro também precisa estar.`;
+  }
   if (bruto?.includes('caminho-invalido')) {
     return `Não achei o ${nome} instalado nesta máquina. Rode "npm run setup" nela para informar o caminho.`;
   }

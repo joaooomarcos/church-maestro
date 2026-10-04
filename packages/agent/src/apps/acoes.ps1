@@ -23,11 +23,62 @@ $ErrorActionPreference = 'Stop'
 
 Add-Type @"
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 public class MaestroApps {
+  public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
   [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
   [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+  [DllImport("user32.dll")] public static extern int GetWindowTextLength(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc cb, IntPtr lParam);
+  [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+  [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+  [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+
+  // Janelas de topo, visiveis e com titulo, do processo. Process.MainWindowHandle
+  // erra com programas que abrem uma janela auxiliar antes da principal (Java,
+  // Electron): vem zerado ou aponta para uma janela escondida.
+  public static List<IntPtr> JanelasDoProcesso(uint pidAlvo) {
+    List<IntPtr> achadas = new List<IntPtr>();
+    EnumWindows(delegate (IntPtr h, IntPtr l) {
+      uint pid;
+      GetWindowThreadProcessId(h, out pid);
+      if (pid == pidAlvo && IsWindowVisible(h) && GetWindowTextLength(h) > 0 && GetWindow(h, 4) == IntPtr.Zero) {
+        achadas.Add(h);
+      }
+      return true;
+    }, IntPtr.Zero);
+    return achadas;
+  }
+
+  // O Windows so deixa trazer uma janela para frente a quem acabou de receber
+  // input do usuario; um processo solto (como este) so faz a janela piscar na
+  // barra de tarefas. O toque no Alt e a ligacao com a thread da janela que
+  // esta na frente sao o jeito de contornar isso. Devolve se a janela ficou
+  // mesmo na frente, em vez de confiar no retorno de SetForegroundWindow.
+  public static bool Forcar(IntPtr h) {
+    if (IsIconic(h)) ShowWindow(h, 9);
+    IntPtr frente = GetForegroundWindow();
+    if (frente == h) return true;
+    uint pidFrente;
+    uint threadFrente = GetWindowThreadProcessId(frente, out pidFrente);
+    uint minhaThread = GetCurrentThreadId();
+    keybd_event(0x12, 0, 0, UIntPtr.Zero);
+    keybd_event(0x12, 0, 2, UIntPtr.Zero);
+    bool ligou = false;
+    if (threadFrente != 0 && threadFrente != minhaThread) ligou = AttachThreadInput(minhaThread, threadFrente, true);
+    BringWindowToTop(h);
+    ShowWindow(h, 5);
+    SetForegroundWindow(h);
+    if (ligou) AttachThreadInput(minhaThread, threadFrente, false);
+    return GetForegroundWindow() == h;
+  }
 }
 "@
 
@@ -136,14 +187,15 @@ function Obter-Processos($lista) {
 function Trazer-ParaFrente($lista) {
     $trouxe = $false
     foreach ($processo in $lista) {
-        $janela = $processo.MainWindowHandle
+        $janelas = @([MaestroApps]::JanelasDoProcesso([uint32]$processo.Id))
         # Processo sem janela (servico, instancia em segundo plano): nada a focar.
-        if ($null -eq $janela -or $janela -eq [IntPtr]::Zero) { continue }
-        if ([MaestroApps]::IsIconic($janela)) {
-            # 9 = SW_RESTORE: janela minimizada nao aceita foco.
-            [void][MaestroApps]::ShowWindow($janela, 9)
+        if ($janelas.Count -eq 0 -and $processo.MainWindowHandle -ne [IntPtr]::Zero) {
+            $janelas = @($processo.MainWindowHandle)
         }
-        if ([MaestroApps]::SetForegroundWindow($janela)) { $trouxe = $true }
+        foreach ($janela in $janelas) {
+            if ([MaestroApps]::Forcar($janela)) { $trouxe = $true; break }
+        }
+        if ($trouxe) { break }
     }
     return $trouxe
 }
@@ -175,7 +227,9 @@ try {
         'frente' {
             $alvos = @(Obter-Processos $Processos)
             if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
-            $dados = @{ trouxe = (Trazer-ParaFrente $alvos) }
+            # Antes devolvia ok mesmo sem conseguir, e o botao parecia ter funcionado.
+            if (-not (Trazer-ParaFrente $alvos)) { throw "nao-consegui-focar" }
+            $dados = @{ trouxe = $true }
         }
         'tecla' {
             if (-not $Tecla) { throw "tecla-invalida" }
