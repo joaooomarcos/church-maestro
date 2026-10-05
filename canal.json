@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "30dffe70369e1c257b17383f35d4d697c425a7c7",
-  "notas": "Atualização com barra de etapas; convidado com modo escolhido pela equipe; iniciar/encerrar no PowerPoint",
+  "sha": "15ef434259ef5817fccf2a1510f386435d61f195",
+  "notas": "Visor do telão nas telas PowerPoint e Holyrics",
   "liberadoEm": "2026-10-05",
-  "versao": "0.4.0",
+  "versao": "0.5.0",
   "versoes": [
+    {
+      "versao": "0.5.0",
+      "sha": "15ef434259ef5817fccf2a1510f386435d61f195",
+      "notas": "Visor do telão nas telas PowerPoint e Holyrics",
+      "data": "2026-10-05"
+    },
     {
       "versao": "0.4.0",
       "sha": "30dffe70369e1c257b17383f35d4d697c425a7c7",
