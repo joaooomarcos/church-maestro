@@ -74,6 +74,8 @@ export const ROTAS = {
   holyricsAcao: '/api/holyrics/acao',
   holyricsPlaylist: '/api/holyrics/playlist',
   pptAcao: '/api/powerpoint/acao',
+  pptSlide: '/api/powerpoint/slide',
+  holyricsVisualizacao: '/api/holyrics/visualizacao',
   cenarios: '/api/cenarios',
   cenario: '/api/cenarios/:id',
   automacoes: '/api/automacoes',

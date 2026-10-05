@@ -11,6 +11,11 @@ export interface PontePowerPoint {
   status(): Promise<StatusPpt>;
   executar(comando: ComandoPpt): Promise<StatusPpt>;
   /**
+   * Exporta a imagem do slide que está no telão (ou do seguinte) e devolve onde
+   * ela ficou. Só existe durante a exibição.
+   */
+  miniatura(qual: 'atual' | 'proximo'): Promise<{ caminho: string; slide: number }>;
+  /**
    * Janela em primeiro plano na máquina. Mora aqui porque esta ponte é o único
    * canal do agente com a área de trabalho do Windows — não tem a ver com
    * PowerPoint. Devolve null quando não dá para saber.

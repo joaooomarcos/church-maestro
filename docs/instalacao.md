@@ -463,6 +463,18 @@ some do quadro da máquina no painel e do "Alterar" (Abrir, Reiniciar, Fechar).
 Os quadros do painel só aparecem para o que está **aberto**; quem está fechado
 já aparece nas bolinhas.
 
+### O visor do telão não aparece
+
+As telas PowerPoint e Holyrics mostram o que está no telão.
+
+- **PowerPoint:** a imagem é exportada pelo próprio PowerPoint, só durante a
+  exibição. Mostra o slide como foi desenhado: animação no meio do slide não
+  aparece. "Próximo" some no último slide.
+- **Holyrics:** é a página `/view/widescreen` do próprio Holyrics, aberta direto
+  do celular. O Maestro procura na porta da legenda e na do API Server; se não
+  achar em nenhuma, o visor não aparece. O celular precisa estar na mesma rede
+  da máquina do Holyrics.
+
 ### "Trazer para frente" não traz a janela
 
 O Windows só deixa trazer uma janela para frente a quem acabou de receber um

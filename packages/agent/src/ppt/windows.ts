@@ -3,6 +3,7 @@ import { createInterface, type Interface } from 'node:readline';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import type { ComandoPpt, StatusPpt } from '@maestro/shared';
 import { ErroPowerPoint, PPT_INDISPONIVEL, type PontePowerPoint } from './tipos.js';
 
@@ -46,6 +47,8 @@ function mensagemPara(codigo: string | undefined, bruto: string | undefined): st
       return 'O arquivo abriu no Modo de Exibição Protegido. Na máquina, clique em "Habilitar Edição" no PowerPoint e tente de novo.';
     case 'fora-de-exibicao':
       return 'A apresentação não está no modo exibição. Inicie a apresentação para poder passar os slides.';
+    case 'sem-proximo':
+      return 'Este é o último slide.';
     case 'acao-desconhecida':
       return 'Comando de PowerPoint não reconhecido.';
     default:
@@ -208,6 +211,15 @@ export function criarPonteWindows(): PontePowerPoint {
       const carga: Record<string, unknown> = { acao: comando.acao };
       if (comando.acao === 'irPara') carga['slide'] = comando.slide;
       return normalizar(await enviar(carga));
+    },
+
+    async miniatura(qual) {
+      const dados = await enviar({ acao: 'miniatura', qual, pasta: join(tmpdir(), 'maestro-slides') });
+      const d = (dados ?? {}) as Record<string, unknown>;
+      if (typeof d['caminho'] !== 'string' || typeof d['slide'] !== 'number') {
+        throw new ErroPowerPoint('O PowerPoint não devolveu a imagem do slide.');
+      }
+      return { caminho: d['caminho'], slide: d['slide'] };
     },
 
     async janelaEmPrimeiroPlano() {

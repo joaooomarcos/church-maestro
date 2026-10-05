@@ -1,5 +1,5 @@
 import { platform } from 'node:os';
-import { PPT_INDISPONIVEL, type PontePowerPoint } from './tipos.js';
+import { ErroPowerPoint, PPT_INDISPONIVEL, type PontePowerPoint } from './tipos.js';
 import { criarPonteWindows } from './windows.js';
 
 export * from './tipos.js';
@@ -16,6 +16,9 @@ const PONTE_INERTE: PontePowerPoint = {
   },
   async executar() {
     return PPT_INDISPONIVEL;
+  },
+  async miniatura() {
+    throw new ErroPowerPoint('Esta máquina não tem PowerPoint.');
   },
   async janelaEmPrimeiroPlano() {
     return null;

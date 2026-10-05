@@ -67,6 +67,25 @@ export function Holyrics() {
     return () => window.clearInterval(timer);
   }, [atualId, online, carregarPlaylist]);
 
+  // A página do próprio Holyrics que desenha o telão. O celular abre direto
+  // nela, então precisa estar na mesma rede da máquina.
+  const [visor, setVisor] = useState<string | null>(null);
+  useEffect(() => {
+    setVisor(null);
+    if (!atualId || !online) return undefined;
+    let valido = true;
+    apiGet<{ url: string | null }>(`${ROTAS.holyricsVisualizacao}?dispositivo=${encodeURIComponent(atualId)}`)
+      .then((resposta) => {
+        if (valido) setVisor(resposta.url);
+      })
+      .catch(() => {
+        // sem o visor a tela segue funcionando
+      });
+    return () => {
+      valido = false;
+    };
+  }, [atualId, online]);
+
   async function mostrarMusica(item: ItemPlaylistHolyrics): Promise<void> {
     if (!atual || enviando) return;
     vibrar(15);
@@ -170,6 +189,13 @@ export function Holyrics() {
           <p>Sem apresentação em exibição.</p>
         )}
       </div>
+
+      {atual && online && visor ? (
+        <figure className="visor-slides__quadro visor-slides__quadro--atual visor-holyrics">
+          <iframe src={visor} title={`Telão do Holyrics em ${atual.nome}`} />
+          <figcaption>No telão</figcaption>
+        </figure>
+      ) : null}
 
       {atual && online ? (
         <>

@@ -198,6 +198,35 @@ export function criarDriverHolyrics(): DriverHolyrics {
       await chamar(dispositivo, `SetF${tecla}`, { enable: ativar }, op);
     },
 
+    async paginaVisualizacao(dispositivo, op) {
+      const cfg = dispositivo.servicos.holyrics;
+      if (!cfg || !dispositivo.host) return null;
+      // A página mora no mesmo servidor do Holyrics que serve as legendas; em
+      // algumas instalações é a porta do API Server, em outras é outra porta.
+      const origens = new Set<string>();
+      if (cfg.legendaUrl) {
+        try {
+          origens.add(new URL(cfg.legendaUrl).origin);
+        } catch {
+          // URL de legenda inválida: segue só com a porta da API
+        }
+      }
+      origens.add(`http://${dispositivo.host}:${cfg.porta}`);
+      for (const origem of origens) {
+        const url = `${origem}/view/widescreen`;
+        try {
+          const resposta = await fetch(url, {
+            method: 'GET',
+            signal: op?.sinal ?? AbortSignal.timeout(op?.timeoutMs ?? TIMEOUT_PADRAO_MS),
+          });
+          if (resposta.ok) return url;
+        } catch {
+          // tenta a próxima porta
+        }
+      }
+      return null;
+    },
+
     async apresentacaoRapida(dispositivo, texto, op) {
       await chamar(dispositivo, 'ShowQuickPresentation', { text: texto }, op);
     },

@@ -58,6 +58,11 @@ export interface DriverHolyrics {
     ativar: boolean,
     op?: OpcoesRequisicao,
   ): Promise<void>;
+  /**
+   * Endereço da página do Holyrics que mostra o que está no telão
+   * (`/view/widescreen`), ou null se ela não respondeu em nenhuma porta conhecida.
+   */
+  paginaVisualizacao(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<string | null>;
   /** Exibe um texto avulso — usado como marcador na prova real das legendas. */
   apresentacaoRapida(
     dispositivo: DispositivoConfig,
@@ -90,6 +95,12 @@ export interface DriverAgente {
     comando: import('@maestro/shared').ComandoPpt,
     op?: OpcoesRequisicao,
   ): Promise<StatusPpt>;
+  /** Imagem do slide no telão (ou do próximo), para o painel mostrar o que a igreja está vendo. */
+  miniaturaPowerPoint(
+    dispositivo: DispositivoConfig,
+    qual: 'atual' | 'proximo',
+    op?: OpcoesRequisicao,
+  ): Promise<{ imagem: Buffer; tipo: string; slide: number | null }>;
   /**
    * Manda a máquina se atualizar para um commit. O agente responde na hora e
    * só então começa a troca — ele mesmo sai do ar no meio dela.

@@ -129,6 +129,35 @@ function Invoke-Comando($comando) {
             }
             return Get-Status
         }
+        'miniatura' {
+            # Imagem do slide que esta no telao (ou do seguinte), exportada pelo
+            # proprio PowerPoint. So o slide como foi desenhado: animacao no meio
+            # do slide nao aparece.
+            $ppt = Get-PowerPoint
+            if ($ppt.SlideShowWindows.Count -eq 0) {
+                throw [System.Exception]::new('fora-de-exibicao')
+            }
+            $janela = $ppt.SlideShowWindows.Item(1)
+            $apresentacao = $janela.Presentation
+            # SlideIndex e a posicao no arquivo; CurrentShowPosition pula os ocultos.
+            $indice = [int]$janela.View.Slide.SlideIndex
+            if ($comando.qual -eq 'proximo') { $indice = $indice + 1 }
+            if ($indice -gt $apresentacao.Slides.Count) {
+                throw [System.Exception]::new('sem-proximo')
+            }
+            $pasta = [string]$comando.pasta
+            if (-not (Test-Path -LiteralPath $pasta)) { $null = New-Item -ItemType Directory -Path $pasta -Force }
+            # O nome leva o arquivo junto: trocar de apresentacao nao pode mostrar o slide da anterior.
+            $nomeSeguro = ($apresentacao.Name -replace '[^A-Za-z0-9]', '_')
+            $caminho = Join-Path $pasta ($nomeSeguro + '-' + $indice + '.jpg')
+            $recente = (Test-Path -LiteralPath $caminho) -and (((Get-Date) - (Get-Item -LiteralPath $caminho).LastWriteTime).TotalSeconds -lt 120)
+            if (-not $recente) {
+                $largura = 960
+                $altura = [int]($largura * $apresentacao.PageSetup.SlideHeight / $apresentacao.PageSetup.SlideWidth)
+                $apresentacao.Slides.Item($indice).Export($caminho, 'JPG', $largura, $altura)
+            }
+            return @{ caminho = $caminho; slide = $indice }
+        }
         'encerrar' {
             $ppt = Get-PowerPoint
             if ($ppt.SlideShowWindows.Count -gt 0) {
@@ -148,6 +177,7 @@ function Get-CodigoErro($mensagem) {
     if ($mensagem -match 'fora-de-exibicao') { return 'fora-de-exibicao' }
     if ($mensagem -match 'sem-apresentacao') { return 'sem-apresentacao' }
     if ($mensagem -match 'modo-protegido') { return 'modo-protegido' }
+    if ($mensagem -match 'sem-proximo') { return 'sem-proximo' }
     if ($mensagem -match 'acao-desconhecida') { return 'acao-desconhecida' }
     if ($mensagem -match '0x800401E3' -or $mensagem -match 'Operation unavailable' -or $mensagem -match 'MK_E_UNAVAILABLE') {
         return 'sem-powerpoint'

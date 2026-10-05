@@ -154,6 +154,11 @@ export function criarDriversMock(): Drivers {
     async definirF() {
       // Mock: F8/F9/F10 não têm efeito observável no schema de estado — só precisa não falhar.
     },
+    async paginaVisualizacao(dispositivo) {
+      const nome = obterApresentacao(dispositivo.id)?.nome ?? 'Nada no ar';
+      const pagina = `<body style="margin:0;display:grid;place-items:center;height:100vh;background:#000;color:#fff;font:600 7vw sans-serif;text-align:center">${nome}<br><small style="font:400 3vw sans-serif;opacity:.6">Holyrics (demonstração)</small></body>`;
+      return `data:text/html;charset=utf-8,${encodeURIComponent(pagina)}`;
+    },
     async apresentacaoRapida(dispositivo, texto) {
       apresentacoesPorDispositivo.set(dispositivo.id, {
         nome: texto,
@@ -200,6 +205,14 @@ export function criarDriversMock(): Drivers {
     },
     async lerPowerPoint(dispositivo) {
       return estadoPowerPointMock(obterPpt(dispositivo.id));
+    },
+    async miniaturaPowerPoint(dispositivo, qual) {
+      const ppt = obterPpt(dispositivo.id);
+      if (!ppt.emApresentacao) throw new Error('A apresentação não está no modo exibição.');
+      const slide = ppt.slide + (qual === 'proximo' ? 1 : 0);
+      if (slide > ppt.totalSlides) throw new Error('Este é o último slide.');
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540"><rect width="960" height="540" fill="#1f3a5f"/><text x="480" y="250" font-family="sans-serif" font-size="72" fill="#fff" text-anchor="middle">Slide ${slide}</text><text x="480" y="330" font-family="sans-serif" font-size="30" fill="#b8c7dc" text-anchor="middle">${ppt.arquivo ?? ''} (demonstração)</text></svg>`;
+      return { imagem: Buffer.from(svg, 'utf8'), tipo: 'image/svg+xml', slide };
     },
     async comandarPowerPoint(dispositivo, comando) {
       const ppt = obterPpt(dispositivo.id);

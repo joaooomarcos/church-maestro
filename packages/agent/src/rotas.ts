@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import Fastify, {
   type FastifyError,
   type FastifyInstance,
@@ -178,6 +179,18 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
       return;
     }
     return ponte.status();
+  });
+
+  /** Imagem (JPEG) do slide que está no telão, ou do próximo. O número do slide vai no cabeçalho. */
+  app.get('/ppt/slide', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!ponte.disponivel) {
+      reply.code(501).send(ERRO_SEM_POWERPOINT);
+      return;
+    }
+    const qual = (req.query as { qual?: string }).qual === 'proximo' ? 'proximo' : 'atual';
+    const { caminho, slide } = await ponte.miniatura(qual);
+    const imagem = await readFile(caminho);
+    reply.header('content-type', 'image/jpeg').header('x-maestro-slide', String(slide)).send(imagem);
   });
 
   app.post('/ppt/acao', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {

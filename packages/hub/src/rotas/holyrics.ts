@@ -72,4 +72,15 @@ export function registrarRotasHolyrics(app: FastifyInstance, ctx: ContextoApp): 
       return responderErroDriver(reply, erro);
     }
   });
+
+  /** Onde está a página do Holyrics que mostra o telão; o celular abre direto nela. */
+  app.get(ROTAS.holyricsVisualizacao, async (req, reply) => {
+    const { dispositivo: dispositivoId } = req.query as { dispositivo?: string };
+    if (!dispositivoId) return responderRequisicaoInvalida(reply, 'Informe o dispositivo na consulta.');
+    const dispositivo = ctx.obterDispositivo(dispositivoId);
+    if (!dispositivo) return responderDispositivoNaoEncontrado(reply, dispositivoId);
+
+    const url = await ctx.drivers.holyrics.paginaVisualizacao(dispositivo).catch(() => null);
+    return reply.send({ url });
+  });
 }

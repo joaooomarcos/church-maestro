@@ -217,6 +217,37 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
       }
     },
 
+    async miniaturaPowerPoint(dispositivo, qual, op) {
+      const cfg = dispositivo.servicos.agente;
+      if (!cfg || !dispositivo.host) {
+        throw new ErroDriver(`O dispositivo "${dispositivo.nome}" não tem o agente configurado.`);
+      }
+      const token = cfg.token ?? tokenPadrao;
+      let resposta: Response;
+      try {
+        resposta = await fetch(`http://${dispositivo.host}:${cfg.porta}/ppt/slide?qual=${qual}`, {
+          headers: token ? { 'x-maestro-token': token } : {},
+          // Exportar um slide pesado leva mais que a leitura de estado.
+          signal: op?.sinal ?? AbortSignal.timeout(op?.timeoutMs ?? 8000),
+        });
+      } catch (err) {
+        throw new ErroDriver(
+          `O agente do ${dispositivo.nome} não respondeu.`,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+      if (!resposta.ok) {
+        const corpo = (await resposta.json().catch(() => null)) as { mensagem?: string } | null;
+        throw new ErroDriver(corpo?.mensagem ?? `Não consegui a imagem do slide do ${dispositivo.nome}.`, `HTTP ${resposta.status}`);
+      }
+      const numero = Number(resposta.headers.get('x-maestro-slide'));
+      return {
+        imagem: Buffer.from(await resposta.arrayBuffer()),
+        tipo: resposta.headers.get('content-type') ?? 'image/jpeg',
+        slide: Number.isFinite(numero) && numero > 0 ? numero : null,
+      };
+    },
+
     async comandarPowerPoint(dispositivo, comando: ComandoPpt, op): Promise<StatusPpt> {
       return pedir<StatusPpt>(
         dispositivo,
