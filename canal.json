@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "94e094de43a7e9012b3c4f73d62aa20f8877bb40",
-  "notas": "Programas por máquina, quadros só do que está aberto, 'Alterar' e botão Acordar; Aviso: tela e tempo escolhidos no envio e no passo do cenário; fechar aviso …",
-  "liberadoEm": "2026-10-04",
-  "versao": "0.3.0",
+  "sha": "30dffe70369e1c257b17383f35d4d697c425a7c7",
+  "notas": "Atualização com barra de etapas; convidado com modo escolhido pela equipe; iniciar/encerrar no PowerPoint",
+  "liberadoEm": "2026-10-05",
+  "versao": "0.4.0",
   "versoes": [
+    {
+      "versao": "0.4.0",
+      "sha": "30dffe70369e1c257b17383f35d4d697c425a7c7",
+      "notas": "Atualização com barra de etapas; convidado com modo escolhido pela equipe; iniciar/encerrar no PowerPoint",
+      "data": "2026-10-05"
+    },
     {
       "versao": "0.3.0",
       "sha": "94e094de43a7e9012b3c4f73d62aa20f8877bb40",
