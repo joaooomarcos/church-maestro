@@ -61,7 +61,9 @@ function modosDisponiveis(ctx: ContextoApp, dispositivo: DispositivoConfig): Mod
   if (dispositivo.servicos.holyrics) modos.push('holyrics');
   if (agenteOnline && estado?.agente?.capacidades.includes('powerpoint')) modos.push('powerpoint');
   if (agenteOnline) modos.push('teclado');
-  return modos;
+  // A equipe escolheu o que este link controla: o convidado não vê o resto.
+  const escolhido = dispositivo.modoConvidado;
+  return escolhido ? modos.filter((modo) => modo === escolhido) : modos;
 }
 
 function resumoDoQueEstaNoAr(ctx: ContextoApp, dispositivo: DispositivoConfig): string {
@@ -94,9 +96,20 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
     if (!dispositivo) return responderDispositivoNaoEncontrado(reply, corpo.data.dispositivo);
 
     let token = dispositivo.tokenConvidado;
-    if (!token || corpo.data.regerar) {
-      token = randomBytes(16).toString('hex');
-      await ctx.atualizarDispositivo({ ...dispositivo, tokenConvidado: token });
+    if (!token || corpo.data.regerar) token = randomBytes(16).toString('hex');
+
+    // Sem `modo` no pedido, a escolha anterior continua valendo.
+    const modo = corpo.data.modo ?? dispositivo.modoConvidado;
+    const appEscolhido = corpo.data.modo ? corpo.data.app : dispositivo.appConvidado;
+    const appDoTeclado = modo === 'teclado' ? appEscolhido : undefined;
+    const { modoConvidado: _modo, appConvidado: _app, ...resto } = dispositivo;
+    if (token !== dispositivo.tokenConvidado || modo !== _modo || appDoTeclado !== _app) {
+      await ctx.atualizarDispositivo({
+        ...resto,
+        tokenConvidado: token,
+        ...(modo ? { modoConvidado: modo } : {}),
+        ...(appDoTeclado ? { appConvidado: appDoTeclado } : {}),
+      });
     }
     // O PIN pode ter nascido agora (valor padrão do schema): grava para ele não
     // mudar no próximo reinício do hub, no meio de um culto.
@@ -107,6 +120,8 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
       nome: dispositivo.nome,
       url: urlNaRede(ctx.config.porta, caminhoConvidado(token)),
       pin: ctx.config.pinConvidado,
+      ...(modo ? { modo } : {}),
+      ...(appDoTeclado ? { app: appDoTeclado } : {}),
     });
   });
 
@@ -159,6 +174,7 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
         modos: modosDisponiveis(ctx, dispositivo),
         resumo: resumoDoQueEstaNoAr(ctx, dispositivo),
         appsAbertos: abertos,
+        ...(dispositivo.appConvidado ? { appFixo: dispositivo.appConvidado } : {}),
       }),
     );
   });
@@ -170,6 +186,13 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
     const corpo = acaoConvidadoSchema.safeParse(req.body);
     if (!corpo.success) return responderRequisicaoInvalida(reply, 'Comando inválido.');
     const { modo, acao, app: alvo } = corpo.data;
+    if (dispositivo.modoConvidado && modo !== dispositivo.modoConvidado) {
+      const erro: ErroApi = {
+        erro: 'modo_nao_permitido',
+        mensagem: 'Este link não controla isso. Peça um QR code novo para a equipe.',
+      };
+      return reply.code(403).send(erro);
+    }
 
     try {
       if (modo === 'holyrics') {
@@ -178,7 +201,7 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
       } else if (modo === 'powerpoint') {
         await ctx.drivers.agente.comandarPowerPoint(dispositivo, { acao });
       } else {
-        await ctx.drivers.agente.teclaApp(dispositivo, alvo ?? 'powerpoint', acao);
+        await ctx.drivers.agente.teclaApp(dispositivo, dispositivo.appConvidado ?? alvo ?? 'powerpoint', acao);
       }
     } catch (erro) {
       return responderErroDriver(reply, erro);

@@ -4,6 +4,7 @@ import {
   ROTAS,
   pedidoAtualizacaoSchema,
   respostaVersoesSchema,
+  type EstadoAgente,
   type MaquinaVersao,
 } from '@maestro/shared';
 import {
@@ -32,6 +33,43 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
   const pedidos = new Map<string, { sha: string; em: number }>();
   const ultimas = new Map<string, { sha: string | null; notas: string }>();
 
+  // Demonstração: nenhuma máquina é atualizada, mas o cartão percorre as etapas
+  // como percorreria de verdade, para dar para ver (e ensaiar) a tela.
+  const ensaios = new Map<string, { sha: string; em: number }>();
+  const instaladasNoEnsaio = new Map<string, { sha: string; em: number }>();
+  const ETAPAS_ENSAIO: Array<{ ate: number; estado: 'baixando' | 'compilando' | 'trocando'; mensagem: string }> = [
+    { ate: 3000, estado: 'baixando', mensagem: 'Baixando a versão' },
+    { ate: 9000, estado: 'compilando', mensagem: 'Compilando a versão nova (a máquina segue no ar)' },
+    { ate: 13_000, estado: 'trocando', mensagem: 'Trocando os arquivos e reiniciando' },
+  ];
+
+  function agenteEmDemonstracao(id: string, agente: EstadoAgente | undefined): EstadoAgente | undefined {
+    if (!agente) return agente;
+    const ensaio = ensaios.get(id);
+    if (ensaio) {
+      const decorrido = Date.now() - ensaio.em;
+      const etapa = ETAPAS_ENSAIO.find((e) => decorrido < e.ate);
+      if (etapa) {
+        return {
+          ...agente,
+          // Na troca de arquivos a máquina some do painel, como na igreja.
+          online: etapa.estado !== 'trocando',
+          atualizacao: { estado: etapa.estado, sha: ensaio.sha, mensagem: etapa.mensagem, ts: Date.now() },
+        };
+      }
+      ensaios.delete(id);
+      instaladasNoEnsaio.set(id, { sha: ensaio.sha, em: Date.now() });
+    }
+    const instalada = instaladasNoEnsaio.get(id);
+    if (!instalada) return agente;
+    return {
+      ...agente,
+      versaoSha: instalada.sha,
+      versaoNotas: 'instalada no ensaio (demonstração)',
+      atualizacao: { estado: 'ok', sha: instalada.sha, mensagem: 'Atualizado', ts: instalada.em },
+    };
+  }
+
   app.get(ROTAS.versoes, async (_req, reply) => {
     const [disponivel, instaladaAqui] = await Promise.all([
       obterVersoesDisponiveis(),
@@ -43,7 +81,7 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
 
     const maquinas: MaquinaVersao[] = ctx.dispositivos().map((dispositivo) => {
       const estado = snapshot.dispositivos.find((d) => d.id === dispositivo.id);
-      const agente = estado?.agente;
+      const agente = ctx.modoDemo ? agenteEmDemonstracao(dispositivo.id, estado?.agente) : estado?.agente;
       const ehMaquinaDoHub = locais.has(dispositivo.host);
       // O agente é a fonte da verdade; no hub, o versao.txt local cobre o caso
       // de o agente daquela máquina estar fora do ar.
@@ -79,7 +117,7 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
               estado: 'trocando',
               sha: pedido.sha,
               mensagem: andamento
-                ? `${andamento.mensagem} A máquina saiu do ar para reiniciar; costuma voltar em 1 a 2 minutos.`
+                ? `${andamento.mensagem}. A máquina saiu do ar para reiniciar; costuma voltar em 1 a 2 minutos.`
                 : 'Pedido enviado. Aguardando a máquina responder; ela sai do ar por 1 a 2 minutos ao trocar os arquivos.',
               ts: Date.now(),
             };
@@ -148,10 +186,15 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
     // Em demonstração o hub roda dentro da pasta do projeto: atualizar "esta
     // máquina" espelharia uma versão baixada por cima dela, apagando o .git.
     if (ctx.modoDemo) {
-      return responderRequisicaoInvalida(
-        reply,
-        'Modo de demonstração: nenhuma máquina é atualizada de verdade.',
-      );
+      if (alvo === ALVO_HUB || !ctx.obterDispositivo(alvo)) {
+        return responderRequisicaoInvalida(
+          reply,
+          'Modo de demonstração: nenhuma máquina é atualizada de verdade.',
+        );
+      }
+      ensaios.set(alvo, { sha, em: Date.now() });
+      pedidos.set(alvo, { sha, em: Date.now() });
+      return reply.send({ aceito: true, alvo });
     }
 
     if (alvo === ALVO_HUB) {

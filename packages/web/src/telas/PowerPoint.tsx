@@ -27,7 +27,7 @@ export function PowerPoint() {
   const online = atual?.powerpoint?.online ?? false;
   const emApresentacao = atual?.powerpoint?.emApresentacao ?? false;
 
-  async function agir(acao: 'proximo' | 'anterior' | 'iniciar'): Promise<void> {
+  async function agir(acao: 'proximo' | 'anterior' | 'iniciar' | 'encerrar'): Promise<void> {
     if (!atual) return;
     vibrar(15);
     setEnviando(true);
@@ -78,18 +78,36 @@ export function PowerPoint() {
         {!online ? (
           <p>{atual?.powerpoint?.erro ?? 'Sem conexão com o PowerPoint.'}</p>
         ) : !emApresentacao ? (
-          <>
-            <p className="powerpoint__aviso">A apresentação não está no modo exibição.</p>
-            <button type="button" className="botao-acao" disabled={enviando} onClick={() => void agir('iniciar')}>
-              Iniciar apresentação
-            </button>
-          </>
+          <p className="powerpoint__aviso">A apresentação não está no modo exibição.</p>
         ) : (
           <h2>
             Slide {atual?.powerpoint?.slide ?? '?'} de {atual?.powerpoint?.totalSlides ?? '?'}
           </h2>
         )}
       </div>
+
+      {online ? (
+        <div className="holyrics__modos">
+          <button
+            type="button"
+            className="holyrics__modo"
+            disabled={enviando || emApresentacao}
+            onClick={() => void agir('iniciar')}
+          >
+            <span>Iniciar apresentação</span>
+            <span className="holyrics__tecla">F5</span>
+          </button>
+          <button
+            type="button"
+            className="holyrics__modo holyrics__modo--sair"
+            disabled={enviando || !emApresentacao}
+            onClick={() => void agir('encerrar')}
+          >
+            <span>Encerrar apresentação</span>
+            <span className="holyrics__tecla">ESC</span>
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

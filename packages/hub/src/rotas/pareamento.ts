@@ -64,6 +64,8 @@ export function registrarRotasPareamento(app: FastifyInstance, ctx: ContextoApp)
         host: pedido.host,
         fixarHost: false,
         ...(existente?.tokenConvidado ? { tokenConvidado: existente.tokenConvidado } : {}),
+        ...(existente?.modoConvidado ? { modoConvidado: existente.modoConvidado } : {}),
+        ...(existente?.appConvidado ? { appConvidado: existente.appConvidado } : {}),
         ...(existente?.monitorAvisos ? { monitorAvisos: existente.monitorAvisos } : {}),
         ...(existente?.apps ? { apps: existente.apps } : {}),
         ...(existente?.mac ? { mac: existente.mac } : {}),

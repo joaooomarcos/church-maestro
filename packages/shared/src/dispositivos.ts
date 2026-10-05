@@ -98,6 +98,10 @@ export const dispositivoConfigSchema = z.object({
   observacao: z.string().optional(),
   /** Segredo do link de convidado desta máquina (o QR code). */
   tokenConvidado: z.string().optional(),
+  /** O que o link de convidado controla (holyrics, powerpoint ou teclado). Ausente = o convidado escolhe. */
+  modoConvidado: z.enum(['holyrics', 'powerpoint', 'teclado']).optional(),
+  /** No modo teclado, o programa que recebe as setas. */
+  appConvidado: z.enum(APLICATIVOS).optional(),
   /** Monitor onde os avisos aparecem (id de `Monitor`). Ausente = o principal. */
   monitorAvisos: z.string().optional(),
   /**

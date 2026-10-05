@@ -75,7 +75,7 @@ export function Convidado({ token }: { token: string }) {
       await apiPost(ROTAS.convidadoAcao, {
         modo,
         acao,
-        ...(modo === 'teclado' ? { app: appAlvo } : {}),
+        ...(modo === 'teclado' ? { app: estado?.appFixo ?? appAlvo } : {}),
       });
     } catch (falha) {
       setErro(falha instanceof Error ? falha.message : 'Não consegui passar o slide.');
@@ -134,7 +134,7 @@ export function Convidado({ token }: { token: string }) {
         </div>
       ) : null}
 
-      {modo === 'teclado' ? (
+      {modo === 'teclado' && !estado.appFixo ? (
         <select
           className="versoes__select"
           value={appAlvo}

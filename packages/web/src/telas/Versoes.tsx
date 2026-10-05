@@ -27,26 +27,40 @@ function estaAtualizando(maquina: MaquinaVersao): boolean {
   return estado === 'baixando' || estado === 'compilando' || estado === 'trocando';
 }
 
-const ETAPAS = ['baixando', 'compilando', 'trocando'] as const;
+/** As etapas que o atualizador informa, na ordem. A primeira é o pedido, antes de a máquina responder. */
+const ETAPAS = [
+  { rotulo: 'Pedido' },
+  { rotulo: 'Baixando', estado: 'baixando' },
+  { rotulo: 'Compilando', estado: 'compilando' },
+  { rotulo: 'Reiniciando', estado: 'trocando' },
+] as const;
 
-function etapaDe(maquina: MaquinaVersao): string | null {
-  const indice = ETAPAS.findIndex((etapa) => etapa === maquina.atualizacao?.estado);
-  return indice >= 0 ? `Etapa ${indice + 1} de ${ETAPAS.length}` : null;
+/** Em que etapa a máquina está; null se não há atualização em andamento. */
+function etapaAtual(maquina: MaquinaVersao, pedidoAgora: boolean): number | null {
+  const indice = ETAPAS.findIndex((etapa) => 'estado' in etapa && etapa.estado === maquina.atualizacao?.estado);
+  if (indice >= 0) return indice;
+  return maquina.alvoSha || pedidoAgora ? 0 : null;
 }
 
 function haQuanto(desde: number | undefined): string | null {
   if (!desde) return null;
   const segundos = Math.max(0, Math.round((Date.now() - desde) / 1000));
-  if (segundos < 60) return `há ${segundos} s`;
-  return `há ${Math.floor(segundos / 60)} min ${segundos % 60} s`;
+  if (segundos < 60) return `${segundos} s`;
+  return `${Math.floor(segundos / 60)} min ${segundos % 60} s`;
 }
 
-function rotuloEstado(maquina: MaquinaVersao): string | null {
+/** Logo depois de terminar, o cartão diz que deu certo em vez de simplesmente voltar ao normal. */
+const RECEM_ATUALIZADA_MS = 3 * 60_000;
+
+function recemAtualizada(maquina: MaquinaVersao): boolean {
   const atualizacao = maquina.atualizacao;
-  if (!atualizacao) return null;
-  if (estaAtualizando(maquina)) return atualizacao.mensagem || 'Atualizando…';
-  if (atualizacao.estado === 'falhou') return atualizacao.mensagem || 'A última atualização falhou.';
-  return null;
+  return atualizacao?.estado === 'ok' && Date.now() - atualizacao.ts < RECEM_ATUALIZADA_MS;
+}
+
+function mensagemDeFalha(maquina: MaquinaVersao): string | null {
+  const atualizacao = maquina.atualizacao;
+  if (atualizacao?.estado !== 'falhou') return null;
+  return atualizacao.mensagem || 'A última atualização falhou.';
 }
 
 export function Versoes() {
@@ -132,8 +146,12 @@ export function Versoes() {
       <section className="versoes__maquinas">
         {dados.maquinas.map((maquina) => {
           const igual = maquina.sha !== null && maquina.sha === shaEscolhido;
-          const ocupada = estaAtualizando(maquina);
-          const estado = rotuloEstado(maquina);
+          const alvo = maquina.id === ALVO_HUB ? ALVO_HUB : maquina.id;
+          const pedindo = enviando === alvo;
+          const etapa = etapaAtual(maquina, pedindo);
+          const ocupada = etapa !== null;
+          const falha = ocupada ? null : mensagemDeFalha(maquina);
+          const decorrido = haQuanto(maquina.pedidoEm);
           return (
             <article key={maquina.id} className="cartao-versao">
               <header className="cartao-versao__cabecalho">
@@ -150,25 +168,49 @@ export function Versoes() {
                 {maquina.notas || 'versão desconhecida'}
                 {maquina.ultimaConhecida ? ' (última versão vista antes de sair do ar)' : ''}
               </p>
-              {maquina.alvoSha ? (
-                <p className="cartao-versao__estado">
-                  Instalando {curto(maquina.alvoSha)}
-                  {haQuanto(maquina.pedidoEm) ? ` · pedido ${haQuanto(maquina.pedidoEm)}` : ''}
-                  {etapaDe(maquina) ? ` · ${etapaDe(maquina)}` : ''}
-                </p>
+
+              {etapa !== null ? (
+                <div className="progresso-versao" role="status" aria-live="polite">
+                  <ol className="progresso-versao__etapas">
+                    {ETAPAS.map((passo, indice) => (
+                      <li
+                        key={passo.rotulo}
+                        className={`progresso-versao__etapa${
+                          indice < etapa
+                            ? ' progresso-versao__etapa--feita'
+                            : indice === etapa
+                              ? ' progresso-versao__etapa--atual'
+                              : ''
+                        }`}
+                        aria-current={indice === etapa ? 'step' : undefined}
+                      >
+                        <span className="progresso-versao__barra" />
+                        <span className="progresso-versao__rotulo">{passo.rotulo}</span>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="progresso-versao__detalhe">
+                    {maquina.alvoSha ? `Instalando ${curto(maquina.alvoSha)}` : 'Enviando o pedido'}
+                    {decorrido ? ` · há ${decorrido}` : ''}
+                    {maquina.atualizacao?.mensagem && estaAtualizando(maquina) ? ` · ${maquina.atualizacao.mensagem}` : ''}
+                  </p>
+                </div>
               ) : null}
-              {estado ? <p className="cartao-versao__estado">{estado}</p> : null}
-              {!maquina.online && !maquina.alvoSha ? (
-                <p className="cartao-versao__estado">Máquina offline.</p>
+              {falha ? <p className="cartao-versao__estado cartao-versao__estado--falha">{falha}</p> : null}
+              {!ocupada && !falha && recemAtualizada(maquina) ? (
+                <p className="cartao-versao__estado cartao-versao__estado--ok">Atualização concluída.</p>
               ) : null}
+              {!maquina.online && !ocupada ? <p className="cartao-versao__estado">Máquina offline.</p> : null}
 
               <button
                 type="button"
-                className="botao-acao"
+                className={`botao-acao${ocupada ? ' botao-acao--carregando' : ''}`}
                 disabled={igual || ocupada || !maquina.online || enviando !== null || !shaEscolhido}
+                aria-busy={ocupada}
                 onClick={() => void atualizar(maquina)}
               >
-                {igual ? 'Já está nesta versão' : ocupada ? 'Atualizando…' : 'Atualizar esta máquina'}
+                {ocupada ? <span className="controle-apps__espera" aria-hidden="true" /> : null}
+                {ocupada ? 'Atualizando…' : igual ? 'Já está nesta versão' : 'Atualizar esta máquina'}
               </button>
             </article>
           );

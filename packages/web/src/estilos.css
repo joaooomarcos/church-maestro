@@ -2177,3 +2177,119 @@ p {
   padding: 0 16px;
   margin-top: 4px;
 }
+
+/* --- convite: link para copiar ou abrir -------------------------------- */
+
+.convite__link {
+  margin: 0;
+  max-width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--cor-texto);
+  overflow-wrap: anywhere;
+  text-align: center;
+  user-select: all;
+}
+
+.convite__abrir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* --- Versões: andamento da atualização --------------------------------- */
+
+.progresso-versao__etapas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.progresso-versao__etapa {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.progresso-versao__barra {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--cor-borda);
+  overflow: hidden;
+  position: relative;
+}
+
+.progresso-versao__etapa--feita .progresso-versao__barra {
+  background: var(--cor-primaria);
+}
+
+/* A etapa em andamento não sabe quanto falta: a faixa corre em vez de encher. */
+.progresso-versao__etapa--atual .progresso-versao__barra::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  border-radius: 3px;
+  background: var(--cor-primaria);
+  animation: progresso-versao-correr 1.2s ease-in-out infinite;
+}
+
+.progresso-versao__rotulo {
+  font-size: 0.75rem;
+  color: var(--cor-texto);
+  opacity: 0.55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progresso-versao__etapa--feita .progresso-versao__rotulo,
+.progresso-versao__etapa--atual .progresso-versao__rotulo {
+  opacity: 1;
+}
+
+.progresso-versao__etapa--atual .progresso-versao__rotulo {
+  font-weight: 700;
+}
+
+.progresso-versao__detalhe {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--cor-texto);
+  opacity: 0.8;
+}
+
+@keyframes progresso-versao-correr {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(225%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progresso-versao__etapa--atual .progresso-versao__barra::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}
+
+.cartao-versao__estado--falha {
+  color: var(--cor-perigo);
+}
+
+.cartao-versao__estado--ok {
+  color: var(--cor-sucesso);
+}
+
+.botao-acao--carregando:disabled {
+  opacity: 1;
+  cursor: progress;
+}

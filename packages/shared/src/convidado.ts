@@ -37,6 +37,8 @@ export const estadoConvidadoSchema = z.object({
   /** Texto curto do que está no ar, para o convidado saber que acertou a máquina. */
   resumo: z.string().default(''),
   appsAbertos: z.array(z.enum(APLICATIVOS)).default([]),
+  /** No modo teclado, o programa que a equipe escolheu ao gerar o QR; o convidado não troca. */
+  appFixo: z.enum(APLICATIVOS).optional(),
 });
 
 export type EstadoConvidado = z.infer<typeof estadoConvidadoSchema>;
@@ -45,6 +47,13 @@ export const pedidoLinkConvidadoSchema = z.object({
   dispositivo: z.string().min(1),
   /** true gera um token novo e derruba os links antigos daquela máquina. */
   regerar: z.boolean().default(false),
+  /**
+   * O que a pessoa vai controlar, escolhido pela equipe antes de gerar o QR.
+   * Com isso o convidado só vê Avançar e Voltar, sem ter o que escolher.
+   */
+  modo: z.enum(MODOS_CONVIDADO).optional(),
+  /** No modo teclado, o programa que recebe as setas. */
+  app: z.enum(APLICATIVOS).optional(),
 });
 
 export const respostaLinkConvidadoSchema = z.object({
@@ -52,6 +61,8 @@ export const respostaLinkConvidadoSchema = z.object({
   nome: z.string(),
   url: z.string(),
   pin: z.string(),
+  modo: z.enum(MODOS_CONVIDADO).optional(),
+  app: z.enum(APLICATIVOS).optional(),
 });
 
 export type RespostaLinkConvidado = z.infer<typeof respostaLinkConvidadoSchema>;
