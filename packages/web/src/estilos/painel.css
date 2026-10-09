@@ -1,0 +1,323 @@
+/* Painel: cartões de máquina, detalhes da máquina e cartões de automação. */
+
+/* --- botão de ligar ------------------------------------------------------ */
+
+.botao-ligar {
+  justify-content: center;
+  min-width: var(--altura-toque-min);
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+.botao-ligar:disabled {
+  opacity: 0.55;
+}
+
+/* --- cartão da máquina (tocável) ---------------------------------------- */
+
+.cartao-maquina--tocavel {
+  cursor: pointer;
+}
+
+.cartao-maquina--tocavel:active {
+  background: var(--cor-fundo-elevado);
+}
+
+.cartao-maquina__detalhes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: var(--altura-toque-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cor-texto-fraco);
+}
+
+/* --- quadros do que está rodando ---------------------------------------- */
+
+.blocos .bloco {
+  text-align: left;
+  font: inherit;
+  align-items: stretch;
+  justify-content: flex-start;
+  color: inherit;
+}
+
+.blocos .bloco__detalhe {
+  display: block;
+}
+
+/* Só informação: sem fundo, borda fina discreta. */
+.bloco.info {
+  background: transparent;
+  border: 1px solid var(--cor-borda-fraca);
+}
+
+.bloco.info.bloco--ok {
+  border-color: var(--cor-borda-fraca);
+}
+
+/* Tocável: fundo preenchido e borda forte; a cor de "ao vivo" continua no texto. */
+.bloco.tocavel {
+  flex-direction: column;
+  gap: 3px;
+  min-height: 76px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo-cartao);
+  font-weight: inherit;
+}
+
+.bloco.tocavel:active {
+  background: var(--cor-fundo-elevado);
+}
+
+.bloco .bloco__titulo .tocavel__seta {
+  margin-left: auto;
+}
+
+.cartao-maquina__frente.info {
+  background: transparent;
+  border: 1px solid var(--cor-borda-fraca);
+}
+
+/* --- lista de programas (detalhes da máquina) --------------------------- */
+
+.programas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.programas__titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--cor-texto-fraco);
+}
+
+.programas__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.programas__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--cor-borda-fraca);
+}
+
+.programas__nome {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.programas__ponto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cor-texto-fraco);
+  opacity: 0.6;
+}
+
+.programas__ponto--aberto {
+  background: var(--cor-sucesso);
+  opacity: 1;
+}
+
+.programas__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.programas__acao {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 0.9rem;
+}
+
+.programas__acao:disabled {
+  opacity: 0.55;
+}
+
+/* --- detalhes da máquina ------------------------------------------------- */
+
+.pc-detalhe {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pc-detalhe__topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pc-detalhe__rede {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.pc-detalhe__titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.pc-detalhe__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+  font-size: 0.92rem;
+}
+
+.pc-detalhe__rotulo {
+  flex-shrink: 0;
+}
+
+.pc-detalhe__valor {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.pc-detalhe__copiar {
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* --- cartões de informação do Painel ------------------------------------ */
+
+.cartao-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.cartao-info__titulo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.cartao-info__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cartao-info__linha {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.cartao-info__linha--forte {
+  color: var(--cor-texto);
+  font-weight: 600;
+}
+
+.cartao-info__linha--aviso {
+  color: var(--cor-ambar);
+}
+
+.cartao-info__ok {
+  color: var(--cor-sucesso);
+}
+
+.cartao-info__erro {
+  color: var(--cor-perigo);
+  font-weight: 600;
+}
+
+.cartao-info--falha {
+  border-color: var(--cor-perigo);
+  background: var(--cor-perigo-fundo);
+}
+
+.cartao-info__ver {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--cor-texto-fraco);
+  font: inherit;
+  font-size: 0.82rem;
+  text-decoration: underline;
+}
+
+.cartao-info__passos {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+
+.cartao-info__passo--falha {
+  color: var(--cor-perigo);
+}
+
+.cartao-info__motivo {
+  opacity: 0.9;
+}
+
+/* --- ajustes de integração (celular de 375 px) ---------------------------- */
+
+/* Botão de ícone compacto: o padrão de .tocavel é alto demais e apertava o nome da máquina. */
+.tocavel.botao-ligar {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+/* Com vários botões (Frente, Reiniciar, Fechar) eles dividem a linha inteira, sem quebrar. */
+.programas__botoes:has(> :nth-child(2)) {
+  flex: 1 1 100%;
+  flex-wrap: nowrap;
+}
+
+.programas__botoes:has(> :nth-child(2)) > .programas__acao {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  padding: 0 6px;
+  gap: 4px;
+  font-size: 0.85rem;
+}

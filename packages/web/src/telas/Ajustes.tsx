@@ -8,9 +8,12 @@ import {
   type DispositivoConfig,
   type EstadoDispositivo,
 } from '@maestro/shared';
+import { Icone } from '../componentes/Icone';
 import { useAppContexto } from '../contexto/AppContext';
 import { apiGet, apiPost, apiPut } from '../nucleo/cliente';
 import { nomeDoMonitor } from '../nucleo/monitores';
+import { AjustesLegendas } from './AjustesLegendas';
+import { AjustesNdi } from './AjustesNdi';
 
 const INTERVALOS_HEARTBEAT = [5, 10, 20, 30, 60];
 
@@ -179,11 +182,13 @@ function MonitoresDosAvisos() {
   );
 }
 
-/** Quais programas cada máquina usa: só eles aparecem no painel e em "Alterar". */
+/** Quais programas cada máquina usa: só eles aparecem no painel e nas telas de cada programa. */
 function ProgramasDasMaquinas() {
   const { snapshot } = useAppContexto();
   // Vale na hora; o painel confirma na leitura seguinte.
   const [locais, setLocais] = useState<Record<string, Aplicativo[]>>({});
+  // Todos abertos por padrão: guardamos só os que a pessoa recolheu.
+  const [recolhidos, setRecolhidos] = useState<Record<string, boolean>>({});
   const maquinas = (snapshot?.dispositivos ?? []).filter((d) => d.agente !== undefined);
   if (maquinas.length === 0) return null;
 
@@ -206,31 +211,53 @@ function ProgramasDasMaquinas() {
     <section className="versoes__alvo">
       <h2 className="versoes__titulo">Programas de cada máquina</h2>
       <p className="versoes__dica">
-        Marque o que se usa em cada computador. O que não estiver marcado some do painel: do quadro da máquina
-        e de "Alterar", onde ficam Abrir, Reiniciar e Fechar.
+        Marque o que cada computador usa. O que não estiver ligado some do painel.
       </p>
-      <ul className="monitores-avisos">
-        {maquinas.map((maquina) => (
-          <li key={maquina.id} className="monitor-avisos">
-            <p className="monitor-avisos__nome">{maquina.nome}</p>
-            <div className="seletor-dias seletor-dias--livre">
-              {APLICATIVOS.map((app) => {
-                const marcado = usados(maquina).includes(app);
-                return (
-                  <button
-                    key={app}
-                    type="button"
-                    aria-pressed={marcado}
-                    className={`seletor-dias__dia${marcado ? ' seletor-dias__dia--marcado' : ''}`}
-                    onClick={() => void alternar(maquina, app)}
-                  >
-                    {NOMES_APLICATIVOS[app]}
-                  </button>
-                );
-              })}
-            </div>
-          </li>
-        ))}
+      <ul className="programas-maquinas">
+        {maquinas.map((maquina) => {
+          const ligados = usados(maquina);
+          const aberto = !recolhidos[maquina.id];
+          return (
+            <li key={maquina.id} className="programas-maquina">
+              <button
+                type="button"
+                className="programas-maquina__cabecalho"
+                aria-expanded={aberto}
+                onClick={() => setRecolhidos((todos) => ({ ...todos, [maquina.id]: aberto }))}
+              >
+                <span className="programas-maquina__nome">{maquina.nome}</span>
+                <span className="programas-maquina__resumo">
+                  {ligados.length} de {APLICATIVOS.length}
+                </span>
+                <span className={`programas-maquina__seta${aberto ? ' programas-maquina__seta--aberta' : ''}`}>
+                  <Icone nome="chevron-baixo" tamanho={20} />
+                </span>
+              </button>
+              {aberto ? (
+                <ul className="programas-maquina__lista">
+                  {APLICATIVOS.map((app) => {
+                    const ligado = ligados.includes(app);
+                    return (
+                      <li key={app} className="programas-maquina__linha">
+                        <span>{NOMES_APLICATIVOS[app]}</span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={ligado}
+                          aria-label={`${NOMES_APLICATIVOS[app]} em ${maquina.nome}`}
+                          className={`interruptor${ligado ? ' interruptor--ligado' : ''}`}
+                          onClick={() => void alternar(maquina, app)}
+                        >
+                          <span className="interruptor__bolinha" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -241,6 +268,8 @@ export function Ajustes() {
   return (
     <div className="ajustes">
       <ProgramasDasMaquinas />
+      <AjustesLegendas />
+      <AjustesNdi />
       <MonitoresDosAvisos />
       <IntervaloHeartbeat />
     </div>

@@ -19,7 +19,10 @@ import { registrarRotasChecks } from './checks/index.js';
 import { criarAreaCompartilhada } from './compartilhar.js';
 import { registrarRotasCompartilhar } from './rotas/compartilhar.js';
 import { criarAgendador } from './automacoes/agendador.js';
+import { normalizarPinsConvidado } from './pinsConvidado.js';
+import { criarGatilhoAoLigar } from './automacoes/aoLigar.js';
 import { registrarRotasAutomacoes } from './rotas/automacoes.js';
+import { criarAtualizadorAoLigar } from './legendas/atualizarAoLigar.js';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const pastaWeb = path.join(aqui, '../../web/dist');
@@ -57,14 +60,17 @@ async function principal(): Promise<void> {
     store,
     cenarios: configuracao.cenarios,
     automacoes: configuracao.automacoes,
+    convidados: usarMock ? undefined : configuracao.convidados,
     dispositivos,
     caminhoDispositivos: configuracao.caminhos.dispositivos,
     caminhoHub: configuracao.caminhos.hub,
     caminhoCenarios: configuracao.caminhos.cenarios,
     caminhoAutomacoes: configuracao.caminhos.automacoes,
+    caminhoConvidados: configuracao.caminhos.convidados,
     persistir: !usarMock,
   });
 
+  if (!usarMock) await normalizarPinsConvidado(ctx, app.log);
   await registrarAutenticacao(app, configuracao.hub);
   registrarRotas(app, ctx);
   registrarRotasChecks(app, ctx);
@@ -99,6 +105,21 @@ async function principal(): Promise<void> {
       });
     },
   });
+  // Observa antes do primeiro ciclo do poller: a primeira leitura é só o ponto de partida.
+  const gatilhoAoLigar = criarGatilhoAoLigar(ctx);
+  gatilhoAoLigar.iniciar();
+  // Fontes de legenda do OBS atualizadas sozinhas quando um Holyrics liga.
+  const legendasAoLigar = criarAtualizadorAoLigar({
+    dispositivos: () => ctx.dispositivos(),
+    drivers,
+    snapshot: () => store.obterSnapshot(),
+    intervaloMs: configuracao.hub.intervaloPollingMs,
+    avisar: (texto, nivel) => {
+      app.log.info(texto);
+      store.transmitirMensagem({ tipo: 'aviso', nivel, texto });
+    },
+  });
+  legendasAoLigar.iniciar();
   poller.iniciar();
   agendador.iniciar();
 
@@ -111,6 +132,8 @@ async function principal(): Promise<void> {
     app.log.info(`recebido ${sinal}, encerrando…`);
     poller.parar();
     agendador.parar();
+    legendasAoLigar.parar();
+    gatilhoAoLigar.parar();
     void drivers.obs
       .encerrar()
       .catch((erro: unknown) => app.log.warn({ erro }, 'falha ao encerrar driver do OBS'))

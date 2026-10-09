@@ -277,7 +277,8 @@ async function configurarHolyrics(rl: Interface): Promise<ServicoHolyrics | unde
     '2. Ative o servidor (a porta padrão é 8091).',
     '3. Clique em "gerenciar permissões" e crie um token chamado "maestro".',
     '4. Na coluna Local, marque: GetCurrentPresentation, ActionNext, ActionPrevious,',
-    '   ActionGoToIndex, CloseCurrentPresentation, ShowQuickPresentation, SetF8, SetF9, SetF10.',
+    '   ActionGoToIndex, CloseCurrentPresentation, SetF8, SetF9, SetF10,',
+    '   GetLyricsPlaylist, ShowLyrics (ou ShowSong), ShowVerse e GetTriggers.',
     '5. Copie o token gerado.',
   ]);
 
@@ -319,13 +320,13 @@ async function configurarObs(rl: Interface): Promise<ServicoObs | undefined> {
   }
 
   const senha = await perguntar(rl, 'Senha do WebSocket (Enter se não tiver)');
-  console.log('\nO teste de legendas precisa saber qual fonte do OBS mostra a letra.');
-  const sourceLegenda = await perguntar(rl, 'Nome exato dessa fonte (Enter para pular)');
+  // A cena, os grupos e as fontes de cada Holyrics são escolhidos no painel,
+  // que lê os nomes direto do OBS. Parear de novo não apaga essa escolha.
+  console.log('\nAs fontes de legenda são escolhidas depois, no painel: Sistema › Ajustes › Legendas.');
 
   return {
     porta,
     ...(senha ? { senha } : {}),
-    ...(sourceLegenda ? { sourceLegenda } : {}),
   };
 }
 

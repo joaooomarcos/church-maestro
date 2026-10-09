@@ -1,14 +1,23 @@
 import { useState } from 'react';
-import { ROTAS } from '@maestro/shared';
-import { useAppContexto } from '../contexto/AppContext';
+import { MONITOR_TODOS, ROTAS, type EstadoDispositivo } from '@maestro/shared';
+import { useAppContexto, useControlesRodape } from '../contexto/AppContext';
 import { apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
+import { nomeDoMonitor } from '../nucleo/monitores';
 import { Icone } from '../componentes/Icone';
-import { OpcoesAviso, monitorPrincipal } from '../componentes/OpcoesAviso';
+import {
+  DURACOES,
+  DuracaoAviso,
+  TelasAviso,
+  monitorPrincipal,
+  precisaEscolherTela,
+} from '../componentes/OpcoesAviso';
+import '../estilos/avisos.css';
 
 const CHAVE_RECENTES = 'maestro:avisos-recentes';
 const CHAVE_DESTINOS = 'maestro:avisos-destinos';
 const MAXIMO_RECENTES = 6;
+const MAXIMO_CARACTERES = 300;
 const PAINEL = 'painel';
 
 function ler<T>(chave: string, padrao: T): T {
@@ -28,6 +37,14 @@ function gravar(chave: string, valor: unknown): void {
   }
 }
 
+/** "Tela 2 · 1920×1080 (principal)" vira só "Tela 2", que cabe no resumo do rodapé. */
+function telaCurta(maquina: EstadoDispositivo, monitor: string | null | undefined): string {
+  if (monitor === MONITOR_TODOS) return 'todas as telas';
+  const id = monitor ?? monitorPrincipal(maquina);
+  const encontrado = maquina.agente?.monitores?.find((m) => m.id === id);
+  return encontrado ? (nomeDoMonitor(encontrado).split(' · ')[0] ?? id ?? '') : (id ?? 'tela principal');
+}
+
 /** Mandar um aviso agora, sem montar cenário: "câmera 2 sem imagem", "podem começar". */
 export function Avisos() {
   const { snapshot, notificar } = useAppContexto();
@@ -42,8 +59,10 @@ export function Avisos() {
   // Também não é lembrado: cada aviso decide se some sozinho ou fica até o "Ok".
   const [segundos, setSegundos] = useState<number | null>(null);
   const [fechando, setFechando] = useState(false);
+  const [fecharPorMaquina, setFecharPorMaquina] = useState(false);
 
   function alternar(id: string): void {
+    vibrar(8);
     setDestinos((atuais) => {
       const novos = atuais.includes(id) ? atuais.filter((d) => d !== id) : [...atuais, id];
       gravar(CHAVE_DESTINOS, novos);
@@ -58,6 +77,8 @@ export function Avisos() {
   }
 
   const dispositivos = destinos.filter((d) => d !== PAINEL && maquinas.some((m) => m.id === d));
+  const escolhidas = maquinas.filter((m) => dispositivos.includes(m.id));
+  const comVariasTelas = escolhidas.filter((m) => precisaEscolherTela(m, monitores));
   const noPainel = destinos.includes(PAINEL);
   const texto = mensagem.trim();
 
@@ -67,9 +88,7 @@ export function Avisos() {
     vibrar(15);
     setEnviando(true);
     try {
-      const escolhas = Object.fromEntries(
-        maquinas.filter((m) => dispositivos.includes(m.id)).map((m) => [m.id, monitores[m.id] ?? monitorPrincipal(m)]),
-      );
+      const escolhas = Object.fromEntries(escolhidas.map((m) => [m.id, monitores[m.id] ?? monitorPrincipal(m)]));
       const { falhas } = await apiPost<{ falhas: string[] }>(ROTAS.aviso, {
         dispositivos,
         mensagem: texto,
@@ -104,112 +123,186 @@ export function Avisos() {
     }
   }
 
+  // Resumo do que vai acontecer, lido logo acima do botão: onde (e em que tela) e por quanto tempo.
+  const alvos = [
+    ...escolhidas.map((m) =>
+      precisaEscolherTela(m, monitores) ? `${m.nome} (${telaCurta(m, monitores[m.id])})` : m.nome,
+    ),
+    ...(noPainel ? ['Painel'] : []),
+  ];
+  const duracao = DURACOES.find((d) => d.segundos === segundos)?.rotulo ?? `${segundos} s`;
+  const pronto = texto.length > 0 && alvos.length > 0;
+
+  useControlesRodape(
+    <div className="avisos-rodape">
+      <p className={`avisos-rodape__resumo${comVariasTelas.length > 0 ? ' avisos-rodape__resumo--cuidado' : ''}`}>
+        {alvos.length === 0 ? (
+          'Escolha onde o aviso aparece.'
+        ) : (
+          <>
+            {comVariasTelas.length > 0 ? <Icone nome="aviso" tamanho={16} /> : null}
+            <span>
+              Vai aparecer em: <strong>{alvos.join(', ')}</strong> · {segundos === null ? 'até tocarem em Ok' : duracao}
+            </span>
+          </>
+        )}
+      </p>
+      <button
+        type="button"
+        className={`avisos-rodape__enviar${pronto ? '' : ' avisos-rodape__enviar--incompleto'}`}
+        disabled={enviando}
+        onClick={() => void enviar()}
+      >
+        <Icone nome="sino" tamanho={22} /> {enviando ? 'Enviando…' : 'Enviar aviso'}
+      </button>
+    </div>,
+  );
+
   return (
     <div className="avisos">
-      <section className="versoes__alvo cenario-editor">
+      <section className="avisos__bloco">
         <label className="campo">
-          <span className="campo__rotulo">Mensagem</span>
+          <span className="avisos__rotulo-linha">
+            <span className="campo__rotulo">Mensagem</span>
+            <span className="avisos__contador">
+              {mensagem.length}/{MAXIMO_CARACTERES}
+            </span>
+          </span>
           <textarea
             className="campo__entrada campo__entrada--texto"
             rows={3}
-            maxLength={300}
+            maxLength={MAXIMO_CARACTERES}
             value={mensagem}
             placeholder="Ex.: Podem iniciar a transmissão"
             onChange={(e) => setMensagem(e.target.value)}
           />
         </label>
 
+        {recentes.length > 0 ? (
+          <div className="campo">
+            <span className="campo__rotulo">Usados há pouco</span>
+            <ul className="avisos__recentes">
+              {recentes.map((recente) => (
+                <li key={recente} className="avisos__recente">
+                  <button
+                    type="button"
+                    className="avisos__usar"
+                    title={recente}
+                    onClick={() => setMensagem(recente)}
+                  >
+                    {recente}
+                  </button>
+                  <button
+                    type="button"
+                    className="avisos__esquecer"
+                    aria-label={`Esquecer "${recente}"`}
+                    onClick={() => esquecer(recente)}
+                  >
+                    <Icone nome="fechar" tamanho={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="avisos__bloco">
         <div className="campo">
           <span className="campo__rotulo">Onde aparece</span>
-          <div className="seletor-dias seletor-dias--livre">
-            {maquinas.map((maquina) => {
-              const marcado = destinos.includes(maquina.id);
+          <div className="avisos-destinos" role="group" aria-label="Onde aparece">
+            {[
+              ...maquinas.map((m) => ({ id: m.id, nome: m.nome, desligada: !m.agente?.online })),
+              { id: PAINEL, nome: 'Painel (celulares)', desligada: false },
+            ].map((destino) => {
+              const marcado = destinos.includes(destino.id);
               return (
                 <button
-                  key={maquina.id}
+                  key={destino.id}
                   type="button"
                   aria-pressed={marcado}
-                  className={`seletor-dias__dia${marcado ? ' seletor-dias__dia--marcado' : ''}`}
-                  onClick={() => alternar(maquina.id)}
+                  className={`avisos-destino${marcado ? ' avisos-destino--marcado' : ''}`}
+                  onClick={() => alternar(destino.id)}
                 >
-                  {maquina.nome}
+                  {marcado ? (
+                    <Icone nome="ok" tamanho={20} />
+                  ) : (
+                    <span className="avisos-destino__vazio" aria-hidden="true" />
+                  )}
+                  <span className="avisos-destino__nome">
+                    {destino.nome}
+                    {destino.desligada ? <span className="avisos-destino__estado">desligada</span> : null}
+                  </span>
                 </button>
               );
             })}
-            <button
-              type="button"
-              aria-pressed={noPainel}
-              className={`seletor-dias__dia${noPainel ? ' seletor-dias__dia--marcado' : ''}`}
-              onClick={() => alternar(PAINEL)}
-            >
-              Painel (celulares)
-            </button>
           </div>
+          <p className="avisos-dica">Nas máquinas, abre uma janela por cima de tudo.</p>
         </div>
 
-        <OpcoesAviso
-          maquinas={maquinas.filter((m) => dispositivos.includes(m.id))}
+        {comVariasTelas.length > 0 ? (
+          <p className="info avisos-cuidado">
+            <Icone nome="aviso" tamanho={18} />
+            <span>
+              Confira a tela de cada máquina: cuidado com a do <strong>telão</strong> e com a que vai para a{' '}
+              <strong>live</strong>.
+            </span>
+          </p>
+        ) : null}
+
+        <TelasAviso
+          maquinas={escolhidas}
           monitores={monitores}
           aoEscolherMonitor={(id, monitor) => setMonitores((atuais) => ({ ...atuais, [id]: monitor ?? null }))}
-          segundos={segundos}
-          aoEscolherSegundos={setSegundos}
         />
-
-        <button type="button" className="botao-acao" disabled={enviando} onClick={() => void enviar()}>
-          <Icone nome="sino" tamanho={20} /> {enviando ? 'Enviando…' : 'Enviar aviso'}
-        </button>
-        <p className="versoes__dica">
-          Nas máquinas, abre uma janela por cima de tudo. Máquina com mais de uma tela
-          pergunta em qual delas; cuidado com a do telão e com a que vai para a live.
-        </p>
       </section>
 
-      <section className="versoes__alvo">
-        <h2 className="versoes__titulo">Aviso preso na tela?</h2>
-        <p className="versoes__dica">
-          Fecha as janelas de aviso que estiverem abertas, sem precisar chegar perto da máquina (no telão, por
-          exemplo).
-        </p>
-        <div className="seletor-dias seletor-dias--livre">
-          <button type="button" className="botao-secundario" disabled={fechando} onClick={() => void fecharAvisos([])}>
-            Fechar em todas as máquinas
-          </button>
-          {maquinas.map((maquina) => (
-            <button
-              key={maquina.id}
-              type="button"
-              className="botao-secundario"
-              disabled={fechando || !maquina.agente?.online}
-              onClick={() => void fecharAvisos([maquina.id])}
-            >
-              {maquina.nome}
-            </button>
-          ))}
+      <section className="avisos__bloco">
+        <DuracaoAviso segundos={segundos} aoEscolherSegundos={setSegundos} />
+      </section>
+
+      <section className="avisos__bloco avisos-preso">
+        <div className="avisos-preso__cabecalho">
+          <span className="campo__rotulo">Aviso preso na tela?</span>
+          <span className="avisos-dica">Fecha as janelas de aviso de longe.</span>
         </div>
-      </section>
-
-      {recentes.length > 0 ? (
-        <section className="versoes__alvo">
-          <h2 className="versoes__titulo">Usados há pouco</h2>
-          <ul className="avisos__recentes">
-            {recentes.map((recente) => (
-              <li key={recente} className="avisos__recente">
-                <button type="button" className="avisos__usar" onClick={() => setMensagem(recente)}>
-                  {recente}
-                </button>
-                <button
-                  type="button"
-                  className="botao-icone"
-                  aria-label="Esquecer esta mensagem"
-                  onClick={() => esquecer(recente)}
-                >
-                  <Icone nome="fechar" tamanho={16} />
-                </button>
-              </li>
+        <div className="avisos-preso__acoes">
+          <button
+            type="button"
+            className="tocavel tocavel--vermelho avisos-preso__botao"
+            disabled={fechando}
+            onClick={() => void fecharAvisos([])}
+          >
+            <Icone nome="fechar" tamanho={18} /> Fechar em todas
+          </button>
+          <button
+            type="button"
+            className="tocavel avisos-preso__botao"
+            aria-expanded={fecharPorMaquina}
+            onClick={() => setFecharPorMaquina((aberto) => !aberto)}
+          >
+            Por máquina
+            <span className="tocavel__seta">
+              <Icone nome={fecharPorMaquina ? 'subir' : 'chevron-baixo'} tamanho={18} />
+            </span>
+          </button>
+        </div>
+        {fecharPorMaquina ? (
+          <div className="avisos-preso__maquinas">
+            {maquinas.map((maquina) => (
+              <button
+                key={maquina.id}
+                type="button"
+                className="tocavel tocavel--vermelho avisos-preso__botao"
+                disabled={fechando || !maquina.agente?.online}
+                onClick={() => void fecharAvisos([maquina.id])}
+              >
+                <Icone nome="fechar" tamanho={16} /> {maquina.nome}
+              </button>
             ))}
-          </ul>
-        </section>
-      ) : null}
+          </div>
+        ) : null}
+      </section>
     </div>
   );
 }

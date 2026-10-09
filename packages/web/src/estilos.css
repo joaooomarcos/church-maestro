@@ -21,6 +21,10 @@
   --cor-aviso: #e0a83f;
   --cor-aviso-fundo: rgba(224, 168, 63, 0.16);
   --cor-neutro: #64758a;
+  --cor-ambar: #e0a83f;
+  --cor-ambar-fundo: rgba(224, 168, 63, 0.16);
+  --cor-borda-fraca: #212b39;
+  --cor-borda-forte: #3d4f66;
   --raio: 14px;
   --raio-grande: 18px;
   --altura-toque-min: 56px;
@@ -312,10 +316,8 @@ p {
   background: var(--cor-fundo-elevado);
 }
 
-.tela-pin__tecla--entrar {
-  background: var(--cor-sucesso);
-  border-color: var(--cor-sucesso);
-  color: #fff;
+.tela-pin__tecla--vazia {
+  visibility: hidden;
 }
 
 .tela-pin__tecla--apagar {
@@ -2159,8 +2161,22 @@ p {
 }
 
 .holyrics__musica--no-ar {
-  border-color: var(--cor-primaria);
-  background: rgba(47, 125, 216, 0.18);
+  border-color: var(--cor-sucesso);
+  background: linear-gradient(rgba(47, 168, 96, 0.1), rgba(47, 168, 96, 0.1)), var(--cor-fundo-cartao);
+}
+
+/* Título em destaque e artista logo depois, entre parênteses e mais leve. O
+   artista é inline-block: se não couber na linha, desce inteiro, sem cortar o título. */
+.holyrics__musica-texto {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.holyrics__artista {
+  display: inline-block;
+  margin-left: 0.35em;
+  font-weight: 400;
+  color: var(--cor-texto-fraco);
 }
 
 .holyrics__musica:disabled {
@@ -2341,4 +2357,414 @@ p {
 /* Só para olhar: toques no visor não podem cair dentro da página do Holyrics. */
 .visor-holyrics iframe {
   pointer-events: none;
+}
+
+/* ======================================================================
+ * REGRAS DE DESIGN (valem para tudo que for criado ou revisado)
+ *
+ * 1. Só informação (título, contador, status): SEM fundo, só uma borda fina
+ *    e discreta, texto mais leve, sem seta. Não pode parecer botão.  -> .info
+ * 2. Tocável: fundo preenchido + borda mais forte.                   -> .tocavel
+ *    - leva a outra tela: seta › na ponta direita                    -> .tocavel__seta
+ *    - executa algo: um ícone (Icone) em vez da seta
+ * 3. Verde = "no ar / ao vivo". Cores de ação: Trazer para frente azul,
+ *    Reiniciar âmbar, Fechar vermelho, Abrir verde.                  -> .tocavel--azul / --ambar / --vermelho / --verde
+ * ====================================================================== */
+
+.info {
+  background: transparent;
+  border: 1px solid var(--cor-borda-fraca);
+  border-radius: var(--raio);
+  color: var(--cor-texto-fraco);
+  font-weight: 400;
+}
+
+.tocavel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--altura-toque-min);
+  padding: 8px 14px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+
+.tocavel:active {
+  background: var(--cor-fundo-elevado);
+}
+
+.tocavel__seta {
+  display: inline-flex;
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--cor-texto-fraco);
+}
+
+.tocavel--azul {
+  border-color: var(--cor-primaria);
+  color: var(--cor-primaria-forte);
+}
+
+.tocavel--ambar {
+  border-color: var(--cor-ambar);
+  color: var(--cor-ambar);
+}
+
+.tocavel--vermelho {
+  border-color: var(--cor-perigo);
+  color: var(--cor-perigo);
+}
+
+.tocavel--verde {
+  border-color: var(--cor-sucesso);
+  color: var(--cor-sucesso);
+}
+
+/* --- cabeçalho: controles à direita do título --------------------------- */
+
+.app__controles {
+  margin-left: auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* --- seletor de PC ------------------------------------------------------- */
+
+.seletor-pc {
+  position: relative;
+  min-width: 0;
+}
+
+.seletor-pc__botao {
+  min-height: 44px;
+  padding: 0 10px 0 14px;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.seletor-pc__nome {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seletor-pc__unico {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.seletor-pc__fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Celular: folha que sobe de baixo, com itens grandes. */
+.seletor-pc__popup {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  max-height: 70dvh;
+  overflow-y: auto;
+  padding: 14px 14px calc(env(safe-area-inset-bottom) + 14px);
+  border: 1px solid var(--cor-borda-forte);
+  border-bottom: none;
+  border-radius: var(--raio-grande) var(--raio-grande) 0 0;
+  background: var(--cor-fundo-elevado);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.seletor-pc__titulo {
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cor-texto-fraco);
+}
+
+.seletor-pc__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seletor-pc__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--altura-toque-min);
+  padding: 0 14px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+
+.seletor-pc__item--atual {
+  border-color: var(--cor-primaria);
+  background: rgba(47, 125, 216, 0.18);
+}
+
+.seletor-pc__item-nome {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Desktop: menu logo abaixo do botão, sem escurecer a tela. */
+@media (min-width: 960px) {
+  .seletor-pc__fundo {
+    background: transparent;
+  }
+
+  .seletor-pc__popup {
+    position: absolute;
+    left: auto;
+    right: 0;
+    bottom: auto;
+    top: calc(100% + 6px);
+    width: 280px;
+    max-height: 60dvh;
+    padding: 12px;
+    border-bottom: 1px solid var(--cor-borda-forte);
+    border-radius: var(--raio);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+
+  .seletor-pc__item {
+    min-height: 46px;
+  }
+}
+
+/* --- faixa fina de título (Holyrics / PowerPoint) ------------------------ */
+
+.faixa-titulo {
+  padding: 8px 12px 0;
+  overflow: hidden;
+}
+
+.faixa-titulo__linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.faixa-titulo__titulo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.faixa-titulo__nome {
+  color: var(--cor-texto);
+  font-weight: 600;
+}
+
+.faixa-titulo__complemento {
+  font-weight: 400;
+}
+
+.faixa-titulo__contador {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.faixa-titulo__barra {
+  height: 3px;
+  margin: 8px -12px 0;
+  background: var(--cor-borda-fraca);
+}
+
+.faixa-titulo__preenchimento {
+  display: block;
+  height: 100%;
+  background: var(--cor-primaria);
+  transition: width 200ms ease;
+}
+
+/* Avisos de estado (sem conexão, sem apresentação) também são só informação. */
+.holyrics__status.info,
+.powerpoint__status.info {
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.powerpoint__status.powerpoint__aviso {
+  margin-bottom: 0;
+  font-weight: 400;
+}
+
+.holyrics > * + *,
+.powerpoint > * + * {
+  margin-top: 12px;
+}
+
+.holyrics > .holyrics__modos,
+.powerpoint > .holyrics__modos {
+  margin-top: 12px;
+}
+
+/* Ações de F8/F9/F10/Sair/Iniciar/Encerrar: tocáveis, borda mais forte. */
+.holyrics__modo {
+  border-color: var(--cor-borda-forte);
+}
+
+.holyrics__modo--ligado {
+  border-color: var(--cor-ambar);
+}
+
+.holyrics__modo--sair {
+  border-color: var(--cor-perigo);
+}
+
+.holyrics__musica {
+  border-color: var(--cor-borda-forte);
+}
+
+.holyrics__musica--no-ar {
+  border-color: var(--cor-sucesso);
+}
+
+/* --- rodapé Anterior / Próximo ------------------------------------------- */
+
+.nav-slides {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 10px;
+}
+
+.nav-slides button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 84px;
+  border-radius: var(--raio-grande);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.nav-slides__proximo {
+  border: 1px solid var(--cor-primaria);
+  background: var(--cor-primaria);
+  color: #fff;
+}
+
+.nav-slides__proximo:active {
+  background: var(--cor-primaria-forte);
+  transform: scale(0.98);
+}
+
+.nav-slides__anterior {
+  border: 1px solid var(--cor-primaria);
+  background: rgba(47, 125, 216, 0.12);
+  color: var(--cor-primaria-forte);
+}
+
+.nav-slides__anterior:active {
+  background: rgba(47, 125, 216, 0.28);
+}
+
+/* --- Versões: selo de máquina já atualizada ------------------------------- */
+
+.selo-atualizada {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--cor-sucesso);
+  border-radius: var(--raio);
+  background: var(--cor-sucesso-fundo);
+  color: var(--cor-sucesso);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* --- Ajustes: programas de cada máquina ----------------------------------- */
+
+.programas-maquinas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.programas-maquina {
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio);
+  background: var(--cor-fundo-cartao);
+  overflow: hidden;
+}
+
+.programas-maquina__cabecalho {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--altura-toque-min);
+  padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: var(--cor-texto);
+  font: inherit;
+  text-align: left;
+}
+
+.programas-maquina__nome {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+}
+
+.programas-maquina__resumo {
+  font-size: 0.85rem;
+  color: var(--cor-texto-fraco);
+}
+
+.programas-maquina__seta {
+  display: inline-flex;
+  color: var(--cor-texto-fraco);
+  transform: rotate(-90deg);
+  transition: transform 150ms ease;
+}
+
+.programas-maquina__seta--aberta {
+  transform: none;
+}
+
+.programas-maquina__lista {
+  border-top: 1px solid var(--cor-borda);
+}
+
+.programas-maquina__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+}
+
+.programas-maquina__linha + .programas-maquina__linha {
+  border-top: 1px solid var(--cor-borda-fraca);
 }

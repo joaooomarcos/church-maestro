@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   APLICATIVOS,
-  NOMES_APLICATIVOS,
   ROTAS,
   type AcaoApp,
   type Aplicativo,
@@ -9,15 +8,25 @@ import {
 } from '@maestro/shared';
 import { apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
+import { Icone } from './Icone';
+import '../estilos/painel.css';
 
 const ROTULOS: Record<AcaoApp, string> = {
   abrir: 'Abrir',
-  frente: 'Trazer para frente',
+  frente: 'Frente',
   fechar: 'Fechar',
   reiniciar: 'Reiniciar',
 };
 
-/** Cabe na pílula do cartão; o nome completo aparece ao gerenciar. */
+/** Frente azul, Reiniciar âmbar, Fechar vermelho, Abrir verde. */
+const COR_ACAO: Record<AcaoApp, 'azul' | 'ambar' | 'vermelho' | 'verde'> = {
+  frente: 'azul',
+  reiniciar: 'ambar',
+  fechar: 'vermelho',
+  abrir: 'verde',
+};
+
+/** Nome curto de cada programa para a lista. */
 const NOMES_CURTOS: Record<Aplicativo, string> = {
   obs: 'OBS',
   holyrics: 'Holyrics',
@@ -70,7 +79,6 @@ function acoesPara(aberto: boolean): AcaoApp[] {
 }
 
 export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }) {
-  const [expandido, setExpandido] = useState(false);
   const [pendentes, setPendentes] = useState<Partial<Record<Aplicativo, Pendente>>>({});
   const [agora, setAgora] = useState(() => Date.now());
 
@@ -141,69 +149,45 @@ export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }
   }
 
   return (
-    <div className="controle-apps">
-      <div className="controle-apps__resumo">
-        <div className="controle-apps__cabecalho">
-          <span className="controle-apps__titulo">Programas</span>
-          <button
-            type="button"
-            className="controle-apps__alternar"
-            aria-expanded={expandido}
-            onClick={() => setExpandido((atual) => !atual)}
-          >
-            {expandido ? 'Pronto' : 'Alterar'}
-          </button>
-        </div>
-        <ul className="pilulas" aria-label="Programas desta máquina">
-          {visiveis.map((app) => {
-            const aberto = agente.processos[app] === true;
-            return (
-              <li key={app} className={`pilula${aberto ? ' pilula--aberta' : ''}`}>
-                <span className="pilula__ponto" aria-hidden="true" />
+    <section className="programas" aria-label="Programas desta máquina">
+      <h3 className="programas__titulo">Programas</h3>
+      <ul className="programas__lista">
+        {visiveis.map((app) => {
+          const aberto = agente.processos[app] === true;
+          const pendente = pendentes[app];
+          return (
+            <li key={app} className="programas__item">
+              <span className="programas__nome">
+                <span
+                  className={`programas__ponto${aberto ? ' programas__ponto--aberto' : ''}`}
+                  aria-hidden="true"
+                />
                 {NOMES_CURTOS[app]}
                 <span className="visualmente-oculto">{aberto ? ' (aberto)' : ' (fechado)'}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      {expandido ? (
-        <ul className="controle-apps__lista">
-          {visiveis.map((app) => {
-            const aberto = agente.processos[app] === true;
-            const pendente = pendentes[app];
-            return (
-              <li key={app} className="controle-apps__item">
-                <span className="controle-apps__nome">
-                  <span
-                    className={`controle-apps__ponto${aberto ? ' controle-apps__ponto--aberto' : ''}`}
-                    aria-hidden="true"
-                  />
-                  {NOMES_APLICATIVOS[app]}
-                </span>
-                <span className="controle-apps__botoes">
-                  {acoesPara(aberto).map((acao) => (
-                    <button
-                      key={acao}
-                      type="button"
-                      className={`controle-apps__acao${pendente?.acao === acao ? ' controle-apps__acao--carregando' : ''}`}
-                      disabled={pendente !== undefined}
-                      aria-busy={pendente?.acao === acao}
-                      onClick={() => void acionar(app, acao)}
-                    >
-                      {pendente?.acao === acao ? (
-                        <span className="controle-apps__espera" aria-hidden="true" />
-                      ) : null}
-                      {ROTULOS[acao]}
-                    </button>
-                  ))}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
-    </div>
+              </span>
+              <span className="programas__botoes">
+                {acoesPara(aberto).map((acao) => (
+                  <button
+                    key={acao}
+                    type="button"
+                    className={`tocavel tocavel--${COR_ACAO[acao]} programas__acao`}
+                    disabled={pendente !== undefined}
+                    aria-busy={pendente?.acao === acao}
+                    onClick={() => void acionar(app, acao)}
+                  >
+                    {pendente?.acao === acao ? (
+                      <span className="controle-apps__espera" aria-hidden="true" />
+                    ) : (
+                      <Icone nome={acao} tamanho={18} />
+                    )}
+                    {ROTULOS[acao]}
+                  </button>
+                ))}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

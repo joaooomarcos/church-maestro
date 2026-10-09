@@ -2,6 +2,7 @@ import { Icone, type NomeIcone } from './Icone';
 
 export type TelaId =
   | 'painel'
+  | 'maquinas'
   | 'ndi'
   | 'holyrics'
   | 'powerpoint'
@@ -26,6 +27,7 @@ const GRUPOS: ReadonlyArray<{ titulo: string; itens: ItemMenu[] }> = [
     titulo: 'Operação',
     itens: [
       { id: 'painel', rotulo: 'Painel', icone: 'painel' },
+      { id: 'maquinas', rotulo: 'Máquinas', icone: 'sistema' },
       { id: 'ndi', rotulo: 'NDI', icone: 'ndi' },
       { id: 'holyrics', rotulo: 'Holyrics', icone: 'holyrics' },
       { id: 'powerpoint', rotulo: 'PowerPoint', icone: 'powerpoint' },
@@ -37,13 +39,13 @@ const GRUPOS: ReadonlyArray<{ titulo: string; itens: ItemMenu[] }> = [
     titulo: 'Automação',
     itens: [
       { id: 'cenarios', rotulo: 'Cenários', icone: 'raio' },
-      { id: 'agendamentos', rotulo: 'Agendamentos', icone: 'relogio' },
+      { id: 'agendamentos', rotulo: 'Automações', icone: 'relogio' },
     ],
   },
   {
     titulo: 'Compartilhar',
     itens: [
-      { id: 'convidado', rotulo: 'Slides do convidado', icone: 'qr' },
+      { id: 'convidado', rotulo: 'Controle remoto', icone: 'qr' },
       { id: 'compartilhar', rotulo: 'Links e arquivos', icone: 'compartilhar' },
     ],
   },

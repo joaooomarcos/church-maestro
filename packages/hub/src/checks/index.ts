@@ -11,11 +11,12 @@ export { checarNdi } from './ndi.js';
 
 const corpoLegendasSchema = z
   .object({
-    dispositivoHolyrics: z.string().optional(),
-    dispositivoObs: z.string().optional(),
-    provaReal: z.boolean().optional(),
+    /** "Forçar teste": ignora horário proibido e OBS no ar (nunca Holyrics exibindo). */
+    forcar: z.boolean().optional(),
+    holyrics: z.array(z.string()).optional(),
     esperaRenderizacaoMs: z.number().int().positive().max(15_000).optional(),
     esperaReferenciaMs: z.number().int().positive().max(5000).optional(),
+    esperaGrupoMs: z.number().int().positive().max(15_000).optional(),
   })
   .default({});
 

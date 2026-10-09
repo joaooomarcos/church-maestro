@@ -109,3 +109,57 @@ Falta testar no Windows: se a janela aparece mesmo com o agente rodando
 escondido (o `ShowWindow` extra no `Shown` existe por isso), se abre no monitor
 certo com escala de tela diferente de 100%, e o `notify-send` no Note Som
 rodando como serviço do usuário.
+
+## Versão 0.6.0 (2026-10-09) ✔ feita
+
+- **PIN da equipe:** exatamente 4 dígitos; a tela de PIN tem 4 bolinhas e entra
+  sozinha ao digitar o 4º. Não há tela para trocar o PIN (fica em `config/hub.json`).
+- **Painel:** cards de PC tocáveis abrem a tela **Máquinas** (seletor de PC, bloco
+  Rede, lista de programas com Frente / Reiniciar / Fechar / Abrir). "Acordar"
+  virou o ícone de ligar. Cards **Agendamentos** e **Última execução** no topo.
+  Tiles de PowerPoint, Holyrics e NDI abrem a tela respectiva; OBS não é tocável.
+- **Padrão visual:** seletor de PC no canto direito do cabeçalho; informação com
+  borda fina, tocável com fundo preenchido; verde = no ar.
+- **Holyrics e PowerPoint:** faixa de título com contador e barra de progresso;
+  artista como texto leve; música no ar com borda verde; rodapé com Próximo e Anterior.
+- **Automações** (antes "Agendamentos"): gatilho "Quando uma máquina ligar" roda um
+  cenário depois de uma espera configurável (padrão 30 s).
+- **Ajustes › Programas de cada máquina:** interruptor por programa.
+- **Avisos:** tela em seções, "Enviar aviso" fixo no rodapé, resumo "Vai aparecer
+  em…"; o aviso preso ficou no fim, recolhido.
+- **Versões:** "✓ Atualizada" quando a máquina já está na versão escolhida;
+  "Atualizar de → para" nos demais casos.
+- **Controle remoto** (antes "Slides do convidado"; a máquina de cada link é escolhida num campo do formulário, não no cabeçalho): modo "Setas do teclado" manda a seta para a janela da
+  frente; opção **Controle completo** por link; **links fixos** com PIN próprio de
+  4 dígitos, sem expirar. Todos os PINs de convidado têm 4 dígitos; PIN antigo é
+  trocado automaticamente na inicialização do hub (e as sessões do link fixo caem).
+- **Teste do NDI:** compara por imagem a origem (NDI Screen Capture) com o destino
+  (Studio Monitor). Configuração em Ajustes › NDI; limites em
+  `packages/hub/src/checks/imagem.ts` (LIMITES_IMAGEM).
+- **Menu:** o item "Dispositivos" saiu; as configurações ficam em Ajustes.
+
+### A validar na igreja
+
+- ShowSong/ShowLyrics e ShowVerse pela API do Holyrics disparam os gatilhos "ao
+  exibir" como no uso manual, e CloseCurrentPresentation dispara os "ao encerrar".
+  Conferir os nomes de gatilho (`any_song`, `any_song_slide`, `any_verse`, `closing`)
+  e o nome exato da permissão (ShowLyrics ou ShowSong).
+- GetSourceScreenshot de fonte de navegador dentro de grupo fechado mostra a
+  página; GetSceneItemEnabled e GetGroupSceneItemList funcionam na versão do OBS
+  da igreja.
+- Esperas padrão: 1,8 s de renderização; até 3 s para o grupo abrir ou fechar;
+  teste todo em ~15 s; 4 s antes da atualização automática ao ligar o Holyrics.
+- Captura de tela do agente (`captura.ps1`): respeita o DPI; com a sessão bloqueada
+  sai preta; timeout de 20 s ainda não medido. Limites de comparação do NDI a calibrar.
+- Máquina "dormindo" pode aparecer online: o painel a considera online se o agente
+  deu sinal nos últimos 30 s OU se alguma integração responde. Possível melhoria:
+  avisar "Agente sem resposta" quando as integrações respondem mas o agente parou.
+- Renomear uma máquina no assistente muda o id: os mapeamentos de Ajustes › Legendas
+  e os links fixos do convidado precisam ser refeitos.
+
+### Ideias para depois
+
+- Persistir o histórico de execuções e o "visto há" em disco.
+- Rota para trocar o PIN da equipe pelo painel.
+- "Desligar" máquina pelo painel.
+- Limpar o CSS antigo não usado em `packages/web/src/estilos.css`.

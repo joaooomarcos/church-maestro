@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
-import { AppProvider, useAppContexto } from './contexto/AppContext';
+import { useState } from 'react';
+import { AppProvider, useAppContexto, useSlotsLayout } from './contexto/AppContext';
 import { FaixaReconectando } from './componentes/FaixaReconectando';
 import { Toasts } from './componentes/Toasts';
 import { AlertasEquipe } from './componentes/AlertasEquipe';
 import { TelaPin } from './componentes/TelaPin';
 import { Icone } from './componentes/Icone';
-import { MenuLateral, ehTela, tituloDaTela, type TelaId } from './componentes/MenuLateral';
+import { MenuLateral, tituloDaTela } from './componentes/MenuLateral';
 import { Painel } from './telas/Painel';
+import { PcDetalhe } from './telas/PcDetalhe';
 import { Ndi } from './telas/Ndi';
 import { Holyrics } from './telas/Holyrics';
 import { PowerPoint } from './telas/PowerPoint';
@@ -19,30 +20,10 @@ import { CompartilharQr } from './telas/CompartilharQr';
 import { Versoes } from './telas/Versoes';
 import { Ajustes } from './telas/Ajustes';
 
-const CHAVE_TELA = 'maestro:tela';
-
-/** Volta para a tela em que a pessoa estava quando o painel recarrega. */
-function telaSalva(): TelaId {
-  try {
-    const salva = window.localStorage.getItem(CHAVE_TELA);
-    return ehTela(salva) ? salva : 'painel';
-  } catch {
-    return 'painel';
-  }
-}
-
 function ConteudoPrincipal() {
-  const { autenticado, reconectando, controlesRodape } = useAppContexto();
-  const [tela, setTela] = useState<TelaId>(telaSalva);
+  const { autenticado, reconectando, tela, abrirTela } = useAppContexto();
+  const { controlesRodape, controlesCabecalho } = useSlotsLayout();
   const [menuAberto, setMenuAberto] = useState(false);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(CHAVE_TELA, tela);
-    } catch {
-      // sem armazenamento: só não lembra a tela
-    }
-  }, [tela]);
 
   if (autenticado === null) {
     return <div className="carregando">Carregando…</div>;
@@ -63,7 +44,7 @@ function ConteudoPrincipal() {
         atual={tela}
         aberto={menuAberto}
         aoSelecionar={(nova) => {
-          setTela(nova);
+          abrirTela(nova);
           setMenuAberto(false);
         }}
         aoFechar={() => setMenuAberto(false)}
@@ -82,9 +63,11 @@ function ConteudoPrincipal() {
             <Icone nome="menu" />
           </button>
           <h1 className="app__titulo">{tituloDaTela(tela)}</h1>
+          {controlesCabecalho ? <div className="app__controles">{controlesCabecalho}</div> : null}
         </header>
         <main className="app__conteudo">
           {tela === 'painel' && <Painel />}
+          {tela === 'maquinas' && <PcDetalhe />}
           {tela === 'ndi' && <Ndi />}
           {tela === 'holyrics' && <Holyrics />}
           {tela === 'powerpoint' && <PowerPoint />}

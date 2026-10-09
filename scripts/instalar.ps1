@@ -10,7 +10,7 @@
   $repo = 'joaooomarcos/church-maestro'
   $branch = if ($env:MAESTRO_BRANCH) { $env:MAESTRO_BRANCH } else { 'main' }
   $destino = if ($env:MAESTRO_DIR) { $env:MAESTRO_DIR } else { Join-Path $HOME 'maestro' }
-  $preservar = @('config\hub.json', 'config\agent.json', 'config\devices.json', 'config\scenarios.json', 'config\automacoes.json', 'data')
+  $preservar = @('config\hub.json', 'config\agent.json', 'config\devices.json', 'config\scenarios.json', 'config\automacoes.json', 'config\convidados.json', 'data')
   $tarefas = @('maestro-hub', 'maestro-agent')
 
   function Passo([string]$texto) { Write-Host "`n==> $texto" -ForegroundColor Cyan }

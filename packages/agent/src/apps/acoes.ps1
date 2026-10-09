@@ -249,12 +249,16 @@ try {
         }
         'tecla' {
             if (-not $Tecla) { throw "tecla-invalida" }
-            $alvos = @(Obter-Processos $Processos)
-            if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
-            if (-not (Trazer-ParaFrente $alvos)) { throw "nao-consegui-focar" }
-            # A janela leva um instante para assumir o foco; sem esta pausa a
-            # tecla chega na janela anterior.
-            Start-Sleep -Milliseconds 250
+            # Com alvo: traz o programa para frente antes. Sem alvo (setas do
+            # convidado): vai direto para a janela que ja estiver na frente.
+            if ($Processos) {
+                $alvos = @(Obter-Processos $Processos)
+                if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
+                if (-not (Trazer-ParaFrente $alvos)) { throw "nao-consegui-focar" }
+                # A janela leva um instante para assumir o foco; sem esta pausa a
+                # tecla chega na janela anterior.
+                Start-Sleep -Milliseconds 250
+            }
             $wshell = New-Object -ComObject WScript.Shell
             $wshell.SendKeys("{$Tecla}")
             $dados = @{ enviou = $Tecla }

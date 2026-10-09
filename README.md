@@ -94,7 +94,7 @@ curl -fsSL https://raw.githubusercontent.com/joaooomarcos/church-maestro/main/sc
 
 Instala em `~/maestro` (`C:\Users\<usuário>\maestro` no Windows) e preserva o que
 é de cada máquina: `config/hub.json`, `config/agent.json`, `config/devices.json`,
-`config/scenarios.json` e `data/`. Para levar uma correção à igreja, faça push no
+`config/scenarios.json`, `config/automacoes.json`, `config/convidados.json` e `data/`. Para levar uma correção à igreja, faça push no
 `main` e rode o mesmo comando em cada máquina — ele para o hub/agente, atualiza e
 religa as tarefas agendadas, sem repetir o assistente.
 

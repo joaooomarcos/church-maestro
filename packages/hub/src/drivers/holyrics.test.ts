@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import type { DispositivoConfig } from '@maestro/shared';
-import { criarDriverHolyrics, normalizarApresentacao, normalizarPlaylist } from './holyrics.js';
+import { criarDriverHolyrics, normalizarApresentacao, normalizarGatilhos, normalizarPlaylist } from './holyrics.js';
 import { ErroDriver } from './tipos.js';
 
 describe('normalizarPlaylist', () => {
@@ -21,6 +21,25 @@ describe('normalizarPlaylist', () => {
   it('devolve lista vazia quando a resposta não é uma lista', () => {
     expect(normalizarPlaylist(undefined)).toEqual([]);
     expect(normalizarPlaylist({})).toEqual([]);
+  });
+});
+
+describe('normalizarGatilhos', () => {
+  it('mapeia a resposta de GetTriggers e descarta o que não tem when/type', () => {
+    const gatilhos = normalizarGatilhos([
+      { id: 'xyz', enabled: true, when: 'displaying', type: 'any_song', receiver: { type: 'obs_v5' }, description: 'abre' },
+      { id: 2, enabled: false, when: 'closing', type: 'any_verse' },
+      { id: 'sem-tipo', when: 'displaying' },
+      null,
+    ]);
+    expect(gatilhos).toEqual([
+      { id: 'xyz', ativo: true, quando: 'displaying', tipo: 'any_song', receptor: 'obs_v5', descricao: 'abre' },
+      { id: '2', ativo: false, quando: 'closing', tipo: 'any_verse', receptor: null, descricao: '' },
+    ]);
+  });
+
+  it('devolve lista vazia quando a resposta não é uma lista', () => {
+    expect(normalizarGatilhos(null)).toEqual([]);
   });
 });
 
@@ -112,6 +131,23 @@ describe('driver Holyrics sobre HTTP', () => {
     const dispositivo = await subir(() => ({ status: 'ok' }));
     await criarDriverHolyrics().irPara(dispositivo, 4);
     expect(JSON.parse(chamadas[0]?.corpo ?? '{}')).toEqual({ index: 4 });
+  });
+
+  it('exibe o versículo por referência, sem apresentação rápida', async () => {
+    const dispositivo = await subir(() => ({ status: 'ok' }));
+    await criarDriverHolyrics().mostrarVersiculo(dispositivo, 'Sl 23:1');
+    expect(chamadas[0]?.acao).toBe('ShowVerse');
+    expect(JSON.parse(chamadas[0]?.corpo ?? '{}')).toEqual({ references: 'Sl 23:1' });
+  });
+
+  it('lista os gatilhos', async () => {
+    const dispositivo = await subir(() => ({
+      status: 'ok',
+      data: [{ id: 'a', enabled: true, when: 'closing', type: 'any_song', receiver: { type: 'obs_v5' } }],
+    }));
+    const gatilhos = await criarDriverHolyrics().listarGatilhos(dispositivo);
+    expect(chamadas[0]?.acao).toBe('GetTriggers');
+    expect(gatilhos[0]?.tipo).toBe('any_song');
   });
 
   it('lê a apresentação atual', async () => {

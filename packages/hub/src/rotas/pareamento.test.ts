@@ -3,7 +3,7 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { dispositivoConfigSchema, type DispositivoConfig } from '@maestro/shared';
-import { escolherId } from './pareamento.js';
+import { escolherId, servicosDoPareamento } from './pareamento.js';
 import { criarContexto } from './contexto.js';
 import { Store } from '../estado/store.js';
 import type { Drivers } from '../drivers/tipos.js';
@@ -94,5 +94,47 @@ describe('registrarDispositivo', () => {
     await ctx.registrarDispositivo(dispositivo('note-som-novo', '192.168.0.30'), 'note-som');
 
     expect(ctx.dispositivos().map((d) => d.id)).toEqual(['note-som-novo']);
+  });
+});
+
+describe('servicosDoPareamento', () => {
+  const legendas = {
+    cena: 'Cena_Elementos',
+    grupoMusica: 'Música',
+    grupoLeitura: 'Leitura',
+    holyrics: [{ dispositivo: 'note-frente', fonteMusica: 'holyrics1_musica' }],
+    atualizarAoLigar: true,
+    horariosProibidos: [],
+    versiculo: 'Sl 23:1',
+  };
+  const existente = dispositivoConfigSchema.parse({
+    id: 'pc-transmissao',
+    nome: 'PC Transmissão',
+    host: '192.168.0.20',
+    servicos: { obs: { porta: 4455, legendas } },
+  });
+
+  it('mantém Ajustes › Legendas quando a máquina do OBS pareia de novo', () => {
+    const servicos = servicosDoPareamento({ porta: 8770, servicos: { obs: { porta: 4455, senha: 'nova' } } }, existente);
+    expect(servicos.obs).toEqual({ porta: 4455, senha: 'nova', legendas });
+    expect(servicos.agente).toEqual({ porta: 8770 });
+  });
+
+  it('não inventa OBS quando o assistente diz que a máquina não tem mais', () => {
+    const servicos = servicosDoPareamento({ porta: 8770, servicos: {} }, existente);
+    expect(servicos.obs).toBeUndefined();
+  });
+});
+
+describe('servicosDoPareamento (NDI)', () => {
+  it('mantém o monitor de cada janela que continua existindo', () => {
+    const existente = dispositivoConfigSchema.parse({
+      id: 'pc-fundo',
+      nome: 'PC Fundo',
+      host: '192.168.0.22',
+      servicos: { ndiMonitor: { portas: [80, 81], monitores: { '80': '\\\\.\\DISPLAY2', '81': '\\\\.\\DISPLAY1' } } },
+    });
+    const servicos = servicosDoPareamento({ porta: 8770, servicos: { ndiMonitor: { portas: [80] } } }, existente);
+    expect(servicos.ndiMonitor).toEqual({ portas: [80], monitores: { '80': '\\\\.\\DISPLAY2' } });
   });
 });

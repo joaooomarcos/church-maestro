@@ -1,4 +1,4 @@
-import { ErroDriver, type DriverHolyrics, type OpcoesRequisicao } from './tipos.js';
+import { ErroDriver, type DriverHolyrics, type GatilhoHolyrics, type OpcoesRequisicao } from './tipos.js';
 import type {
   DispositivoConfig,
   EstadoHolyrics,
@@ -137,6 +137,35 @@ export function normalizarPlaylist(bruta: unknown): ItemPlaylistHolyrics[] {
   return itens;
 }
 
+interface GatilhoBruto {
+  id?: string | number;
+  enabled?: boolean;
+  when?: string;
+  type?: string;
+  receiver?: { type?: string } | null;
+  description?: string;
+}
+
+/** Resposta de GetTriggers → lista em português; o que não tem `when`/`type` não serve para nada. */
+export function normalizarGatilhos(bruta: unknown): GatilhoHolyrics[] {
+  if (!Array.isArray(bruta)) return [];
+  const gatilhos: GatilhoHolyrics[] = [];
+  for (const elemento of bruta as GatilhoBruto[]) {
+    if (elemento === null || typeof elemento !== 'object') continue;
+    if (!elemento.when || !elemento.type) continue;
+    gatilhos.push({
+      id: elemento.id === undefined || elemento.id === null ? '' : String(elemento.id),
+      // A doc mostra `enabled` sempre presente; ausente, vale como ligado.
+      ativo: elemento.enabled !== false,
+      quando: elemento.when,
+      tipo: elemento.type,
+      receptor: elemento.receiver?.type ?? null,
+      descricao: elemento.description ?? '',
+    });
+  }
+  return gatilhos;
+}
+
 function rotularSemNome(tipo: string | undefined): string {
   switch (tipo) {
     case 'verse':
@@ -192,6 +221,17 @@ export function criarDriverHolyrics(): DriverHolyrics {
 
     async mostrarLetra(dispositivo, letraId, op) {
       await chamar(dispositivo, 'ShowLyrics', { id: letraId }, op);
+    },
+
+    async mostrarVersiculo(dispositivo, referencia, op) {
+      // Sem `quick_presentation`: como apresentação normal, ela dispara o
+      // gatilho "ao exibir texto bíblico", que é o que o teste quer provar.
+      await chamar(dispositivo, 'ShowVerse', { references: referencia }, op);
+    },
+
+    async listarGatilhos(dispositivo, op) {
+      const bruta = await chamar<unknown>(dispositivo, 'GetTriggers', {}, op);
+      return normalizarGatilhos(bruta);
     },
 
     async definirF(dispositivo, tecla, ativar, op) {

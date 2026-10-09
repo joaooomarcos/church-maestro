@@ -26,6 +26,7 @@ export class Store {
   private snapshot: Snapshot;
   private readonly heartbeats = new Map<string, RegistroHeartbeat>();
   private readonly sockets = new Set<SocketTransmissao>();
+  private readonly observadoresDispositivos = new Set<(dispositivos: EstadoDispositivo[]) => void>();
 
   constructor() {
     this.snapshot = { ts: Date.now(), revisao: 0, dispositivos: [], naoIdentificados: [] };
@@ -44,6 +45,19 @@ export class Store {
       naoIdentificados: this.snapshot.naoIdentificados,
     };
     this.transmitirSnapshot();
+    for (const observador of this.observadoresDispositivos) {
+      try {
+        observador(dispositivos);
+      } catch {
+        // um observador com defeito não pode travar o ciclo de leitura
+      }
+    }
+  }
+
+  /** Avisa a cada leitura nova dos dispositivos (ex.: detectar máquina que ligou). Devolve como cancelar. */
+  observarDispositivos(observador: (dispositivos: EstadoDispositivo[]) => void): () => void {
+    this.observadoresDispositivos.add(observador);
+    return () => this.observadoresDispositivos.delete(observador);
   }
 
   /** Atualiza só a lista de serviços descobertos na rede que não pertencem a dispositivo algum. */

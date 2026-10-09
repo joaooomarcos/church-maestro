@@ -17,6 +17,8 @@ import { registrarRotasNdi } from './ndi.js';
 import { registrarRotasHolyrics } from './holyrics.js';
 import { registrarRotasPowerPoint } from './powerpoint.js';
 import { registrarRotasCenarios } from './cenarios.js';
+import { registrarRotasLegendas } from './legendas.js';
+import { registrarRotasNdiConfig } from './ndiConfig.js';
 
 export type { ContextoApp } from './contexto.js';
 export { criarContexto } from './contexto.js';
@@ -45,4 +47,6 @@ export function registrarRotas(app: FastifyInstance, ctx: ContextoApp): void {
   registrarRotasHolyrics(app, ctx);
   registrarRotasPowerPoint(app, ctx);
   registrarRotasCenarios(app, ctx);
+  registrarRotasLegendas(app, ctx);
+  registrarRotasNdiConfig(app, ctx);
 }

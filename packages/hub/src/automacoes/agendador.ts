@@ -1,5 +1,5 @@
-import type { Agendamento, ExecucaoAgendada } from '@maestro/shared';
-import { executarCenario } from '../cenarios/executar.js';
+import { ehAoLigar, type Agendamento, type ExecucaoAgendada } from '@maestro/shared';
+import { executarERegistrar, historicoDe } from './historico.js';
 import type { ContextoApp } from '../rotas/contexto.js';
 
 const VERIFICAR_A_CADA_MS = 15_000;
@@ -9,7 +9,6 @@ const VERIFICAR_A_CADA_MS = 15_000;
  * aí rodar o "Pré-culto" atrasado faria mais mal do que bem.
  */
 export const TOLERANCIA_MS = 2 * 60_000;
-const HISTORICO_MAXIMO = 20;
 
 function horarioNoDia(dia: Date, hora: string): Date {
   const [horas, minutos] = hora.split(':').map(Number);
@@ -63,7 +62,6 @@ export interface Agendador {
  */
 export function criarAgendador(ctx: ContextoApp, relogio: () => Date = () => new Date()): Agendador {
   const ultimoDiaRodado = new Map<string, string>();
-  const historico: ExecucaoAgendada[] = [];
   let temporizador: NodeJS.Timeout | undefined;
   let verificando = false;
 
@@ -76,26 +74,15 @@ export function criarAgendador(ctx: ContextoApp, relogio: () => Date = () => new
     try {
       const agora = relogio();
       for (const agendamento of automacoes.agendamentos) {
+        // Os "quando ligar" têm gatilho próprio (aoLigar.ts), não dependem do relógio.
+        if (ehAoLigar(agendamento)) continue;
         if (!deveRodar(agendamento, agora, ultimoDiaRodado.get(agendamento.id))) continue;
         ultimoDiaRodado.set(agendamento.id, chaveDoDia(agora));
 
         const cenario = ctx.cenarios().find((c) => c.id === agendamento.cenarioId);
         if (!cenario) continue;
 
-        const resultado = await executarCenario(ctx, cenario);
-        const falhas = resultado.acoes.filter((acao) => !acao.ok);
-        const registro: ExecucaoAgendada = {
-          agendamentoId: agendamento.id,
-          cenarioId: cenario.id,
-          cenarioNome: cenario.nome,
-          ts: resultado.ts,
-          ok: resultado.ok,
-          resumo: resultado.ok
-            ? `${resultado.acoes.length} passo(s) aplicados`
-            : falhas.map((falha) => `${falha.descricao}: ${falha.erro ?? 'falhou'}`).join('; '),
-        };
-        historico.unshift(registro);
-        historico.splice(HISTORICO_MAXIMO);
+        const { resultado, registro } = await executarERegistrar(ctx, cenario, 'agendado', agendamento.id);
 
         ctx.store.transmitirMensagem({
           tipo: 'aviso',
@@ -118,7 +105,7 @@ export function criarAgendador(ctx: ContextoApp, relogio: () => Date = () => new
     parar() {
       if (temporizador) clearInterval(temporizador);
     },
-    historico: () => [...historico],
+    historico: () => historicoDe(ctx),
     verificar,
   };
 }

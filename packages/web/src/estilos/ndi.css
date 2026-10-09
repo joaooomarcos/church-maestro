@@ -1,0 +1,117 @@
+/* ======================================================================
+ * NDI: Ajustes › NDI (monitor de cada janela) e os prints do teste do NDI.
+ * ====================================================================== */
+
+/* --- Ajustes › NDI -------------------------------------------------------- */
+
+.ajustes-ndi__maquina {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.ajustes-ndi__maquina:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.ajustes-ndi__nome {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Só informação (máquina fora do ar, sem lista de monitores): sem fundo, borda fina. */
+.ajustes-ndi__status {
+  align-self: flex-start;
+  margin: 0;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+}
+
+/* --- prints do teste ------------------------------------------------------- */
+
+.passo-check__imagens {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.print-ndi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+}
+
+/* Tocável: borda forte e fundo preenchido; amplia o print ao tocar. */
+.print-ndi__botao {
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo-cartao);
+  line-height: 0;
+  cursor: zoom-in;
+}
+
+.print-ndi__botao:active {
+  background: var(--cor-fundo-elevado);
+}
+
+.print-ndi__imagem {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #000;
+}
+
+.print-ndi__rotulo {
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: var(--cor-texto-fraco);
+  overflow-wrap: anywhere;
+}
+
+/* Um print só (origem fora do painel): não estica até a largura toda. */
+.passo-check__imagens--unica {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 50%;
+}
+
+.ampliacao-ndi {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  border: none;
+  background: rgba(0, 0, 0, 0.88);
+  color: #fff;
+  font: inherit;
+  cursor: zoom-out;
+}
+
+.ampliacao-ndi__imagem {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: var(--raio);
+  background: #000;
+}
+
+.ampliacao-ndi__legenda {
+  font-size: 0.9rem;
+  text-align: center;
+}

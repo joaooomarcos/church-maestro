@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ROTAS, type ItemPlaylistHolyrics, type RespostaPlaylistHolyrics } from '@maestro/shared';
-import { useAppContexto, useControlesRodape } from '../contexto/AppContext';
+import { useAppContexto, useControlesCabecalho, useControlesRodape } from '../contexto/AppContext';
+import { FaixaTitulo } from '../componentes/FaixaTitulo';
+import { Icone } from '../componentes/Icone';
+import { NavegacaoSlides } from '../componentes/NavegacaoSlides';
+import { SeletorPc, usaPrograma } from '../componentes/SeletorPc';
 import { apiGet, apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
 
@@ -16,12 +20,12 @@ const MODOS_TELA: ReadonlyArray<{ acao: ModoTela; rotulo: string; tecla: string 
 ];
 
 export function Holyrics() {
-  const { snapshot } = useAppContexto();
+  const { snapshot, maquinaPedida } = useAppContexto();
   const dispositivos = useMemo(
-    () => (snapshot?.dispositivos ?? []).filter((d) => d.holyrics !== undefined),
+    () => (snapshot?.dispositivos ?? []).filter((d) => d.holyrics !== undefined && usaPrograma(d, 'holyrics')),
     [snapshot],
   );
-  const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(() => maquinaPedida('holyrics'));
   const [enviando, setEnviando] = useState(false);
   // A API do Holyrics liga e desliga F8/F9/F10, mas não diz o estado atual.
   // Guardamos o que foi mandado daqui, por máquina, para o botão funcionar como
@@ -143,15 +147,16 @@ export function Holyrics() {
 
   useControlesRodape(
     atual && online ? (
-      <div className="botoes-gigantes">
-        <button type="button" className="botao-gigante" disabled={enviando} onClick={() => void agir('anterior')}>
-          ‹ ANTERIOR
-        </button>
-        <button type="button" className="botao-gigante" disabled={enviando} onClick={() => void agir('proximo')}>
-          PRÓXIMO ›
-        </button>
-      </div>
+      <NavegacaoSlides
+        desabilitado={enviando}
+        aoAnterior={() => void agir('anterior')}
+        aoProximo={() => void agir('proximo')}
+      />
     ) : null,
+  );
+
+  useControlesCabecalho(
+    <SeletorPc dispositivos={dispositivos} atual={selecionadoId} aoTrocar={setSelecionadoId} />,
   );
 
   if (dispositivos.length === 0) {
@@ -160,35 +165,18 @@ export function Holyrics() {
 
   return (
     <div className="holyrics">
-      {dispositivos.length > 1 ? (
-        <div className="seletor-dispositivo">
-          {dispositivos.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              className={`botao-opcao${d.id === selecionadoId ? ' botao-opcao--ativo' : ''}`}
-              onClick={() => setSelecionadoId(d.id)}
-            >
-              {d.nome}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="holyrics__status">
-        {!online ? (
-          <p>{atual?.holyrics?.erro ?? 'Sem conexão com o Holyrics.'}</p>
-        ) : apresentacao ? (
-          <>
-            <h2>{apresentacao.nome}</h2>
-            <p>
-              Slide {apresentacao.slide ?? '?'} de {apresentacao.totalSlides ?? '?'}
-            </p>
-          </>
-        ) : (
-          <p>Sem apresentação em exibição.</p>
-        )}
-      </div>
+      {!online ? (
+        <p className="info holyrics__status">{atual?.holyrics?.erro ?? 'Sem conexão com o Holyrics.'}</p>
+      ) : apresentacao ? (
+        <FaixaTitulo
+          titulo={apresentacao.nome}
+          complemento={playlist?.find((item) => item.id === apresentacao.id)?.artista}
+          slide={apresentacao.slide ?? null}
+          total={apresentacao.totalSlides ?? null}
+        />
+      ) : (
+        <p className="info holyrics__status">Sem apresentação em exibição.</p>
+      )}
 
       {atual && online && visor ? (
         <figure className="visor-slides__quadro visor-slides__quadro--atual visor-holyrics">
@@ -223,7 +211,7 @@ export function Holyrics() {
               onClick={() => void sair()}
             >
               <span>Sair</span>
-              <span className="holyrics__tecla">ESC</span>
+              <Icone nome="fechar" tamanho={20} />
             </button>
           </div>
           <section className="holyrics__playlist">
@@ -247,8 +235,10 @@ export function Holyrics() {
                         disabled={enviando}
                         onClick={() => void mostrarMusica(item)}
                       >
-                        <span>{item.titulo}</span>
-                        {item.artista ? <span className="holyrics__tecla">{item.artista}</span> : null}
+                        <span className="holyrics__musica-texto">
+                          {item.titulo}
+                          {item.artista ? <span className="holyrics__artista"> ({item.artista})</span> : null}
+                        </span>
                       </button>
                     </li>
                   );

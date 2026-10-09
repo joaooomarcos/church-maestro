@@ -42,7 +42,15 @@ export type NomeIcone =
   | 'subir'
   | 'descer'
   | 'transmitir'
-  | 'sino';
+  | 'sino'
+  | 'seta-esq'
+  | 'seta-dir'
+  | 'chevron-dir'
+  | 'chevron-baixo'
+  | 'ligar'
+  | 'frente'
+  | 'reiniciar'
+  | 'abrir';
 
 const CAMINHOS: Record<NomeIcone, JSX.Element> = {
   painel: (
@@ -217,6 +225,31 @@ const CAMINHOS: Record<NomeIcone, JSX.Element> = {
       <path d="M10.2 20.2a2 2 0 0 0 3.6 0" />
     </>
   ),
+  // Setas com haste (as de "seta-esquerda/direita" são só a ponta).
+  'seta-esq': <path d="M19 12H5M11 5.5 4.5 12l6.5 6.5" />,
+  'seta-dir': <path d="M5 12h14M13 5.5l6.5 6.5-6.5 6.5" />,
+  'chevron-dir': <path d="M9.5 6l6 6-6 6" />,
+  'chevron-baixo': <path d="M6 9.5l6 6 6-6" />,
+  ligar: (
+    <>
+      <path d="M12 3.5v8" />
+      <path d="M7.2 6.6a7.5 7.5 0 1 0 9.6 0" />
+    </>
+  ),
+  frente: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 9.5h18" />
+      <path d="M12 16.5v-4M10 14.2l2-2 2 2" />
+    </>
+  ),
+  reiniciar: (
+    <>
+      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+      <path d="M19.5 4.5v4.5H15" />
+    </>
+  ),
+  abrir: <path d="M8 5.6v12.8L18.4 12z" />,
 };
 
 export function Icone({ nome, tamanho = 22 }: { nome: NomeIcone; tamanho?: number }) {

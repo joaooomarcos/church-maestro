@@ -1,0 +1,294 @@
+/* ======================================================================
+ * Tela Avisos (e as opções de aviso que os cenários reaproveitam).
+ * Este arquivo carrega ANTES de estilos.css (vem pelo App): onde ele precisa
+ * vencer uma regra de lá, o seletor começa por .avisos.
+ * ====================================================================== */
+
+/* --- blocos: sem cartão pesado, só uma linha separando os assuntos -------- */
+
+div.avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.avisos .avisos__bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--cor-borda-fraca);
+}
+
+.avisos .avisos__bloco:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.avisos__rotulo-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.avisos__contador {
+  font-size: 0.75rem;
+  color: var(--cor-texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.avisos-dica {
+  margin: 0;
+  color: var(--cor-texto-fraco);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+/* --- usados há pouco: pílulas de uma linha, com o x para esquecer -------- */
+
+.avisos .avisos__recentes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.avisos .avisos__recente {
+  display: flex;
+  align-items: stretch;
+  max-width: 100%;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: 999px;
+  background: var(--cor-fundo-cartao);
+  overflow: hidden;
+}
+
+.avisos .avisos__usar {
+  flex: 1;
+  min-width: 0;
+  max-width: 260px;
+  min-height: 40px;
+  padding: 0 4px 0 14px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cor-texto);
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.avisos__esquecer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  border: none;
+  background: transparent;
+  color: var(--cor-texto-fraco);
+}
+
+.avisos .avisos__usar:active,
+.avisos__esquecer:active {
+  background: var(--cor-fundo-elevado);
+}
+
+/* --- onde aparece: escolha múltipla, marcado inconfundível --------------- */
+
+.avisos-destinos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.avisos-destino {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--altura-toque-min);
+  padding: 8px 12px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo-cartao);
+  color: var(--cor-texto);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.avisos-destino--marcado {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria);
+  color: #fff;
+}
+
+.avisos-destino .icone {
+  flex-shrink: 0;
+}
+
+.avisos-destino__vazio {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 1px;
+  border-radius: 50%;
+  border: 2px solid var(--cor-texto-fraco);
+}
+
+.avisos-destino__nome {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.avisos-destino__estado {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+/* Cuidado com telão/live: só aparece quando há máquina com mais de uma tela. */
+.avisos-cuidado {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-color: rgba(224, 168, 63, 0.45);
+  color: var(--cor-ambar);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.avisos-cuidado .icone {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* --- duração: uma fileira só ---------------------------------------------- */
+
+.avisos-duracao {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-fundo-elevado);
+}
+
+.avisos-duracao__opcao {
+  min-height: 44px;
+  padding: 0 2px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-texto-fraco);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.avisos-duracao__opcao--marcada {
+  background: var(--cor-primaria);
+  color: #fff;
+}
+
+/* --- aviso preso: secundário, no fim, mas a um toque ---------------------- */
+
+.avisos-preso__cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.avisos-preso__acoes,
+.avisos-preso__maquinas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.avisos .tocavel.avisos-preso__botao {
+  min-height: 48px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
+
+/* --- rodapé fixo: resumo + enviar, perto do polegar ----------------------- */
+
+.avisos-rodape {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+
+.avisos-rodape__resumo {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 0 4px;
+  color: var(--cor-texto-fraco);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.avisos-rodape__resumo strong {
+  color: var(--cor-texto);
+  font-weight: 600;
+}
+
+.avisos-rodape__resumo--cuidado .icone {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--cor-ambar);
+}
+
+.avisos-rodape__enviar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 60px;
+  border-radius: var(--raio-grande);
+  border: 1px solid var(--cor-primaria);
+  background: var(--cor-primaria);
+  color: #fff;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.avisos-rodape__enviar:active {
+  background: var(--cor-primaria-forte);
+  transform: scale(0.98);
+}
+
+/* Falta mensagem ou destino: continua tocável (o toast diz o que falta), só mais apagado. */
+.avisos-rodape__enviar--incompleto {
+  background: rgba(47, 125, 216, 0.14);
+  color: var(--cor-primaria-forte);
+}
+
+@media (min-width: 720px) {
+  .avisos-destinos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .avisos-preso__maquinas {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

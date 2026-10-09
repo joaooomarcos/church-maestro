@@ -1,6 +1,6 @@
 import OBSWebSocket from 'obs-websocket-js';
 import { ErroDriver, type DriverObs } from './tipos.js';
-import type { DispositivoConfig, EstadoObs } from '@maestro/shared';
+import type { DispositivoConfig, EstadoObs, ItemEstruturaObs } from '@maestro/shared';
 
 /**
  * obs-websocket v5 (Ferramentas › Configurações do WebSocket no OBS).
@@ -133,6 +133,40 @@ export function criarDriverObs(): DriverObs {
     }
   }
 
+  function causa(err: unknown): string {
+    return err instanceof Error ? err.message : String(err);
+  }
+
+  function itensDe(sceneItems: unknown[]): ItemEstruturaObs[] {
+    return sceneItems
+      .map((bruto) => {
+        const item = bruto as { sourceName?: unknown; inputKind?: unknown; isGroup?: unknown };
+        if (typeof item.sourceName !== 'string') return null;
+        return {
+          nome: item.sourceName,
+          tipo: typeof item.inputKind === 'string' ? item.inputKind : null,
+          grupo: item.isGroup === true,
+        };
+      })
+      .filter((i): i is ItemEstruturaObs => i !== null);
+  }
+
+  /** Id do item na cena (ou grupo), com erro já explicado quando ele não está lá. */
+  async function idObrigatorio(
+    dispositivo: DispositivoConfig,
+    conexao: Conexao,
+    cena: string,
+    item: string,
+  ): Promise<number> {
+    const id = await idDoItem(conexao, cena, item);
+    if (id === null) {
+      throw new ErroDriver(
+        `No OBS do ${dispositivo.nome}, "${item}" não está dentro de "${cena}". Confira os nomes em Ajustes › Legendas.`,
+      );
+    }
+    return id;
+  }
+
   return {
     async ler(dispositivo): Promise<EstadoObs> {
       const vazio: EstadoObs = {
@@ -220,6 +254,96 @@ export function criarDriverObs(): DriverObs {
         throw new ErroDriver(
           `Não foi possível capturar a fonte "${source}" no OBS do ${dispositivo.nome}. Confira se esse é o nome exato da fonte de legenda.`,
           err instanceof Error ? err.message : String(err),
+        );
+      }
+    },
+
+    async estrutura(dispositivo) {
+      const conexao = await garantirConexao(dispositivo);
+      try {
+        const [{ scenes }, { groups }] = await Promise.all([
+          conexao.obs.call('GetSceneList'),
+          conexao.obs.call('GetGroupList'),
+        ]);
+        const nomesCenas = scenes
+          .map((c) => (c as { sceneName?: unknown }).sceneName)
+          .filter((n): n is string => typeof n === 'string')
+          // O OBS devolve as cenas de baixo para cima; a tela mostra como na lista do OBS.
+          .reverse();
+        const cenas = await Promise.all(
+          nomesCenas.map(async (nome) => {
+            const { sceneItems } = await conexao.obs.call('GetSceneItemList', { sceneName: nome });
+            return { nome, itens: itensDe(sceneItems) };
+          }),
+        );
+        const grupos = await Promise.all(
+          groups.map(async (nome) => {
+            const { sceneItems } = await conexao.obs.call('GetGroupSceneItemList', { sceneName: nome });
+            return { nome, itens: itensDe(sceneItems) };
+          }),
+        );
+        return { cenas, grupos };
+      } catch (err) {
+        throw new ErroDriver(`Não foi possível ler as cenas do OBS do ${dispositivo.nome}.`, causa(err));
+      }
+    },
+
+    async itemVisivel(dispositivo, cena, item) {
+      const conexao = await garantirConexao(dispositivo);
+      const id = await idObrigatorio(dispositivo, conexao, cena, item);
+      try {
+        const { sceneItemEnabled } = await conexao.obs.call('GetSceneItemEnabled', {
+          sceneName: cena,
+          sceneItemId: id,
+        });
+        return sceneItemEnabled;
+      } catch (err) {
+        throw new ErroDriver(`Não foi possível ler o olhinho de "${item}" no OBS do ${dispositivo.nome}.`, causa(err));
+      }
+    },
+
+    async definirItemVisivel(dispositivo, cena, item, visivel) {
+      const conexao = await garantirConexao(dispositivo);
+      const id = await idObrigatorio(dispositivo, conexao, cena, item);
+      try {
+        await conexao.obs.call('SetSceneItemEnabled', {
+          sceneName: cena,
+          sceneItemId: id,
+          sceneItemEnabled: visivel,
+        });
+      } catch (err) {
+        throw new ErroDriver(`Não foi possível mudar o olhinho de "${item}" no OBS do ${dispositivo.nome}.`, causa(err));
+      }
+    },
+
+    async urlDaFonte(dispositivo, fonte) {
+      const conexao = await garantirConexao(dispositivo);
+      try {
+        const { inputSettings, inputKind } = await conexao.obs.call('GetInputSettings', { inputName: fonte });
+        if (inputKind !== 'browser_source') return null;
+        if (inputSettings.is_local_file === true) return null;
+        // `url` só aparece nas configurações quando foi mudada do padrão.
+        return typeof inputSettings.url === 'string' ? inputSettings.url : null;
+      } catch (err) {
+        throw new ErroDriver(
+          `A fonte "${fonte}" não existe no OBS do ${dispositivo.nome}. Confira o nome em Ajustes › Legendas.`,
+          causa(err),
+        );
+      }
+    },
+
+    async atualizarFonte(dispositivo, fonte) {
+      const conexao = await garantirConexao(dispositivo);
+      try {
+        // "refreshnocache" é o botão "Atualizar" das propriedades da fonte de navegador.
+        await conexao.obs.call('PressInputPropertiesButton', {
+          inputName: fonte,
+          propertyName: 'refreshnocache',
+        });
+      } catch (err) {
+        throw new ErroDriver(
+          `Não foi possível atualizar a fonte "${fonte}" no OBS do ${dispositivo.nome}. Confira se ela é uma fonte de navegador com esse nome exato.`,
+          causa(err),
         );
       }
     },

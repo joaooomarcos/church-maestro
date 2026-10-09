@@ -4,7 +4,9 @@ import {
   dispositivoConfigSchema,
   pedidoPareamentoSchema,
   slugificar,
+  type DispositivoConfig,
   type ErroApi,
+  type PedidoPareamento,
 } from '@maestro/shared';
 import { pinConfere } from '../auth.js';
 import type { ContextoApp } from './contexto.js';
@@ -32,6 +34,44 @@ export function escolherId(
     if (id === idAnterior || existente.host === host) return id;
   }
   return `${base}-${Date.now()}`;
+}
+
+/**
+ * Serviços que o assistente mandou, mais o que só o painel configura e o
+ * assistente não conhece: Ajustes › Legendas mora no OBS e não pode sumir
+ * quando a máquina do OBS pareia de novo.
+ */
+export function servicosDoPareamento(
+  pedido: Pick<PedidoPareamento, 'porta' | 'servicos'>,
+  existente: DispositivoConfig | undefined,
+): DispositivoConfig['servicos'] {
+  const anterior = existente?.servicos.obs;
+  const obs = pedido.servicos.obs;
+  // Ajustes › NDI: o monitor de cada janela sobrevive, para as portas que continuam.
+  const ndi = pedido.servicos.ndiMonitor;
+  const monitoresAnteriores = existente?.servicos.ndiMonitor?.monitores;
+  const monitoresMantidos = ndi && monitoresAnteriores
+    ? Object.fromEntries(
+        Object.entries(monitoresAnteriores).filter(([porta]) => ndi.portas.includes(Number(porta))),
+      )
+    : {};
+  return {
+    agente: { porta: pedido.porta },
+    ...pedido.servicos,
+    ...(ndi && !ndi.monitores && Object.keys(monitoresMantidos).length > 0
+      ? { ndiMonitor: { ...ndi, monitores: monitoresMantidos } }
+      : {}),
+    ...(obs && anterior
+      ? {
+          obs: {
+            ...obs,
+            // O formato antigo (uma fonte) vale até alguém salvar Ajustes › Legendas.
+            ...(!obs.sourceLegenda && anterior.sourceLegenda ? { sourceLegenda: anterior.sourceLegenda } : {}),
+            ...(!obs.legendas && anterior.legendas ? { legendas: anterior.legendas } : {}),
+          },
+        }
+      : {}),
+  };
 }
 
 /** Pareamento do agente: cadastra a máquina no hub e devolve o token dos agentes. */
@@ -65,11 +105,14 @@ export function registrarRotasPareamento(app: FastifyInstance, ctx: ContextoApp)
         fixarHost: false,
         ...(existente?.tokenConvidado ? { tokenConvidado: existente.tokenConvidado } : {}),
         ...(existente?.modoConvidado ? { modoConvidado: existente.modoConvidado } : {}),
-        ...(existente?.appConvidado ? { appConvidado: existente.appConvidado } : {}),
+        ...(existente?.completoConvidado !== undefined
+          ? { completoConvidado: existente.completoConvidado }
+          : {}),
         ...(existente?.monitorAvisos ? { monitorAvisos: existente.monitorAvisos } : {}),
+        ...(existente?.monitorNdiEnvio ? { monitorNdiEnvio: existente.monitorNdiEnvio } : {}),
         ...(existente?.apps ? { apps: existente.apps } : {}),
         ...(existente?.mac ? { mac: existente.mac } : {}),
-        servicos: { agente: { porta: pedido.porta }, ...pedido.servicos },
+        servicos: servicosDoPareamento(pedido, existente),
       });
 
       const salvo = await ctx.registrarDispositivo(dispositivo, pedido.dispositivoIdAnterior);

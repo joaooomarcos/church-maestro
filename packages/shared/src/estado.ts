@@ -97,6 +97,10 @@ export const estadoDispositivoSchema = z.object({
   /** true se qualquer integração da máquina respondeu na última varredura. */
   online: z.boolean(),
   ultimoContato: z.number().nullable().default(null),
+  /** Último momento em que o hub viu a máquina responder (guardado em memória; some se o hub reiniciar). */
+  ultimoVisto: z.number().optional(),
+  /** MAC cadastrado na máquina (aprendido do agente), para a tela de detalhes. */
+  mac: z.string().optional(),
   /** Programas que a equipe marcou como usados nesta máquina; ausente = não escolheu ainda. */
   apps: z.array(z.enum(APLICATIVOS)).optional(),
   agente: estadoAgenteSchema.optional(),
@@ -127,4 +131,6 @@ export type MensagemHub =
   | { tipo: 'check'; dados: import('./checks.js').ResultadoCheck }
   | { tipo: 'aviso'; nivel: 'info' | 'alerta' | 'erro'; texto: string }
   /** Aviso para a equipe (passo de cenário): fica na tela até alguém fechar. */
-  | { tipo: 'alerta'; texto: string; ts: number };
+  | { tipo: 'alerta'; texto: string; ts: number }
+  /** Terminou a execução de um cenário (manual, agendada ou ao ligar): o painel atualiza a "última execução". */
+  | { tipo: 'execucao'; dados: import('./cenarios.js').ExecucaoCenario };

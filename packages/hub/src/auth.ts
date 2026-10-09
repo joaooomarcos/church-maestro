@@ -21,6 +21,8 @@ const ROTAS_PUBLICAS = new Set<string>([
   ROTAS.convidadoEntrar,
   ROTAS.convidadoEstado,
   ROTAS.convidadoAcao,
+  ROTAS.convidadoPlaylist,
+  ROTAS.convidadoSlide,
   // Área de transferência: aberta a quem está na rede, por decisão da equipe.
   // O link (para o QR) continua exigindo a sessão do painel.
   ROTAS.compartilhar,

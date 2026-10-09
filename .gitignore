@@ -9,4 +9,5 @@ config/hub.json
 config/agent.json
 config/devices.json
 config/automacoes.json
+config/convidados.json
 data/

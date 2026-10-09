@@ -7,7 +7,7 @@ set -euo pipefail
 REPO="joaooomarcos/church-maestro"
 BRANCH="${MAESTRO_BRANCH:-main}"
 DESTINO="${MAESTRO_DIR:-$HOME/maestro}"
-PRESERVAR=(config/hub.json config/agent.json config/devices.json config/scenarios.json config/automacoes.json data)
+PRESERVAR=(config/hub.json config/agent.json config/devices.json config/scenarios.json config/automacoes.json config/convidados.json data)
 
 TMP="$(mktemp -d)"
 BACKUP="$TMP/preservado"

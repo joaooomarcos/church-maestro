@@ -6,7 +6,7 @@ import {
   slugificar,
   type Cenario,
 } from '@maestro/shared';
-import { executarCenario } from '../cenarios/executar.js';
+import { executarERegistrar } from '../automacoes/historico.js';
 import type { ContextoApp } from './contexto.js';
 import { responderRequisicaoInvalida } from './erros.js';
 
@@ -53,6 +53,6 @@ export function registrarRotasCenarios(app: FastifyInstance, ctx: ContextoApp): 
       return responderRequisicaoInvalida(reply, `Cenário "${corpo.data.cenarioId}" não existe.`);
     }
 
-    return reply.send(await executarCenario(ctx, cenario));
+    return reply.send((await executarERegistrar(ctx, cenario, 'manual')).resultado);
   });
 }

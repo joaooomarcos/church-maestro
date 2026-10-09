@@ -24,9 +24,12 @@ export const comandoAppSchema = z.object({
 
 export type ComandoApp = z.infer<typeof comandoAppSchema>;
 
-/** Seta do teclado para um programa da máquina — o controle do convidado. */
+/**
+ * Seta do teclado — o controle do convidado. Sem `app`, vai para a janela que
+ * estiver na frente da máquina, sem trazer programa nenhum para frente.
+ */
 export const comandoTeclaSchema = z.object({
-  app: z.enum(APLICATIVOS),
+  app: z.enum(APLICATIVOS).optional(),
   direcao: z.enum(['proximo', 'anterior']),
 });
 
@@ -43,6 +46,33 @@ export const monitorSchema = z.object({
 });
 
 export type Monitor = z.infer<typeof monitorSchema>;
+
+/** Tamanho da amostra em tons de cinza que o agente devolve para comparar imagens. */
+export const LARGURA_AMOSTRA = 64;
+export const ALTURA_AMOSTRA = 36;
+
+/** Captura de um monitor, para a prova real do NDI. */
+export const pedidoCapturaSchema = z.object({
+  /** id do monitor; ausente ou null = o principal. */
+  monitor: z.string().nullable().optional(),
+});
+
+export type PedidoCaptura = z.infer<typeof pedidoCapturaSchema>;
+
+export const capturaMonitorSchema = z.object({
+  /** Qual monitor foi capturado (o id que o agente resolveu). */
+  monitor: z.string(),
+  /** Tamanho real do monitor, em pixels. */
+  largura: z.number().int(),
+  altura: z.number().int(),
+  /** Miniatura para exibir (~480 px de largura), em base64. */
+  miniatura: z.string().min(1),
+  tipoMiniatura: z.string().default('image/jpeg'),
+  /** LARGURA_AMOSTRA x ALTURA_AMOSTRA bytes em tons de cinza (linha a linha), em base64. */
+  amostra: z.string().min(1),
+});
+
+export type CapturaMonitor = z.infer<typeof capturaMonitorSchema>;
 
 /** Aviso na tela da máquina: janela por cima de tudo, até alguém clicar em "Ok". */
 export const comandoAvisoSchema = z.object({

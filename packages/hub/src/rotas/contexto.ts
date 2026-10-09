@@ -1,12 +1,15 @@
 import {
   arquivoAutomacoesSchema,
+  arquivoConvidadosSchema,
   cenarioSchema,
   configHubSchema,
   dispositivoConfigSchema,
   type ArquivoAutomacoes,
+  type ArquivoConvidados,
   type Cenario,
   type ConfigHub,
   type DispositivoConfig,
+  type LinkFixoConvidado,
   type ResultadoCheck,
 } from '@maestro/shared';
 import type { Drivers } from '../drivers/tipos.js';
@@ -14,6 +17,7 @@ import {
   salvarAutomacoes,
   salvarCenarios,
   salvarConfigHub,
+  salvarConvidados,
   salvarDispositivos,
 } from '../config.js';
 import type { Store } from '../estado/store.js';
@@ -31,6 +35,8 @@ export interface ContextoApp {
   /** Hub rodando com dados de demonstração (npm run dev): nada de mexer em máquina de verdade. */
   readonly modoDemo: boolean;
   dispositivos(): DispositivoConfig[];
+  /** Hostname que o agente informou no último heartbeat. */
+  hostname(dispositivoId: string): string | undefined;
   obterDispositivo(id: string): DispositivoConfig | undefined;
   /** Substitui o dispositivo pelo `id` dele (PUT completo) e persiste em config/devices.json. */
   atualizarDispositivo(dispositivo: DispositivoConfig): Promise<DispositivoConfig>;
@@ -56,6 +62,11 @@ export interface ContextoApp {
   removerCenario(id: string): Promise<void>;
   automacoes(): ArquivoAutomacoes;
   salvarAutomacoes(automacoes: ArquivoAutomacoes): Promise<ArquivoAutomacoes>;
+  /** Links fixos do convidado (config/convidados.json). */
+  linksConvidado(): LinkFixoConvidado[];
+  /** Cria ou substitui pelo `id` e grava em config/convidados.json. */
+  salvarLinkConvidado(link: LinkFixoConvidado): Promise<LinkFixoConvidado>;
+  removerLinkConvidado(id: string): Promise<void>;
   /** Publica um resultado de check no WebSocket, para todas as telas verem ao vivo. */
   publicar(resultado: ResultadoCheck): void;
 }
@@ -66,11 +77,13 @@ export interface OpcoesContexto {
   store: Store;
   cenarios: Cenario[];
   automacoes?: ArquivoAutomacoes;
+  convidados?: ArquivoConvidados;
   dispositivos: DispositivoConfig[];
   caminhoDispositivos: string;
   caminhoHub: string;
   caminhoCenarios?: string;
   caminhoAutomacoes?: string;
+  caminhoConvidados?: string;
   /**
    * false em modo mock: os dispositivos são de mentira e gravá-los apagaria o
    * cadastro real se alguém rodasse `npm run dev` na máquina da igreja.
@@ -82,7 +95,12 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
   let dispositivos = opcoes.dispositivos;
   let cenarios = opcoes.cenarios;
   let automacoes = opcoes.automacoes ?? arquivoAutomacoesSchema.parse({});
+  let convidados = opcoes.convidados ?? arquivoConvidadosSchema.parse({});
   const persistir = opcoes.persistir !== false;
+
+  async function gravarConvidados(): Promise<void> {
+    if (persistir && opcoes.caminhoConvidados) await salvarConvidados(opcoes.caminhoConvidados, convidados);
+  }
 
   async function gravarAutomacoes(): Promise<void> {
     if (persistir && opcoes.caminhoAutomacoes) await salvarAutomacoes(opcoes.caminhoAutomacoes, automacoes);
@@ -99,6 +117,8 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
     modoDemo: !persistir,
 
     dispositivos: () => dispositivos,
+
+    hostname: (id) => opcoes.store.obterHeartbeat(id)?.dados.hostname,
 
     obterDispositivo: (id) => dispositivos.find((d) => d.id === id),
 
@@ -166,6 +186,23 @@ export function criarContexto(opcoes: OpcoesContexto): ContextoApp {
       automacoes = arquivoAutomacoesSchema.parse(novas);
       await gravarAutomacoes();
       return automacoes;
+    },
+
+    linksConvidado: () => convidados.links,
+
+    async salvarLinkConvidado(link) {
+      const indice = convidados.links.findIndex((l) => l.id === link.id);
+      const links = [...convidados.links];
+      if (indice === -1) links.push(link);
+      else links[indice] = link;
+      convidados = arquivoConvidadosSchema.parse({ links });
+      await gravarConvidados();
+      return link;
+    },
+
+    async removerLinkConvidado(id) {
+      convidados = { links: convidados.links.filter((l) => l.id !== id) };
+      await gravarConvidados();
     },
 
     publicar(resultado) {

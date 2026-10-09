@@ -105,6 +105,8 @@ export const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] as
  */
 export const agendamentoSchema = z.object({
   id: z.string().min(1),
+  /** Ausente nos arquivos antigos: sem `tipo` é sempre um agendamento por horário. */
+  tipo: z.literal('horario').optional(),
   cenarioId: z.string().min(1),
   dias: z.array(z.number().int().min(0).max(6)).min(1),
   hora: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'hora no formato HH:MM'),
@@ -113,29 +115,85 @@ export const agendamentoSchema = z.object({
 
 export type Agendamento = z.infer<typeof agendamentoSchema>;
 
-export const arquivoAutomacoesSchema = z.object({
-  /** Liga/desliga geral: desligado, nenhum agendamento roda. */
+/** Espera padrão entre a máquina ligar e o cenário rodar: dá tempo de o Windows terminar de subir. */
+export const ESPERA_AO_LIGAR_PADRAO_S = 30;
+
+/**
+ * "Quando <máquina> ligar, rode <cenário>": dispara quando o agente da máquina
+ * passa de offline para online, depois de `esperaSegundos`.
+ */
+export const automacaoAoLigarSchema = z.object({
+  id: z.string().min(1),
+  tipo: z.literal('aoLigar'),
+  dispositivo: z.string().min(1),
+  cenarioId: z.string().min(1),
+  esperaSegundos: z.number().int().min(0).max(600).default(ESPERA_AO_LIGAR_PADRAO_S),
   ativo: z.boolean().default(true),
-  agendamentos: z.array(agendamentoSchema).default([]),
+});
+
+export type AutomacaoAoLigar = z.infer<typeof automacaoAoLigarSchema>;
+
+/** Cada item da lista de automações: por horário (formato antigo) ou ao ligar uma máquina. */
+export const automacaoSchema = z.union([automacaoAoLigarSchema, agendamentoSchema]);
+
+export type Automacao = z.infer<typeof automacaoSchema>;
+
+export function ehAoLigar(automacao: Automacao): automacao is AutomacaoAoLigar {
+  return automacao.tipo === 'aoLigar';
+}
+
+export const arquivoAutomacoesSchema = z.object({
+  /** Liga/desliga geral: desligado, nenhuma automação roda. */
+  ativo: z.boolean().default(true),
+  /** O nome do campo vem de quando só existiam agendamentos por horário; mantido para os arquivos antigos. */
+  agendamentos: z.array(automacaoSchema).default([]),
 });
 
 export type ArquivoAutomacoes = z.infer<typeof arquivoAutomacoesSchema>;
 
+/** De onde veio a execução: toque no cenário, horário marcado ou máquina que ligou. */
+export const ORIGENS_EXECUCAO = ['manual', 'agendado', 'aoLigar'] as const;
+export type OrigemExecucao = (typeof ORIGENS_EXECUCAO)[number];
+
+/** Uma execução de cenário no histórico, qualquer que seja a origem. */
 export const execucaoAgendadaSchema = z.object({
-  agendamentoId: z.string(),
+  /** Só nas execuções disparadas por uma automação. */
+  agendamentoId: z.string().optional(),
+  /** Ausente nos registros antigos, que eram sempre agendados. */
+  origem: z.enum(ORIGENS_EXECUCAO).optional(),
   cenarioId: z.string(),
   cenarioNome: z.string(),
   ts: z.number(),
   ok: z.boolean(),
   resumo: z.string(),
+  /** Resultado de cada passo, na ordem em que rodaram. */
+  passos: z
+    .array(z.object({ descricao: z.string(), ok: z.boolean(), erro: z.string().optional() }))
+    .optional(),
 });
 
 export type ExecucaoAgendada = z.infer<typeof execucaoAgendadaSchema>;
+export type ExecucaoCenario = ExecucaoAgendada;
+
+/** Próxima execução por horário, já com o nome do cenário, para o card do Painel. */
+export const proximoAgendamentoSchema = z.object({
+  agendamentoId: z.string(),
+  cenarioId: z.string(),
+  cenarioNome: z.string(),
+  /** Timestamp (ms) da próxima execução. */
+  quando: z.number(),
+});
+
+export type ProximoAgendamento = z.infer<typeof proximoAgendamentoSchema>;
 
 export const respostaAutomacoesSchema = arquivoAutomacoesSchema.extend({
   historico: z.array(execucaoAgendadaSchema).default([]),
-  /** Próxima execução de cada agendamento ativo (timestamp), para a tela mostrar. */
+  /** Próxima execução de cada agendamento por horário ativo (timestamp), para a tela mostrar. */
   proximas: z.record(z.string(), z.number()).default({}),
+  /** A execução mais recente, de qualquer origem. */
+  ultimaExecucao: execucaoAgendadaSchema.nullable().default(null),
+  /** Até 2 próximos horários marcados; vale só se `ativo` (interruptor global) for true. */
+  proximosAgendamentos: z.array(proximoAgendamentoSchema).default([]),
 });
 
 export type RespostaAutomacoes = z.infer<typeof respostaAutomacoesSchema>;

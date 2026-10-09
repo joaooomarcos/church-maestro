@@ -12,12 +12,14 @@ import {
   comandoTeclaSchema,
   comandoPptSchema,
   pedidoAtualizarAgenteSchema,
+  pedidoCapturaSchema,
   saudeAgenteSchema,
   type ConfigAgente,
   type ErroApi,
 } from '@maestro/shared';
 import { ErroApp, acordarMaquina, enviarTecla, executarAcaoApp, situacaoDosApps } from './apps/index.js';
 import { fecharAvisos, mostrarAviso } from './avisos/index.js';
+import { capturarMonitor } from './captura/index.js';
 import { montarHeartbeat } from './heartbeat.js';
 import { SHA_VALIDO, dispararAtualizacao, lerEstadoAtualizacao } from './versao.js';
 import { listarProcessos } from './processos.js';
@@ -152,6 +154,26 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
     } catch (err) {
       if (err instanceof ErroApp) {
         const corpo: ErroApi = { erro: 'falha-acordar', mensagem: err.message, detalhe: err.causaTecnica };
+        reply.code(502).send(corpo);
+        return;
+      }
+      throw err;
+    }
+  });
+
+  /** Print de um monitor (miniatura + amostra em cinza), só em memória — usado pela prova real do NDI. */
+  app.post('/captura', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const analisado = pedidoCapturaSchema.safeParse(req.body ?? {});
+    if (!analisado.success) {
+      const corpo: ErroApi = { erro: 'comando-invalido', mensagem: 'Pedido de captura inválido.' };
+      reply.code(400).send(corpo);
+      return;
+    }
+    try {
+      return await capturarMonitor(analisado.data.monitor);
+    } catch (err) {
+      if (err instanceof ErroApp) {
+        const corpo: ErroApi = { erro: 'falha-captura', mensagem: err.message, detalhe: err.causaTecnica };
         reply.code(502).send(corpo);
         return;
       }

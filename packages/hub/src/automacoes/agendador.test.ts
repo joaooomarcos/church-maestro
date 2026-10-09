@@ -78,7 +78,12 @@ describe('criarAgendador', () => {
     await agendador.verificar();
 
     expect(agendador.historico()).toHaveLength(1);
-    expect(agendador.historico()[0]).toMatchObject({ cenarioNome: 'Pré-culto', ok: true });
+    expect(agendador.historico()[0]).toMatchObject({
+      cenarioNome: 'Pré-culto',
+      origem: 'agendado',
+      ok: true,
+      passos: [{ ok: true }],
+    });
   });
 
   it('com as automações desligadas, não roda nada', async () => {

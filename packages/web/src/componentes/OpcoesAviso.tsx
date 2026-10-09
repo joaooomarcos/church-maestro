@@ -1,9 +1,10 @@
 import { MONITOR_TODOS, type EstadoDispositivo } from '@maestro/shared';
 import { nomeDoMonitor } from '../nucleo/monitores';
+import '../estilos/avisos.css';
 
 /** Quanto tempo o aviso fica na tela: null = até alguém clicar em "Ok". */
-const DURACOES: ReadonlyArray<{ segundos: number | null; rotulo: string }> = [
-  { segundos: null, rotulo: 'Até clicar em Ok' },
+export const DURACOES: ReadonlyArray<{ segundos: number | null; rotulo: string }> = [
+  { segundos: null, rotulo: 'Até Ok' },
   { segundos: 5, rotulo: '5 s' },
   { segundos: 10, rotulo: '10 s' },
   { segundos: 20, rotulo: '20 s' },
@@ -19,47 +20,60 @@ export function monitorPrincipal(maquina: EstadoDispositivo): string | null {
   return maquina.agente?.monitores?.find((m) => m.principal)?.id ?? null;
 }
 
-interface Props {
+/** Máquina com mais de uma tela (ou com escolha salva): é preciso dizer em qual o aviso abre. */
+export function precisaEscolherTela(maquina: EstadoDispositivo, monitores: Record<string, string | null>): boolean {
+  return (maquina.agente?.monitores?.length ?? 0) > 1 || Boolean(monitores[maquina.id]);
+}
+
+interface PropsDuracao {
+  segundos: number | null;
+  aoEscolherSegundos: (segundos: number | null) => void;
+}
+
+/** Quanto tempo o aviso fica: uma fileira só de opções curtas. */
+export function DuracaoAviso({ segundos, aoEscolherSegundos }: PropsDuracao) {
+  return (
+    <div className="campo">
+      <span className="campo__rotulo">Quanto tempo fica na tela</span>
+      <div className="avisos-duracao" role="group" aria-label="Quanto tempo fica na tela">
+        {DURACOES.map((opcao) => {
+          const marcado = segundos === opcao.segundos;
+          return (
+            <button
+              key={opcao.rotulo}
+              type="button"
+              aria-pressed={marcado}
+              className={`avisos-duracao__opcao${marcado ? ' avisos-duracao__opcao--marcada' : ''}`}
+              onClick={() => aoEscolherSegundos(opcao.segundos)}
+            >
+              {opcao.rotulo}
+            </button>
+          );
+        })}
+      </div>
+      {segundos === null ? (
+        <p className="avisos-dica">Fica até alguém tocar em "Ok" ou apertar Esc. No telão, prefira um tempo.</p>
+      ) : null}
+    </div>
+  );
+}
+
+interface PropsTelas {
   /** As máquinas onde o aviso vai aparecer. */
   maquinas: EstadoDispositivo[];
   /** Monitor escolhido por máquina (id, MONITOR_TODOS ou null = principal). Ausente = ainda não escolheu. */
   monitores: Record<string, string | null>;
   aoEscolherMonitor: (idMaquina: string, monitor: string | null | undefined) => void;
-  segundos: number | null;
-  aoEscolherSegundos: (segundos: number | null) => void;
   /** Cenários: oferece "Padrão da máquina" e parte dele. Na tela de envio parte do principal. */
   comPadrao?: boolean;
 }
 
-/** Em que tela o aviso abre e quanto tempo ele fica — o que se decide na hora de mandar. */
-export function OpcoesAviso({ maquinas, monitores, aoEscolherMonitor, segundos, aoEscolherSegundos, comPadrao = false }: Props) {
+/** Em qual tela o aviso abre, só para as máquinas com mais de uma. */
+export function TelasAviso({ maquinas, monitores, aoEscolherMonitor, comPadrao = false }: PropsTelas) {
   return (
     <>
-      <div className="campo">
-        <span className="campo__rotulo">Quanto tempo fica na tela</span>
-        <div className="seletor-dias seletor-dias--livre">
-          {DURACOES.map((opcao) => (
-            <button
-              key={opcao.rotulo}
-              type="button"
-              aria-pressed={segundos === opcao.segundos}
-              className={`seletor-dias__dia${segundos === opcao.segundos ? ' seletor-dias__dia--marcado' : ''}`}
-              onClick={() => aoEscolherSegundos(opcao.segundos)}
-            >
-              {opcao.rotulo}
-            </button>
-          ))}
-        </div>
-        {segundos === null ? (
-          <p className="versoes__dica">
-            Fica até alguém clicar em "Ok" ou apertar Esc. No telão, prefira um tempo: se ninguém estiver por
-            perto, o aviso fica lá.
-          </p>
-        ) : null}
-      </div>
-
       {maquinas
-        .filter((maquina) => (maquina.agente?.monitores?.length ?? 0) > 1 || monitores[maquina.id])
+        .filter((maquina) => precisaEscolherTela(maquina, monitores))
         .map((maquina) => {
           const lista = maquina.agente?.monitores ?? [];
           const escolhido = monitores[maquina.id];
@@ -76,7 +90,7 @@ export function OpcoesAviso({ maquinas, monitores, aoEscolherMonitor, segundos, 
             opcoes.push({ id: escolhido, nome: `${escolhido} (desconectado)` });
           }
           return (
-            <div key={maquina.id} className="campo">
+            <div key={maquina.id} className="campo avisos-tela">
               <span className="campo__rotulo">Tela em {maquina.nome}</span>
               <div className="seletor-dias seletor-dias--livre">
                 {opcoes.map((opcao) => (
@@ -94,6 +108,23 @@ export function OpcoesAviso({ maquinas, monitores, aoEscolherMonitor, segundos, 
             </div>
           );
         })}
+    </>
+  );
+}
+
+type Props = PropsTelas & PropsDuracao;
+
+/** Em que tela o aviso abre e quanto tempo ele fica — o que se decide na hora de mandar. */
+export function OpcoesAviso({ maquinas, monitores, aoEscolherMonitor, segundos, aoEscolherSegundos, comPadrao = false }: Props) {
+  return (
+    <>
+      <DuracaoAviso segundos={segundos} aoEscolherSegundos={aoEscolherSegundos} />
+      <TelasAviso
+        maquinas={maquinas}
+        monitores={monitores}
+        aoEscolherMonitor={aoEscolherMonitor}
+        comPadrao={comPadrao}
+      />
     </>
   );
 }

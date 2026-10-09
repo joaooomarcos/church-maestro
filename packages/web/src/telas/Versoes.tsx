@@ -200,18 +200,28 @@ export function Versoes() {
               {!ocupada && !falha && recemAtualizada(maquina) ? (
                 <p className="cartao-versao__estado cartao-versao__estado--ok">Atualização concluída.</p>
               ) : null}
-              {!maquina.online && !ocupada ? <p className="cartao-versao__estado">Máquina offline.</p> : null}
 
-              <button
-                type="button"
-                className={`botao-acao${ocupada ? ' botao-acao--carregando' : ''}`}
-                disabled={igual || ocupada || !maquina.online || enviando !== null || !shaEscolhido}
-                aria-busy={ocupada}
-                onClick={() => void atualizar(maquina)}
-              >
-                {ocupada ? <span className="controle-apps__espera" aria-hidden="true" /> : null}
-                {ocupada ? 'Atualizando…' : igual ? 'Já está nesta versão' : 'Atualizar esta máquina'}
-              </button>
+              {igual && !ocupada ? (
+                // Já está na versão escolhida: não há o que instalar, então nem botão.
+                <p className="selo-atualizada">✓ Atualizada ({maquina.versao ?? escolhida?.versao ?? curto(maquina.sha)})</p>
+              ) : (
+                <button
+                  type="button"
+                  className={`botao-acao${ocupada ? ' botao-acao--carregando' : ''}`}
+                  disabled={ocupada || !maquina.online || enviando !== null || !shaEscolhido}
+                  aria-busy={ocupada}
+                  onClick={() => void atualizar(maquina)}
+                >
+                  {ocupada ? <span className="controle-apps__espera" aria-hidden="true" /> : null}
+                  {ocupada
+                    ? 'Atualizando…'
+                    : !maquina.online
+                      ? 'Offline — ligue a máquina para atualizar'
+                      : maquina.versao && escolhida?.versao
+                        ? `Atualizar ${maquina.versao} → ${escolhida.versao}`
+                        : 'Atualizar esta máquina'}
+                </button>
+              )}
             </article>
           );
         })}

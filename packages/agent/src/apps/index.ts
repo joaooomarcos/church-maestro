@@ -54,8 +54,8 @@ interface RespostaPs {
   erro?: string;
 }
 
-function mensagemDoErro(bruto: string | undefined, app: Aplicativo): string {
-  const nome = NOMES_APLICATIVOS[app];
+function mensagemDoErro(bruto: string | undefined, app: Aplicativo | undefined): string {
+  const nome = app ? NOMES_APLICATIVOS[app] : 'programa que está na frente';
   if (bruto?.includes('nao-esta-aberto')) return `O ${nome} não está aberto nesta máquina.`;
   if (bruto?.includes('nao-consegui-focar')) {
     return `O Windows não deixou trazer o ${nome} para frente. Se ele estiver aberto como administrador, o Maestro também precisa estar.`;
@@ -66,7 +66,7 @@ function mensagemDoErro(bruto: string | undefined, app: Aplicativo): string {
   return `A máquina recusou a ação no ${nome}${bruto ? `: ${bruto}` : '.'}`;
 }
 
-async function rodarScript(argumentos: string[], app: Aplicativo): Promise<unknown> {
+async function rodarScript(argumentos: string[], app: Aplicativo | undefined): Promise<unknown> {
   if (platform() !== 'win32') {
     throw new ErroApp('Controlar aplicativos só funciona nas máquinas Windows.');
   }
@@ -185,13 +185,17 @@ async function abrir(app: Aplicativo, config: ConfigAgente): Promise<void> {
 }
 
 /**
- * Traz o programa para frente e manda a seta. O convidado escolhe o programa na
- * tela do celular, então a tecla nunca depende de quem clicou por último na
- * máquina.
+ * Manda a seta. Com `app`, traz o programa para frente antes; sem ele (modo
+ * "setas do teclado" do convidado), vai direto para a janela que estiver na
+ * frente da máquina.
  */
-export async function enviarTecla(app: Aplicativo, direcao: 'proximo' | 'anterior'): Promise<void> {
+export async function enviarTecla(
+  app: Aplicativo | undefined,
+  direcao: 'proximo' | 'anterior',
+): Promise<void> {
   const tecla = direcao === 'proximo' ? 'RIGHT' : 'LEFT';
-  await rodarScript(['-Acao', 'tecla', '-Processos', processosDe(app), '-Tecla', tecla], app);
+  const alvo = app ? ['-Processos', processosDe(app)] : [];
+  await rodarScript(['-Acao', 'tecla', ...alvo, '-Tecla', tecla], app);
 }
 
 /**

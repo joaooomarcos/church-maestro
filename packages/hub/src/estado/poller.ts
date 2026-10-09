@@ -98,6 +98,9 @@ function estadoDispositivoFalhaTotal(dispositivo: DispositivoConfig, erro: strin
   };
 }
 
+/** Quando cada máquina respondeu pela última vez (só em memória), para "visto há X" nos detalhes. */
+const ultimosVistos = new Map<string, number>();
+
 /** Lê um dispositivo inteiro: chama só os drivers dos serviços configurados, em paralelo, isolando falhas. */
 async function lerDispositivo(
   dispositivo: DispositivoConfig,
@@ -198,12 +201,18 @@ async function lerDispositivo(
         ? heartbeat.ts
         : null;
 
+    if (ultimoContato !== null) ultimosVistos.set(dispositivo.id, ultimoContato);
+    const ultimoVisto = ultimosVistos.get(dispositivo.id);
+    const mac = agente?.mac ?? dispositivo.mac;
+
     return {
       id: dispositivo.id,
       nome: dispositivo.nome,
       host: dispositivo.host,
       online,
       ultimoContato,
+      ...(ultimoVisto !== undefined ? { ultimoVisto } : {}),
+      ...(mac ? { mac } : {}),
       apps: dispositivo.apps,
       agente,
       powerpoint,

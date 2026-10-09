@@ -1,5 +1,6 @@
 import type {
   DispositivoConfig,
+  EstruturaObs,
   EstadoHolyrics,
   ItemPlaylistHolyrics,
   EstadoNdiMonitor,
@@ -43,6 +44,19 @@ export interface DriverNdi {
   ): Promise<void>;
 }
 
+/** Um gatilho do Holyrics (GetTriggers), já com nomes em português. */
+export interface GatilhoHolyrics {
+  id: string;
+  ativo: boolean;
+  /** `displaying`, `closing`, `change` ou `event`. */
+  quando: string;
+  /** Ex.: `any_song`, `any_verse`. */
+  tipo: string;
+  /** Ex.: `obs_v5`. null se a API não informou. */
+  receptor: string | null;
+  descricao: string;
+}
+
 export interface DriverHolyrics {
   ler(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<EstadoHolyrics>;
   proximo(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
@@ -52,6 +66,10 @@ export interface DriverHolyrics {
   /** Lista de reprodução de músicas (letras) do Holyrics, na ordem em que está montada. */
   listarPlaylist(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<ItemPlaylistHolyrics[]>;
   mostrarLetra(dispositivo: DispositivoConfig, letraId: string, op?: OpcoesRequisicao): Promise<void>;
+  /** Exibe um texto bíblico pela referência (ShowVerse), como apresentação normal. */
+  mostrarVersiculo(dispositivo: DispositivoConfig, referencia: string, op?: OpcoesRequisicao): Promise<void>;
+  /** Gatilhos salvos no Holyrics (GetTriggers, v2.24+). */
+  listarGatilhos(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<GatilhoHolyrics[]>;
   definirF(
     dispositivo: DispositivoConfig,
     tecla: 8 | 9 | 10,
@@ -83,6 +101,15 @@ export interface DriverObs {
   sourceVisivel(dispositivo: DispositivoConfig, source: string): Promise<boolean>;
   /** PNG em base64, usado para comparar antes/depois no teste de legendas. */
   capturarSource(dispositivo: DispositivoConfig, source: string): Promise<string>;
+  /** Cenas, grupos e o que há dentro de cada um — para Ajustes › Legendas sugerir nomes. */
+  estrutura(dispositivo: DispositivoConfig): Promise<EstruturaObs>;
+  /** Olhinho do item `item` (um grupo, por exemplo) dentro da cena `cena`. */
+  itemVisivel(dispositivo: DispositivoConfig, cena: string, item: string): Promise<boolean>;
+  definirItemVisivel(dispositivo: DispositivoConfig, cena: string, item: string, visivel: boolean): Promise<void>;
+  /** URL que a fonte de navegador abre, ou null se ela usa arquivo local / não é de navegador. */
+  urlDaFonte(dispositivo: DispositivoConfig, fonte: string): Promise<string | null>;
+  /** O mesmo que clicar em "Atualizar" nas propriedades da fonte de navegador. */
+  atualizarFonte(dispositivo: DispositivoConfig, fonte: string): Promise<void>;
   /** Fecha conexões abertas — chamado no encerramento do hub. */
   encerrar(): Promise<void>;
 }
@@ -106,10 +133,13 @@ export interface DriverAgente {
    * só então começa a troca — ele mesmo sai do ar no meio dela.
    */
   atualizar(dispositivo: DispositivoConfig, sha: string, op?: OpcoesRequisicao): Promise<void>;
-  /** Manda uma seta do teclado para um aplicativo, trazendo-o para frente antes. */
+  /**
+   * Manda uma seta do teclado. Com `app`, traz o aplicativo para frente antes;
+   * sem ele, vai direto para a janela que estiver na frente da máquina.
+   */
   teclaApp(
     dispositivo: DispositivoConfig,
-    app: import('@maestro/shared').Aplicativo,
+    app: import('@maestro/shared').Aplicativo | undefined,
     direcao: 'proximo' | 'anterior',
     op?: OpcoesRequisicao,
   ): Promise<void>;
@@ -119,6 +149,15 @@ export interface DriverAgente {
     comando: import('@maestro/shared').ComandoAviso,
     op?: OpcoesRequisicao,
   ): Promise<void>;
+  /**
+   * Print de um monitor (miniatura + amostra em cinza), só em memória. Sem
+   * `monitor`, o principal. Sessão bloqueada devolve imagem preta: quem chama decide.
+   */
+  capturarMonitor(
+    dispositivo: DispositivoConfig,
+    monitor: string | null | undefined,
+    op?: OpcoesRequisicao,
+  ): Promise<import('@maestro/shared').CapturaMonitor>;
   /** Acorda a tela da máquina (monitor em repouso por inatividade). */
   acordar(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
   /** Fecha qualquer janela de aviso aberta na máquina (a que ficou presa no telão, por exemplo). */

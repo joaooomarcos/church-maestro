@@ -13,8 +13,11 @@ export const SERVICO_HUB = 'maestro-hub';
 
 export const configHubSchema = z.object({
   porta: z.number().int().positive().default(PORTAS_PADRAO.hub),
-  /** PIN compartilhado da equipe. Trocar aqui invalida as sessões abertas. */
-  pin: z.string().min(4),
+  /**
+   * PIN compartilhado da equipe: exatamente 4 dígitos (o teclado da tela de
+   * entrada tem 4 bolinhas e entra sozinho no 4º). Trocar aqui invalida as sessões abertas.
+   */
+  pin: z.string().regex(/^\d{4}$/, 'O PIN da equipe deve ter exatamente 4 dígitos.'),
   /** Segredo usado para assinar o cookie de sessão. Gerado na instalação. */
   segredoSessao: z.string().min(16),
   /** Token que o hub apresenta aos agentes, e vice-versa. */
@@ -28,10 +31,11 @@ export const configHubSchema = z.object({
    * PIN da página do convidado (o QR code). Separado do PIN da equipe: quem vai
    * apresentar recebe só este, e ele não abre o painel.
    */
+  // Leitura tolerante: hub.json antigo pode ter PIN de outro tamanho; o hub
+  // troca por um de 4 dígitos ao iniciar. Quem grava (ajustes) exige 4 dígitos.
   pinConvidado: z
     .string()
-    .min(4)
-    .max(12)
+    .min(1)
     .default(() => String(Math.floor(1000 + Math.random() * 9000))),
   /** Sub-rede a varrer, ex.: "192.168.0.0/24". Vazio = detecta pela interface. */
   redeVarredura: z.string().optional(),
@@ -66,6 +70,13 @@ export const ROTAS = {
   convidadoEntrar: '/api/convidado/entrar',
   convidadoEstado: '/api/convidado/estado',
   convidadoAcao: '/api/convidado/acao',
+  /** Só para o link "completo": lista de reprodução do Holyrics e imagem do slide do PowerPoint. */
+  convidadoPlaylist: '/api/convidado/playlist',
+  convidadoSlide: '/api/convidado/slide',
+  /** Links fixos (equipe): GET lista, POST cria. */
+  convidadoFixos: '/api/convidado/fixos',
+  convidadoFixosPin: '/api/convidado/fixos/pin',
+  convidadoFixosExcluir: '/api/convidado/fixos/excluir',
   compartilhar: '/api/compartilhar',
   compartilharTexto: '/api/compartilhar/texto',
   compartilharArquivo: '/api/compartilhar/arquivo',
@@ -82,6 +93,14 @@ export const ROTAS = {
   executarCenario: '/api/cenarios/executar',
   checkLegendas: '/api/checks/legendas',
   checkNdi: '/api/checks/ndi',
+  /** Ajustes › NDI: monitor de cada janela do Studio Monitor e o que o Screen Capture envia. GET lê, PUT grava. */
+  ndiConfig: '/api/ndi/config',
+  /** Configuração das legendas (Ajustes › Legendas): GET lê, PUT grava. */
+  legendas: '/api/legendas',
+  /** Cenas, grupos e fontes do OBS, para sugerir o preenchimento das legendas. */
+  legendasEstruturaObs: '/api/legendas/estrutura-obs',
+  /** Clica em "Atualizar" numa fonte web do OBS (a correção sugerida pelo teste). */
+  legendasAtualizarFonte: '/api/legendas/atualizar-fonte',
 } as const;
 
 export const loginSchema = z.object({ pin: z.string().min(1) });
@@ -122,7 +141,7 @@ export type RespostaPlaylistHolyrics = z.infer<typeof respostaPlaylistHolyricsSc
 /** Ajustes que a equipe pode mudar pelo painel, sem mexer em arquivo. */
 export const ajustesSchema = z.object({
   intervaloHeartbeatMs: z.number().int().min(2000).max(120_000).optional(),
-  pinConvidado: z.string().min(4).max(12).optional(),
+  pinConvidado: z.string().regex(/^\d{4}$/, 'O PIN do convidado deve ter exatamente 4 dígitos.').optional(),
 });
 
 export type Ajustes = z.infer<typeof ajustesSchema>;

@@ -78,13 +78,69 @@ export const servicoHolyricsSchema = z.object({
 export const servicoNdiMonitorSchema = z.object({
   /** Uma porta por janela aberta do Studio Monitor. */
   portas: z.array(z.number().int().positive()).default([80]),
+  /**
+   * Em que monitor da máquina cada janela aparece, por porta (a chave é a porta
+   * como texto: "80", "81"…). Vem de Ajustes › NDI; o teste do NDI captura esse
+   * monitor para comparar com o que a máquina de origem envia.
+   */
+  monitores: z.record(z.string(), z.string().min(1)).optional(),
 });
+
+const horaSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'hora no formato HH:MM');
+
+/**
+ * Faixa de horário em que o teste de legendas não roda (o culto, por exemplo).
+ * `fim` menor que `inicio` atravessa a meia-noite.
+ */
+export const faixaHorarioSchema = z.object({
+  /** 0 = domingo … 6 = sábado, como em `Date.getDay()`. */
+  dias: z.array(z.number().int().min(0).max(6)).min(1),
+  inicio: horaSchema,
+  fim: horaSchema,
+});
+
+export type FaixaHorario = z.infer<typeof faixaHorarioSchema>;
+
+/** Quais fontes web do OBS são de um Holyrics: uma no grupo da música, outra no da leitura. */
+export const fontesLegendaHolyricsSchema = z.object({
+  /** id do dispositivo que roda esse Holyrics. */
+  dispositivo: z.string().min(1),
+  fonteMusica: z.string().optional(),
+  fonteLeitura: z.string().optional(),
+});
+
+export type FontesLegendaHolyrics = z.infer<typeof fontesLegendaHolyricsSchema>;
+
+/**
+ * Como a legenda está montada no OBS. O gatilho do Holyrics abre e fecha o
+ * GRUPO inteiro (música ou leitura); a fonte web de cada Holyrics fica sempre
+ * ligada dentro dele. Editado em Ajustes › Legendas.
+ */
+export const configLegendasSchema = z.object({
+  /** Cena que contém os dois grupos (ex.: "Cena_Elementos"). */
+  cena: z.string().optional(),
+  grupoMusica: z.string().optional(),
+  grupoLeitura: z.string().optional(),
+  holyrics: z.array(fontesLegendaHolyricsSchema).default([]),
+  /** Atualiza as fontes web daquele Holyrics no OBS quando ele liga (o caso "aberto depois do OBS"). */
+  atualizarAoLigar: z.boolean().default(true),
+  /** Faixas em que o teste não roda, para nunca exibir nada de teste durante o culto. */
+  horariosProibidos: z.array(faixaHorarioSchema).default([]),
+  /** Referência exibida no teste da leitura. */
+  versiculo: z.string().min(1).default('Sl 23:1'),
+});
+
+export type ConfigLegendas = z.infer<typeof configLegendasSchema>;
 
 export const servicoObsSchema = z.object({
   porta: z.number().int().positive().default(PORTAS_PADRAO.obsWebsocket),
   senha: z.string().optional(),
-  /** Nome da source de legenda no OBS, usada na prova real do teste. */
+  /**
+   * Formato antigo: uma fonte só. Continua valendo enquanto `legendas` não for
+   * preenchido em Ajustes › Legendas.
+   */
   sourceLegenda: z.string().optional(),
+  legendas: configLegendasSchema.optional(),
 });
 
 export const dispositivoConfigSchema = z.object({
@@ -100,10 +156,15 @@ export const dispositivoConfigSchema = z.object({
   tokenConvidado: z.string().optional(),
   /** O que o link de convidado controla (holyrics, powerpoint ou teclado). Ausente = o convidado escolhe. */
   modoConvidado: z.enum(['holyrics', 'powerpoint', 'teclado']).optional(),
-  /** No modo teclado, o programa que recebe as setas. */
-  appConvidado: z.enum(APLICATIVOS).optional(),
+  /** O link temporário tem controle completo (lista de reprodução, tela preta, prévias). Ausente = não. */
+  completoConvidado: z.boolean().optional(),
   /** Monitor onde os avisos aparecem (id de `Monitor`). Ausente = o principal. */
   monitorAvisos: z.string().optional(),
+  /**
+   * Monitor que o NDI Screen Capture desta máquina envia pela rede (id de
+   * `Monitor`). Ausente = o principal, que é o padrão do Screen Capture.
+   */
+  monitorNdiEnvio: z.string().optional(),
   /**
    * Programas que esta máquina usa. Só eles aparecem no painel e em "Programas".
    * Ausente = ainda não foi escolhido: vale o que o agente achou instalado.

@@ -1,4 +1,5 @@
 import { ErroDriver, type DriverAgente, type OpcoesRequisicao } from './tipos.js';
+import { capturaMonitorSchema } from '@maestro/shared';
 import type {
   DispositivoConfig,
   EstadoAgente,
@@ -161,6 +162,29 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
       );
     },
 
+    async capturarMonitor(dispositivo, monitor, op) {
+      const bruto = await pedir<unknown>(
+        dispositivo,
+        '/captura',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ monitor: monitor ?? null }),
+        },
+        // O PowerShell sobe, tira o print e redimensiona: mais que a leitura de estado.
+        { timeoutMs: 20_000, ...(op ?? {}) },
+        tokenPadrao,
+      );
+      const captura = capturaMonitorSchema.safeParse(bruto);
+      if (!captura.success) {
+        throw new ErroDriver(
+          `O agente do ${dispositivo.nome} devolveu uma captura que não entendi. Atualize o agente dessa máquina.`,
+          captura.error.message,
+        );
+      }
+      return captura.data;
+    },
+
     async acordar(dispositivo, op): Promise<void> {
       await pedir<{ ok: boolean }>(
         dispositivo,
@@ -188,7 +212,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
         {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ app, direcao }),
+          body: JSON.stringify({ ...(app ? { app } : {}), direcao }),
         },
         { timeoutMs: 8000, ...(op ?? {}) },
         tokenPadrao,

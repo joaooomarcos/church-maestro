@@ -1,4 +1,4 @@
-import type { ErroApi } from '@maestro/shared';
+import { ROTAS, type ErroApi } from '@maestro/shared';
 
 /**
  * Erro já com a mensagem em português pronta para a tela — extraída do corpo
@@ -37,6 +37,8 @@ function notificarErro(mensagem: string): void {
   for (const fn of ouvintesErro) fn(mensagem);
 }
 
+const ROTAS_DE_ENTRADA = new Set<string>([ROTAS.login, ROTAS.convidadoEntrar]);
+
 async function requisitar<T>(caminho: string, opcoes?: RequestInit): Promise<T> {
   let resposta: Response;
   try {
@@ -51,7 +53,9 @@ async function requisitar<T>(caminho: string, opcoes?: RequestInit): Promise<T> 
     throw new ErroRequisicao(mensagem);
   }
 
-  if (resposta.status === 401) {
+  // Nas rotas de entrada (PIN da equipe e PIN do convidado) o 401 é "PIN incorreto." —
+  // a mensagem certa vem do servidor; a "sessão expirada" só faz sentido nas demais chamadas.
+  if (resposta.status === 401 && !ROTAS_DE_ENTRADA.has(caminho)) {
     ouvinteNaoAutenticado?.();
     throw new ErroRequisicao('Sessão expirada. Entre novamente.');
   }

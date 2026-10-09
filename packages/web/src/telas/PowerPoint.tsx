@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ROTAS } from '@maestro/shared';
-import { useAppContexto, useControlesRodape } from '../contexto/AppContext';
+import { useAppContexto, useControlesCabecalho, useControlesRodape } from '../contexto/AppContext';
+import { FaixaTitulo } from '../componentes/FaixaTitulo';
+import { Icone } from '../componentes/Icone';
+import { NavegacaoSlides } from '../componentes/NavegacaoSlides';
+import { SeletorPc, usaPrograma } from '../componentes/SeletorPc';
 import { apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
 
@@ -18,12 +22,12 @@ function ImagemSlide({ src, rotulo, classe }: { src: string; rotulo: string; cla
 }
 
 export function PowerPoint() {
-  const { snapshot } = useAppContexto();
+  const { snapshot, maquinaPedida } = useAppContexto();
   const dispositivos = useMemo(
-    () => (snapshot?.dispositivos ?? []).filter((d) => d.powerpoint !== undefined),
+    () => (snapshot?.dispositivos ?? []).filter((d) => d.powerpoint !== undefined && usaPrograma(d, 'powerpoint')),
     [snapshot],
   );
-  const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(() => maquinaPedida('powerpoint'));
   const [enviando, setEnviando] = useState(false);
   // Sobe a cada comando: a imagem do slide é pedida de novo na hora, sem esperar a próxima leitura do painel.
   const [comandos, setComandos] = useState(0);
@@ -58,15 +62,16 @@ export function PowerPoint() {
 
   useControlesRodape(
     atual && online && emApresentacao ? (
-      <div className="botoes-gigantes">
-        <button type="button" className="botao-gigante" disabled={enviando} onClick={() => void agir('anterior')}>
-          ‹ ANTERIOR
-        </button>
-        <button type="button" className="botao-gigante" disabled={enviando} onClick={() => void agir('proximo')}>
-          PRÓXIMO ›
-        </button>
-      </div>
+      <NavegacaoSlides
+        desabilitado={enviando}
+        aoAnterior={() => void agir('anterior')}
+        aoProximo={() => void agir('proximo')}
+      />
     ) : null,
+  );
+
+  useControlesCabecalho(
+    <SeletorPc dispositivos={dispositivos} atual={selecionadoId} aoTrocar={setSelecionadoId} />,
   );
 
   if (dispositivos.length === 0) {
@@ -75,32 +80,17 @@ export function PowerPoint() {
 
   return (
     <div className="powerpoint">
-      {dispositivos.length > 1 ? (
-        <div className="seletor-dispositivo">
-          {dispositivos.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              className={`botao-opcao${d.id === selecionadoId ? ' botao-opcao--ativo' : ''}`}
-              onClick={() => setSelecionadoId(d.id)}
-            >
-              {d.nome}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="powerpoint__status">
-        {!online ? (
-          <p>{atual?.powerpoint?.erro ?? 'Sem conexão com o PowerPoint.'}</p>
-        ) : !emApresentacao ? (
-          <p className="powerpoint__aviso">A apresentação não está no modo exibição.</p>
-        ) : (
-          <h2>
-            Slide {atual?.powerpoint?.slide ?? '?'} de {atual?.powerpoint?.totalSlides ?? '?'}
-          </h2>
-        )}
-      </div>
+      {!online ? (
+        <p className="info powerpoint__status">{atual?.powerpoint?.erro ?? 'Sem conexão com o PowerPoint.'}</p>
+      ) : !emApresentacao ? (
+        <p className="info powerpoint__status powerpoint__aviso">A apresentação não está no modo exibição.</p>
+      ) : (
+        <FaixaTitulo
+          titulo={atual?.powerpoint?.arquivo ?? 'Apresentação'}
+          slide={atual?.powerpoint?.slide ?? null}
+          total={atual?.powerpoint?.totalSlides ?? null}
+        />
+      )}
 
       {atual && online && emApresentacao ? (
         <div className="visor-slides">
@@ -126,7 +116,7 @@ export function PowerPoint() {
             onClick={() => void agir('iniciar')}
           >
             <span>Iniciar apresentação</span>
-            <span className="holyrics__tecla">F5</span>
+            <Icone nome="abrir" tamanho={20} />
           </button>
           <button
             type="button"
@@ -135,7 +125,7 @@ export function PowerPoint() {
             onClick={() => void agir('encerrar')}
           >
             <span>Encerrar apresentação</span>
-            <span className="holyrics__tecla">ESC</span>
+            <Icone nome="fechar" tamanho={20} />
           </button>
         </div>
       ) : null}

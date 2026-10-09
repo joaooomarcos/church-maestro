@@ -7,10 +7,46 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { MensagemHub, ResultadoCheck, Snapshot } from '@maestro/shared';
-import { ROTAS } from '@maestro/shared';
+import type {
+  ExecucaoCenario,
+  MensagemHub,
+  ProximoAgendamento,
+  RespostaAutomacoes,
+  ResultadoCheck,
+  Snapshot,
+} from '@maestro/shared';
+import { ROTAS, ehAoLigar } from '@maestro/shared';
 import { apiGet, apiPost, definirOuvinteNaoAutenticado, ouvirErros } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
+import { ehTela, type TelaId } from '../componentes/MenuLateral';
+
+const CHAVE_TELA = 'maestro:tela';
+
+/** Volta para a tela em que a pessoa estava quando o painel recarrega. */
+function telaSalva(): TelaId {
+  try {
+    const salva = window.localStorage.getItem(CHAVE_TELA);
+    return ehTela(salva) ? salva : 'painel';
+  } catch {
+    return 'painel';
+  }
+}
+
+/** O que o Painel mostra de Automações: próximos horários e a última execução. */
+export interface DadosAutomacoes {
+  /** Interruptor global das automações. */
+  ativo: boolean;
+  /** Há agendamento por horário cadastrado (mesmo com o interruptor desligado). */
+  temHorarios: boolean;
+  proximos: ProximoAgendamento[];
+  ultimaExecucao: ExecucaoCenario | null;
+}
+
+/** Pedido de abrir uma tela já numa máquina (toque num tile do Painel). */
+interface PedidoMaquina {
+  tela: TelaId;
+  pcId: string;
+}
 
 type NivelToast = 'info' | 'alerta' | 'erro';
 
@@ -45,8 +81,53 @@ interface AppContextoValor {
   fecharAlerta: (id: string) => void;
   removerToast: (id: string) => void;
   notificar: (mensagem: string, nivel?: NivelToast) => void;
+  tela: TelaId;
+  /** Troca de tela; com `pcId`, a tela abre já naquela máquina. */
+  abrirTela: (tela: TelaId, opcoes?: { pcId?: string }) => void;
+  /** Máquina pedida para a tela informada (só vale para quem a abriu pedindo uma). */
+  maquinaPedida: (tela: TelaId) => string | null;
+  /** null até o primeiro carregamento. */
+  automacoes: DadosAutomacoes | null;
+  recarregarAutomacoes: () => void;
+}
+
+/**
+ * Slots do layout (cabeçalho e rodapé fixos). Ficam num contexto à parte, com o
+ * estado num componente filho: publicar um slot re-renderiza só o App, não a
+ * tela que publicou (que, relendo o contexto principal, republicaria sem fim).
+ */
+interface SlotsLayoutValor {
   controlesRodape: ReactNode | null;
+  controlesCabecalho: ReactNode | null;
+}
+
+interface DefinidoresSlots {
   definirControlesRodape: (node: ReactNode | null) => void;
+  definirControlesCabecalho: (node: ReactNode | null) => void;
+}
+
+const SlotsLayoutContexto = createContext<SlotsLayoutValor>({
+  controlesRodape: null,
+  controlesCabecalho: null,
+});
+const DefinidoresSlotsContexto = createContext<DefinidoresSlots | null>(null);
+
+/** O que as telas publicaram nos slots; quem desenha o cabeçalho/rodapé (App) lê daqui. */
+export function useSlotsLayout(): SlotsLayoutValor {
+  return useContext(SlotsLayoutContexto);
+}
+
+function ProvedorSlots({ children }: { children: ReactNode }) {
+  const [controlesRodape, definirControlesRodape] = useState<ReactNode | null>(null);
+  const [controlesCabecalho, definirControlesCabecalho] = useState<ReactNode | null>(null);
+  const definidores = useRef<DefinidoresSlots>({ definirControlesRodape, definirControlesCabecalho });
+  return (
+    <DefinidoresSlotsContexto.Provider value={definidores.current}>
+      <SlotsLayoutContexto.Provider value={{ controlesRodape, controlesCabecalho }}>
+        {children}
+      </SlotsLayoutContexto.Provider>
+    </DefinidoresSlotsContexto.Provider>
+  );
 }
 
 const AppContexto = createContext<AppContextoValor | null>(null);
@@ -62,10 +143,22 @@ export function useAppContexto(): AppContextoValor {
  * anterior/próximo, por exemplo) enquanto a tela que chamou estiver montada.
  */
 export function useControlesRodape(node: ReactNode | null): void {
-  const { definirControlesRodape } = useAppContexto();
+  const definidores = useContext(DefinidoresSlotsContexto);
   useEffect(() => {
-    definirControlesRodape(node);
-    return () => definirControlesRodape(null);
+    definidores?.definirControlesRodape(node);
+    return () => definidores?.definirControlesRodape(null);
+  });
+}
+
+/**
+ * Publica controles no cabeçalho, à direita do título (o seletor de PC, por
+ * exemplo), enquanto a tela que chamou estiver montada.
+ */
+export function useControlesCabecalho(node: ReactNode | null): void {
+  const definidores = useContext(DefinidoresSlotsContexto);
+  useEffect(() => {
+    definidores?.definirControlesCabecalho(node);
+    return () => definidores?.definirControlesCabecalho(null);
   });
 }
 
@@ -76,7 +169,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [resultadosCheck, setResultadosCheck] = useState<Record<string, ResultadoCheck>>({});
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [alertas, setAlertas] = useState<AlertaEquipe[]>([]);
-  const [controlesRodape, setControlesRodape] = useState<ReactNode | null>(null);
+  const [tela, setTela] = useState<TelaId>(telaSalva);
+  const [pedido, setPedido] = useState<PedidoMaquina | null>(null);
+  const [automacoes, setAutomacoes] = useState<DadosAutomacoes | null>(null);
 
   const revisaoRef = useRef(-1);
   const wsRef = useRef<WebSocket | null>(null);
@@ -101,8 +196,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAlertas((atuais) => atuais.filter((a) => a.id !== id));
   }, []);
 
-  const definirControlesRodape = useCallback((node: ReactNode | null) => {
-    setControlesRodape(node);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CHAVE_TELA, tela);
+    } catch {
+      // sem armazenamento: só não lembra a tela
+    }
+  }, [tela]);
+
+  const abrirTela = useCallback((destino: TelaId, opcoes?: { pcId?: string }) => {
+    setPedido(opcoes?.pcId ? { tela: destino, pcId: opcoes.pcId } : null);
+    setTela(destino);
+  }, []);
+
+  const maquinaPedida = useCallback(
+    (destino: TelaId): string | null => (pedido && pedido.tela === destino ? pedido.pcId : null),
+    [pedido],
+  );
+
+  const recarregarAutomacoes = useCallback(() => {
+    apiGet<RespostaAutomacoes>(ROTAS.automacoes)
+      .then((resposta) => {
+        if (canceladoRef.current) return;
+        setAutomacoes({
+          ativo: resposta.ativo,
+          temHorarios: resposta.agendamentos.some((a) => !ehAoLigar(a) && a.ativo),
+          proximos: resposta.proximosAgendamentos,
+          ultimaExecucao: resposta.ultimaExecucao,
+        });
+      })
+      .catch(() => {
+        // erro já virou toast pelo cliente de API.
+      });
   }, []);
 
   // Checagem inicial de sessão + assina o "expirou" para qualquer chamada futura.
@@ -132,6 +257,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!autenticado) return;
     canceladoRef.current = false;
     tentativaRef.current = 0;
+
+    recarregarAutomacoes();
 
     apiGet<Snapshot>(ROTAS.snapshot)
       .then((dados) => {
@@ -184,6 +311,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const alerta = { id: `${mensagem.ts}-${Math.random().toString(36).slice(2)}`, texto: mensagem.texto, ts: mensagem.ts };
           setAlertas((atuais) => [...atuais, alerta]);
           vibrar([300, 150, 300]);
+        } else if (mensagem.tipo === 'execucao') {
+          const execucao = mensagem.dados;
+          setAutomacoes((atual) => (atual ? { ...atual, ultimaExecucao: execucao } : atual));
+          // Os próximos horários mudam depois de uma execução agendada.
+          recarregarAutomacoes();
         }
       };
 
@@ -207,7 +339,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [autenticado, notificar]);
+  }, [autenticado, notificar, recarregarAutomacoes]);
 
   const entrar = useCallback(async (pin: string): Promise<{ ok: boolean; mensagem?: string }> => {
     try {
@@ -231,9 +363,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fecharAlerta,
     removerToast,
     notificar,
-    controlesRodape,
-    definirControlesRodape,
+    tela,
+    abrirTela,
+    maquinaPedida,
+    automacoes,
+    recarregarAutomacoes,
   };
 
-  return <AppContexto.Provider value={valor}>{children}</AppContexto.Provider>;
+  return (
+    <AppContexto.Provider value={valor}>
+      <ProvedorSlots>{children}</ProvedorSlots>
+    </AppContexto.Provider>
+  );
 }
