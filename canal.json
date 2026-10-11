@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "71f275ab6dd2e7704f7ef5de598559d6e57aa4bb",
-  "notas": "Publicação automática quando o trabalho chega ao main",
+  "sha": "1086894d95f80cb841705e311044ad4f70e52845",
+  "notas": "Tela do celular acesa no controle, reconexão ao desbloquear e PIN escolhido nos links fixos",
   "liberadoEm": "2026-10-11",
-  "versao": "0.6.1",
+  "versao": "0.7.0",
   "versoes": [
+    {
+      "versao": "0.7.0",
+      "sha": "1086894d95f80cb841705e311044ad4f70e52845",
+      "notas": "Tela do celular acesa no controle, reconexão ao desbloquear e PIN escolhido nos links fixos",
+      "data": "2026-10-11"
+    },
     {
       "versao": "0.6.1",
       "sha": "71f275ab6dd2e7704f7ef5de598559d6e57aa4bb",
