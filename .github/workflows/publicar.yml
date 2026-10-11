@@ -1,0 +1,113 @@
+# Libera uma versão para as máquinas da igreja quando o trabalho chega ao main.
+#
+# O trabalho acontece numa branch; devolver a branch para o main é a decisão de
+# publicar. O número sai assim:
+#   - o package.json traz um número ainda não liberado (`npm run versao -- funcionalidade`
+#     na branch): publica esse número;
+#   - senão: conta como correção e sobe o último (0.6.0 -> 0.6.1).
+# Antes de liberar, compila e testa num Windows, como as máquinas vão fazer.
+# O botão "Run workflow" continua valendo, e é por ele que se volta de versão.
+name: Publicar versão
+
+on:
+  push:
+    branches: [main]
+    # Mexer só em texto ou neste arquivo não muda nada nas máquinas.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/**'
+  workflow_dispatch:
+    inputs:
+      tipo:
+        description: O que esta versão é
+        type: choice
+        required: true
+        default: automatico
+        options:
+          - automatico
+          - correcao
+          - funcionalidade
+          - voltar
+      versao:
+        description: 'Só para "voltar": versão já liberada (ex.: 0.5.0)'
+        type: string
+        required: false
+      notas:
+        description: Descrição que aparece no painel (vazio = os commits desde a última versão)
+        type: string
+        required: false
+
+# Duas publicações ao mesmo tempo brigariam pelo canal.json.
+concurrency: publicar
+
+jobs:
+  conferir:
+    name: Compila e testa no Windows
+    runs-on: windows-latest
+    # Publicar pelo terminal também dá push no main; ali já está tudo liberado.
+    if: >-
+      github.event_name != 'push' ||
+      (!startsWith(github.event.head_commit.message, 'Libera ') &&
+       !startsWith(github.event.head_commit.message, 'Desliga a oferta'))
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm test
+
+  publicar:
+    name: Libera no canal
+    needs: conferir
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          # O publicar lê o histórico para montar as notas e cria a tag.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Publica
+        env:
+          TIPO: ${{ inputs.tipo || 'automatico' }}
+          VERSAO: ${{ inputs.versao }}
+          NOTAS: ${{ inputs.notas }}
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
+          liberada() {
+            node -e 'const c=require("./canal.json");process.exit(c.versoes.some(v=>v.versao===process.argv[1])?0:1)' "$1"
+          }
+
+          if [ "$TIPO" = "automatico" ]; then
+            atual=$(node -p 'require("./package.json").version')
+            if liberada "$atual"; then pedido="correcao"; else pedido="$atual"; fi
+          elif [ "$TIPO" = "voltar" ]; then
+            if ! printf '%s' "$VERSAO" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::Para voltar, preencha a versão no formato x.y.z."
+              exit 1
+            fi
+            # Uma versão que nunca foi liberada viraria versão nova no publicar.
+            if ! liberada "$VERSAO"; then
+              echo "::error::A $VERSAO nunca foi liberada; não há para onde voltar."
+              exit 1
+            fi
+            pedido="$VERSAO"
+          else
+            pedido="$TIPO"
+          fi
+
+          argumentos=("$pedido")
+          if [ -n "$NOTAS" ]; then argumentos+=(--notas "$NOTAS"); fi
+          node scripts/publicar.mjs "${argumentos[@]}" | tee -a "$GITHUB_STEP_SUMMARY"

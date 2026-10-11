@@ -119,6 +119,25 @@ npm run publicar -- 0.2.0            # volta as máquinas para uma versão já l
 npm run publicar -- --desligar       # para de oferecer versão nova ao instalador
 ```
 
+No dia a dia ninguém precisa rodar isso: **devolver o trabalho para o `main`
+publica**. O trabalho acontece numa branch; quando ela volta para o `main`, o
+GitHub compila e testa num Windows, como as máquinas vão fazer, e libera a
+versão (se quebrar, nada é publicado). O número sai assim:
+
+- **correção** não pede nada: o último número sobe sozinho (0.6.0 → 0.6.1);
+- **funcionalidade nova**: na branch, rode `npm run versao -- funcionalidade`
+  antes de devolver. Ele só troca o número (0.6.0 → 0.7.0) e faz o commit
+  "Versão 0.7.0", sem liberar nada.
+
+Mudar só documentação (`.md`, `docs/`) não gera versão. O andamento fica em
+**Actions › Publicar versão** no GitHub; o botão **Run workflow** dali publica à
+mão e é por onde se volta para uma versão já liberada (opção `voltar`), inclusive
+do celular.
+
+Publicar pelo terminal só funciona a partir do `main`: as máquinas leem o
+`canal.json` de lá, e uma versão publicada de outra branch não aparece no painel
+(foi o que segurou a 0.6.0).
+
 O script troca o número em todos os `package.json`, faz o commit "Versão
 x.y.z", cria a tag `vx.y.z` e registra a versão no `canal.json`. A descrição
 que aparece no painel sai dos commits desde a última versão; para escrever

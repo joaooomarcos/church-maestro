@@ -14,6 +14,10 @@
  *   npm run publicar -- 0.1.0            volta as máquinas para uma versão já liberada
  *   npm run publicar -- --desligar       para de oferecer versão nova ao instalador
  *
+ * Numa branch de trabalho, `npm run versao -- funcionalidade` só troca o número
+ * e faz o commit "Versão x.y.z", sem liberar nada: quando a branch volta para o
+ * main, o GitHub publica esse número (.github/workflows/publicar.yml).
+ *
  *   --notas "texto"   descrição da versão (padrão: os commits desde a última versão)
  */
 import { execFileSync } from 'node:child_process';
@@ -91,6 +95,7 @@ function resumir(assuntos) {
 
 const argumentos = process.argv.slice(2);
 const desligar = argumentos.includes('--desligar');
+const preparar = argumentos.includes('--preparar');
 const indiceNotas = argumentos.indexOf('--notas');
 const notasPedidas = indiceNotas >= 0 ? argumentos[indiceNotas + 1] : undefined;
 const pedido = argumentos.find((a, i) => !a.startsWith('--') && (indiceNotas < 0 || i !== indiceNotas + 1));
@@ -146,6 +151,10 @@ if (pedido && VERSAO_VALIDA.test(pedido) && historico.some((v) => v.versao === p
     gravarVersao(versao);
     git('add', ...PACOTES.map((pasta) => resolve(raiz, pasta, 'package.json')), 'package-lock.json');
     git('commit', '-m', `Versão ${versao}\n\n${notas}`);
+  }
+  if (preparar) {
+    console.log(`\nNúmero trocado para ${versao}. Nada foi liberado: a versão sai quando esta branch voltar para o main.`);
+    process.exit(0);
   }
   sha = git('rev-parse', 'HEAD');
   git('tag', '-a', `v${versao}`, '-m', `Versão ${versao} — ${notas}`);

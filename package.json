@@ -22,6 +22,7 @@
     "setup": "node packages/agent/dist/setup.js",
     "checklists": "node scripts/converter-checklist.mjs",
     "publicar": "node scripts/publicar.mjs",
+    "versao": "node scripts/publicar.mjs --preparar",
     "atualizar": "node scripts/atualizar-agora.mjs"
   },
   "devDependencies": {
