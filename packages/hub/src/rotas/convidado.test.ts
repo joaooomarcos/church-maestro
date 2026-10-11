@@ -304,6 +304,39 @@ describe('links fixos', () => {
     expect(entrada.statusCode).toBe(404);
   });
 
+  it('aceita PIN escolhido pela equipe ao criar e ao trocar, e recusa o que não tem 4 dígitos', async () => {
+    const m = await montar();
+    const link = await criar(m, { pin: '2468' });
+    expect(link.pin).toBe('2468');
+    const cookie = await entrar(m.app, link.token, '2468');
+
+    const troca = await m.app.inject({
+      method: 'POST',
+      url: ROTAS.convidadoFixosPin,
+      payload: { id: link.id, pin: '1357' },
+    });
+    expect(troca.statusCode).toBe(200);
+    expect(troca.json().pin).toBe('1357');
+    // Trocar derruba quem estava conectado, mesmo com PIN escolhido.
+    expect((await agir(m.app, cookie, { modo: 'holyrics', acao: 'proximo' })).statusCode).toBe(401);
+    await entrar(m.app, link.token, '1357');
+
+    for (const ruim of ['123', '12345', 'abcd']) {
+      const r = await m.app.inject({
+        method: 'POST',
+        url: ROTAS.convidadoFixosPin,
+        payload: { id: link.id, pin: ruim },
+      });
+      expect(r.statusCode).toBe(400);
+      const c = await m.app.inject({
+        method: 'POST',
+        url: ROTAS.convidadoFixos,
+        payload: { nome: 'X', dispositivo: 'note', modo: 'holyrics', pin: ruim },
+      });
+      expect(c.statusCode).toBe(400);
+    }
+  });
+
   it('aplica o limite de tentativas de PIN também aos links fixos', async () => {
     const m = await montar();
     const link = await criar(m);

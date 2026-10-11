@@ -132,3 +132,15 @@
   gap: 10px;
   margin-bottom: 22px;
 }
+
+/* Wi-fi caiu ou o hub não respondeu: avisa sem tirar os botões da tela. */
+.convidado__sem-conexao {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-align: center;
+  background: var(--cor-aviso-fundo);
+  color: var(--cor-aviso);
+  font-weight: 600;
+  font-size: 0.9rem;
+}

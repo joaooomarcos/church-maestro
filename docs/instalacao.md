@@ -214,6 +214,30 @@ botões: avançar e voltar. Ela escolhe o que está controlando:
 O QR temporário dura um dia. Para cortar antes disso, use **Trocar o link**: o
 QR antigo para de funcionar na hora.
 
+### A tela do celular não apaga durante o controle
+
+Na página do convidado e nas telas **PowerPoint** e **Holyrics** do painel, o
+Maestro segura a tela do celular acesa (Android e iPhone). Isso começa **no
+primeiro toque na tela**: o navegador não deixa começar antes. Se a pessoa sair
+para outro aplicativo e voltar, o primeiro toque religa.
+
+O que pode atrapalhar, e o que fazer:
+
+- **iPhone no Modo Pouca Energia** (bateria amarela) pode apagar a tela mesmo
+  assim. Desligue o modo em Ajustes › Bateria durante o culto.
+- **Android com economia de bateria** agressiva faz o mesmo: desligue a economia
+  ou deixe o celular na tomada.
+- Se nada disso resolver num aparelho específico, aumente o tempo de bloqueio
+  automático dele (Ajustes › Tela) para o máximo durante o culto.
+
+Quando o celular bloqueia ou troca de wi-fi mesmo assim, a página se recupera
+sozinha ao voltar: busca o estado na hora e, se o hub não responder, mostra
+**Sem conexão com o painel. Tentando de novo…** e insiste a cada 2 segundos, sem
+pedir o PIN de novo. Um comando que não tem resposta em 6 segundos é abandonado
+(o botão volta a ficar tocável) com o aviso para conferir o wi-fi. Se o aviso
+de sem conexão não some, o celular saiu do wi-fi da igreja (foi para o 4G ou
+para outra rede): reconecte.
+
 ### Links fixos (para quem apresenta sempre)
 
 Na mesma tela, a lista de **links fixos** guarda vários links, cada um com nome,
@@ -221,6 +245,9 @@ máquina, modo e a opção de controle completo. Cada link tem o próprio **PIN 
 dígitos** e **não expira**:
 
 - O celular digita o PIN uma vez e fica conectado até o PIN mudar.
+- **O PIN pode ser escolhido por você.** Ao criar o link, preencha o campo **PIN
+  (4 dígitos)**; se deixar em branco, o Maestro sorteia um. O mesmo vale em
+  **Trocar PIN**: o campo aparece ao tocar no botão, e em branco sorteia.
 - **Trocar PIN** derruba só os celulares daquele link.
 - Todos os PINs de convidado (o do link temporário e os dos links fixos) têm
   exatamente 4 dígitos, e o celular os digita no mesmo teclado numérico do PIN da

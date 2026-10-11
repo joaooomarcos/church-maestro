@@ -128,6 +128,29 @@ function descricaoDoLink(link: RespostaLinkFixo): string {
 
 type Pendente = { id: string; tipo: 'pin' | 'excluir' } | null;
 
+/** Só dígitos, no máximo 4: o mesmo formato de todo PIN de convidado. */
+function soDigitosDoPin(texto: string): string {
+  return texto.replace(/\D/g, '').slice(0, 4);
+}
+
+/** PIN opcional de um link fixo: vazio deixa o hub sortear. */
+function CampoPin({ valor, aoMudar }: { valor: string; aoMudar: (pin: string) => void }) {
+  return (
+    <label className="campo">
+      <span className="campo__rotulo">PIN (4 dígitos)</span>
+      <input
+        className="convite__campo"
+        type="tel"
+        inputMode="numeric"
+        maxLength={4}
+        placeholder="Em branco: sorteia um"
+        value={valor}
+        onChange={(evento) => aoMudar(soDigitosDoPin(evento.target.value))}
+      />
+    </label>
+  );
+}
+
 function LinksFixos({
   controlaveis,
   notificar,
@@ -143,7 +166,12 @@ function LinksFixos({
   const [dispositivo, setDispositivo] = useState('');
   const [modoEscolhido, setModoEscolhido] = useState<ModoConvidado | null>(null);
   const [completo, setCompleto] = useState(false);
+  const [pinCriar, setPinCriar] = useState('');
+  const [pinTroca, setPinTroca] = useState('');
   const [ocupado, setOcupado] = useState(false);
+
+  /** PIN digitado pela metade não vale: ou os 4 dígitos, ou vazio (sorteado). */
+  const pinIncompleto = (pin: string): boolean => pin.length > 0 && pin.length < 4;
 
   const escolhida = controlaveis.some((m) => m.id === dispositivo) ? dispositivo : (controlaveis[0]?.id ?? '');
   const maquina = controlaveis.find((m) => m.id === escolhida);
@@ -164,7 +192,7 @@ function LinksFixos({
   }, [carregar]);
 
   async function criar(): Promise<void> {
-    if (!maquina || !modo || !nome.trim() || ocupado) return;
+    if (!maquina || !modo || !nome.trim() || ocupado || pinIncompleto(pinCriar)) return;
     setOcupado(true);
     try {
       await apiPost(ROTAS.convidadoFixos, {
@@ -172,8 +200,10 @@ function LinksFixos({
         dispositivo: maquina.id,
         modo,
         completo: modo !== 'teclado' && completo,
+        ...(pinCriar ? { pin: pinCriar } : {}),
       });
       setNome('');
+      setPinCriar('');
       setCompleto(false);
       setCriando(false);
       await carregar();
@@ -201,13 +231,15 @@ function LinksFixos({
   async function confirmar(link: RespostaLinkFixo, tipo: 'pin' | 'excluir'): Promise<void> {
     if (pendente?.id !== link.id || pendente.tipo !== tipo) {
       setPendente({ id: link.id, tipo });
+      setPinTroca('');
       return;
     }
+    if (tipo === 'pin' && pinIncompleto(pinTroca)) return;
     setPendente(null);
     setOcupado(true);
     try {
       if (tipo === 'pin') {
-        await apiPost(ROTAS.convidadoFixosPin, { id: link.id });
+        await apiPost(ROTAS.convidadoFixosPin, { id: link.id, ...(pinTroca ? { pin: pinTroca } : {}) });
         notificar('PIN trocado. Os celulares conectados a este link foram desconectados.');
       } else {
         await apiPost(ROTAS.convidadoFixosExcluir, { id: link.id });
@@ -252,7 +284,7 @@ function LinksFixos({
                   <button
                     type="button"
                     className="controle-apps__acao"
-                    disabled={ocupado}
+                    disabled={ocupado || (confirmandoPin && pinIncompleto(pinTroca))}
                     onClick={() => void confirmar(link, 'pin')}
                   >
                     {confirmandoPin ? 'Confirmar: derruba os celulares' : 'Trocar PIN'}
@@ -271,6 +303,7 @@ function LinksFixos({
                     </button>
                   ) : null}
                 </div>
+                {confirmandoPin ? <CampoPin valor={pinTroca} aoMudar={setPinTroca} /> : null}
                 {qrs[link.id] ? (
                   <img className="link-fixo__qr" src={qrs[link.id]} alt={`QR code do link ${link.nome}`} />
                 ) : null}
@@ -301,10 +334,11 @@ function LinksFixos({
             aoMudarModo={setModoEscolhido}
             aoMudarCompleto={setCompleto}
           />
+          <CampoPin valor={pinCriar} aoMudar={setPinCriar} />
           <button
             type="button"
             className="botao-acao"
-            disabled={ocupado || !nome.trim() || !modo || !maquina}
+            disabled={ocupado || !nome.trim() || !modo || !maquina || pinIncompleto(pinCriar)}
             onClick={() => void criar()}
           >
             Criar link fixo
@@ -459,7 +493,7 @@ export function SlidesConvidado() {
                 placeholder="Novo PIN"
                 value={pinNovo}
                 maxLength={4}
-                onChange={(evento) => setPinNovo(evento.target.value.replace(/\D/g, '').slice(0, 4))}
+                onChange={(evento) => setPinNovo(soDigitosDoPin(evento.target.value))}
               />
               <button
                 type="button"

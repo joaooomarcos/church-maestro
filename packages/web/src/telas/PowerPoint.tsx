@@ -5,7 +5,8 @@ import { FaixaTitulo } from '../componentes/FaixaTitulo';
 import { Icone } from '../componentes/Icone';
 import { NavegacaoSlides } from '../componentes/NavegacaoSlides';
 import { SeletorPc, usaPrograma } from '../componentes/SeletorPc';
-import { apiPost } from '../nucleo/cliente';
+import { apiPost, TEMPO_LIMITE_COMANDO_MS } from '../nucleo/cliente';
+import { useTelaAcesa } from '../nucleo/telaAcesa';
 import { vibrar } from '../nucleo/vibrar';
 
 /** A imagem de um slide. Some sozinha se não existir (não há "próximo" no último slide). */
@@ -23,6 +24,7 @@ function ImagemSlide({ src, rotulo, classe }: { src: string; rotulo: string; cla
 
 export function PowerPoint() {
   const { snapshot, maquinaPedida } = useAppContexto();
+  useTelaAcesa();
   const dispositivos = useMemo(
     () => (snapshot?.dispositivos ?? []).filter((d) => d.powerpoint !== undefined && usaPrograma(d, 'powerpoint')),
     [snapshot],
@@ -51,7 +53,7 @@ export function PowerPoint() {
     vibrar(15);
     setEnviando(true);
     try {
-      await apiPost(ROTAS.pptAcao, { dispositivo: atual.id, acao });
+      await apiPost(ROTAS.pptAcao, { dispositivo: atual.id, acao }, TEMPO_LIMITE_COMANDO_MS);
       setComandos((n) => n + 1);
     } catch {
       // erro já virou toast pelo cliente de API.

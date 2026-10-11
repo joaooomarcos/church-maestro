@@ -9,6 +9,7 @@ import {
   entrarConvidadoSchema,
   estadoConvidadoSchema,
   idLinkFixoSchema,
+  trocarPinLinkFixoSchema,
   linkFixoConvidadoSchema,
   pedidoLinkConvidadoSchema,
   type DispositivoConfig,
@@ -208,7 +209,11 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
   app.post(ROTAS.convidadoFixos, async (req, reply) => {
     const corpo = criarLinkFixoSchema.safeParse(req.body);
     if (!corpo.success) {
-      return responderRequisicaoInvalida(reply, `Pedido inválido: ${corpo.error.message}`);
+      const pinInvalido = corpo.error.issues.some((problema) => problema.path[0] === 'pin');
+      return responderRequisicaoInvalida(
+        reply,
+        pinInvalido ? 'O PIN deve ter exatamente 4 dígitos.' : `Pedido inválido: ${corpo.error.message}`,
+      );
     }
     const dispositivo = ctx.obterDispositivo(corpo.data.dispositivo);
     if (!dispositivo) return responderDispositivoNaoEncontrado(reply, corpo.data.dispositivo);
@@ -220,17 +225,26 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
       dispositivo: dispositivo.id,
       modo: corpo.data.modo,
       completo: corpo.data.modo !== 'teclado' && corpo.data.completo,
-      pin: gerarPin(),
+      pin: corpo.data.pin ?? gerarPin(),
       versaoPin: randomBytes(8).toString('hex'),
     });
     await ctx.salvarLinkConvidado(link);
     return reply.send(paraResposta(ctx, link));
   });
 
-  /** Novo PIN: a versão muda e todos os celulares daquele link caem. Os outros links não são tocados. */
+  /**
+   * Novo PIN (o escolhido pela equipe ou, sem ele, um sorteado): a versão muda e
+   * todos os celulares daquele link caem. Os outros links não são tocados.
+   */
   app.post(ROTAS.convidadoFixosPin, async (req, reply) => {
-    const corpo = idLinkFixoSchema.safeParse(req.body);
-    if (!corpo.success) return responderRequisicaoInvalida(reply, 'Informe o link.');
+    const corpo = trocarPinLinkFixoSchema.safeParse(req.body);
+    if (!corpo.success) {
+      const pinInvalido = corpo.error.issues.some((problema) => problema.path[0] === 'pin');
+      return responderRequisicaoInvalida(
+        reply,
+        pinInvalido ? 'O PIN deve ter exatamente 4 dígitos.' : 'Informe o link.',
+      );
+    }
     const link = ctx.linksConvidado().find((l) => l.id === corpo.data.id);
     if (!link) {
       const erro: ErroApi = { erro: 'link_nao_encontrado', mensagem: 'Este link fixo não existe mais.' };
@@ -238,7 +252,7 @@ export function registrarRotasConvidado(app: FastifyInstance, ctx: ContextoApp):
     }
     const novo: LinkFixoConvidado = {
       ...link,
-      pin: gerarPin(),
+      pin: corpo.data.pin ?? gerarPin(),
       versaoPin: randomBytes(8).toString('hex'),
     };
     await ctx.salvarLinkConvidado(novo);

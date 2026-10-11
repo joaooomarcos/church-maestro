@@ -9,7 +9,8 @@ import {
   type NomeAcaoConvidado,
   type RespostaPlaylistHolyrics,
 } from '@maestro/shared';
-import { apiGet, apiPost } from '../nucleo/cliente';
+import { ErroRequisicao, TEMPO_LIMITE_COMANDO_MS, apiGet, apiPost } from '../nucleo/cliente';
+import { useAoVoltar, useTelaAcesa } from '../nucleo/telaAcesa';
 import { vibrar } from '../nucleo/vibrar';
 import { FaixaTitulo } from '../componentes/FaixaTitulo';
 import { Icone } from '../componentes/Icone';
@@ -74,21 +75,44 @@ export function Convidado({ token }: { token: string }) {
   const [erroPlaylist, setErroPlaylist] = useState(false);
   const [modosLigados, setModosLigados] = useState<Partial<Record<ModoTela, boolean>>>({});
   const [comandos, setComandos] = useState(0);
+  const [semConexao, setSemConexao] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
-      const atual = await apiGet<EstadoConvidado>(`${ROTAS.convidadoEstado}?token=${token}`);
+      const atual = await apiGet<EstadoConvidado>(
+        `${ROTAS.convidadoEstado}?token=${token}`,
+        TEMPO_LIMITE_COMANDO_MS,
+      );
       setEstado(atual);
       setPrecisaPin(false);
+      setSemConexao(false);
       setModo((escolhido) => (escolhido && atual.modos.includes(escolhido) ? escolhido : (atual.modos[0] ?? null)));
-    } catch {
-      setPrecisaPin(true);
+    } catch (falha) {
+      // Só o "não autorizado" do hub pede o PIN de novo. Wi-fi que caiu ou hub
+      // que demorou não: a tela fica como está e tenta de novo sozinha.
+      if (falha instanceof ErroRequisicao && falha.status === 401) {
+        setSemConexao(false);
+        setPrecisaPin(true);
+      } else {
+        setSemConexao(true);
+      }
     }
   }, [token]);
 
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  // Celular desbloqueado ou wi-fi de volta: atualiza na hora.
+  useAoVoltar(carregar);
+  useTelaAcesa(!precisaPin);
+
+  // Sem conexão, insiste de 2 em 2 segundos até o hub responder.
+  useEffect(() => {
+    if (!semConexao) return undefined;
+    const timer = window.setInterval(() => void carregar(), 2000);
+    return () => window.clearInterval(timer);
+  }, [semConexao, carregar]);
 
   const completo = estado?.completo === true;
 
@@ -147,7 +171,7 @@ export function Convidado({ token }: { token: string }) {
     setEnviando(true);
     setErro(null);
     try {
-      await apiPost(`${ROTAS.convidadoAcao}?token=${token}`, { modo, acao, ...extra });
+      await apiPost(`${ROTAS.convidadoAcao}?token=${token}`, { modo, acao, ...extra }, TEMPO_LIMITE_COMANDO_MS);
       setComandos((n) => n + 1);
       void carregar();
       return true;
@@ -193,13 +217,25 @@ export function Convidado({ token }: { token: string }) {
     );
   }
 
-  if (!estado) return <p className="painel__vazio">Carregando…</p>;
+  if (!estado) {
+    return (
+      <p className="painel__vazio">
+        {semConexao ? 'Sem conexão com o painel. Confira se o celular está no wi-fi da igreja.' : 'Carregando…'}
+      </p>
+    );
+  }
 
   const noAr = estado.holyrics?.noAr ?? null;
   const ppt = estado.powerpoint;
 
   return (
     <div className={`convidado${completo ? ' convidado--completo' : ''}`}>
+      {semConexao ? (
+        <p className="convidado__sem-conexao" role="status">
+          Sem conexão com o painel. Tentando de novo…
+        </p>
+      ) : null}
+
       <header className="convidado__cabecalho">
         <h1 className="convidado__titulo">{estado.nomeLink ?? estado.dispositivoNome}</h1>
         {estado.resumo && !completo ? <p className="convidado__resumo">{estado.resumo}</p> : null}

@@ -333,8 +333,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     conectar();
 
+    // Celular bloqueado ou wi-fi trocado deixa o WebSocket morto sem avisar (ou
+    // esperando até 15 s para tentar de novo). Ao voltar para a página, refaz a
+    // conexão na hora e busca o estado atual.
+    let escondidoDesde: number | null = null;
+    function reconectarAgora(): void {
+      if (canceladoRef.current) return;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      tentativaRef.current = 0;
+      const antigo = wsRef.current;
+      if (antigo) {
+        antigo.onclose = null;
+        antigo.close();
+      }
+      conectar();
+      apiGet<Snapshot>(ROTAS.snapshot)
+        .then((dados) => {
+          if (canceladoRef.current || dados.revisao < revisaoRef.current) return;
+          revisaoRef.current = dados.revisao;
+          setSnapshot(dados);
+        })
+        .catch(() => {
+          // erro já virou toast pelo cliente de API.
+        });
+    }
+    function aoMudarVisibilidade(): void {
+      if (document.visibilityState !== 'visible') {
+        escondidoDesde = Date.now();
+        return;
+      }
+      const tempoFora = escondidoDesde === null ? 0 : Date.now() - escondidoDesde;
+      escondidoDesde = null;
+      // Troca rápida de aba com a conexão de pé não precisa refazer nada.
+      if (wsRef.current?.readyState !== WebSocket.OPEN || tempoFora > 5000) reconectarAgora();
+    }
+    function aoVoltarRede(): void {
+      if (wsRef.current?.readyState !== WebSocket.OPEN) reconectarAgora();
+    }
+    document.addEventListener('visibilitychange', aoMudarVisibilidade);
+    window.addEventListener('online', aoVoltarRede);
+
     return () => {
       canceladoRef.current = true;
+      document.removeEventListener('visibilitychange', aoMudarVisibilidade);
+      window.removeEventListener('online', aoVoltarRede);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       wsRef.current?.close();
       wsRef.current = null;

@@ -165,14 +165,23 @@ export const arquivoConvidadosSchema = z.object({
 
 export type ArquivoConvidados = z.infer<typeof arquivoConvidadosSchema>;
 
+/** PIN escolhido pela equipe para um link fixo. Sem ele, o hub sorteia um. */
+const pinEscolhidoSchema = z
+  .string()
+  .regex(new RegExp(`^\\d{${DIGITOS_PIN_LINK_FIXO}}$`), 'O PIN deve ter exatamente 4 dígitos.')
+  .optional();
+
 export const criarLinkFixoSchema = z.object({
   nome: z.string().trim().min(1).max(60),
   dispositivo: z.string().min(1),
   modo: z.enum(MODOS_CONVIDADO),
   completo: z.boolean().default(false),
+  pin: pinEscolhidoSchema,
 });
 
 export const idLinkFixoSchema = z.object({ id: z.string().min(1) });
+
+export const trocarPinLinkFixoSchema = idLinkFixoSchema.extend({ pin: pinEscolhidoSchema });
 
 /** O que a equipe vê de um link fixo: o dado do arquivo mais a URL pronta para o QR. */
 export const respostaLinkFixoSchema = linkFixoConvidadoSchema

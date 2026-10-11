@@ -5,7 +5,8 @@ import { FaixaTitulo } from '../componentes/FaixaTitulo';
 import { Icone } from '../componentes/Icone';
 import { NavegacaoSlides } from '../componentes/NavegacaoSlides';
 import { SeletorPc, usaPrograma } from '../componentes/SeletorPc';
-import { apiGet, apiPost } from '../nucleo/cliente';
+import { apiGet, apiPost, TEMPO_LIMITE_COMANDO_MS } from '../nucleo/cliente';
+import { useTelaAcesa } from '../nucleo/telaAcesa';
 import { vibrar } from '../nucleo/vibrar';
 
 type ModoTela = 'f8' | 'f9' | 'f10';
@@ -21,6 +22,7 @@ const MODOS_TELA: ReadonlyArray<{ acao: ModoTela; rotulo: string; tecla: string 
 
 export function Holyrics() {
   const { snapshot, maquinaPedida } = useAppContexto();
+  useTelaAcesa();
   const dispositivos = useMemo(
     () => (snapshot?.dispositivos ?? []).filter((d) => d.holyrics !== undefined && usaPrograma(d, 'holyrics')),
     [snapshot],
@@ -95,7 +97,7 @@ export function Holyrics() {
     vibrar(15);
     setEnviando(true);
     try {
-      await apiPost(ROTAS.holyricsAcao, { dispositivo: atual.id, acao: 'mostrarLetra', letraId: item.id });
+      await apiPost(ROTAS.holyricsAcao, { dispositivo: atual.id, acao: 'mostrarLetra', letraId: item.id }, TEMPO_LIMITE_COMANDO_MS);
     } catch {
       // erro já virou toast pelo cliente de API.
     } finally {
@@ -108,7 +110,7 @@ export function Holyrics() {
     vibrar(15);
     setEnviando(true);
     try {
-      await apiPost(ROTAS.holyricsAcao, { dispositivo: atual.id, acao });
+      await apiPost(ROTAS.holyricsAcao, { dispositivo: atual.id, acao }, TEMPO_LIMITE_COMANDO_MS);
     } catch {
       // erro já virou toast pelo cliente de API.
     } finally {
@@ -124,7 +126,7 @@ export function Holyrics() {
     setModosLigados((todos) => ({ ...todos, [id]: { ...todos[id], [modo]: ligar } }));
     setEnviando(true);
     try {
-      await apiPost(ROTAS.holyricsAcao, { dispositivo: id, acao: modo, ativar: ligar });
+      await apiPost(ROTAS.holyricsAcao, { dispositivo: id, acao: modo, ativar: ligar }, TEMPO_LIMITE_COMANDO_MS);
     } catch {
       setModosLigados((todos) => ({ ...todos, [id]: { ...todos[id], [modo]: !ligar } }));
     } finally {
@@ -137,7 +139,7 @@ export function Holyrics() {
     vibrar(15);
     setEnviando(true);
     try {
-      await apiPost(ROTAS.holyricsAcao, { dispositivo: atual.id, acao: 'encerrar' });
+      await apiPost(ROTAS.holyricsAcao, { dispositivo: atual.id, acao: 'encerrar' }, TEMPO_LIMITE_COMANDO_MS);
     } catch {
       // erro já virou toast pelo cliente de API.
     } finally {
