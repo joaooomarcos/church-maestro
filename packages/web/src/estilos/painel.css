@@ -321,3 +321,9 @@
   gap: 4px;
   font-size: 0.85rem;
 }
+
+/* Explicação curta embaixo do título de uma linha (Manter ligado). */
+.pc-detalhe__dica {
+  display: block;
+  margin-top: 2px;
+}

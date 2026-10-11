@@ -101,6 +101,14 @@ function Invoke-Comando($comando) {
         'primeiroPlano' {
             return Get-PrimeiroPlano
         }
+        'linhasDeComando' {
+            # Linha de comando de cada processo com esse nome (vazia quando o
+            # Windows nao deixa ler, como nos processos de servico).
+            $nome = ([string]$comando.nome) -replace "[^A-Za-z0-9._-]", ''
+            $linhas = @(Get-CimInstance Win32_Process -Filter "Name='$nome'" -ErrorAction SilentlyContinue |
+                ForEach-Object { [string]$_.CommandLine })
+            return @{ linhas = $linhas }
+        }
         'proximo' {
             (Get-View).Next()
             return Get-Status

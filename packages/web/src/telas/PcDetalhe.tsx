@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { EstadoDispositivo } from '@maestro/shared';
+import { ROTAS, type EstadoDispositivo } from '@maestro/shared';
 import { useAppContexto, useControlesCabecalho } from '../contexto/AppContext';
 import { BlocosMaquina, ROTULO_ESTADO, estadoSemaforo } from '../componentes/BlocosMaquina';
 import { BotaoLigar } from '../componentes/BotaoLigar';
@@ -7,6 +7,7 @@ import { ControleApps } from '../componentes/ControleApps';
 import { Icone } from '../componentes/Icone';
 import { SeletorPc } from '../componentes/SeletorPc';
 import { Semaforo } from '../componentes/Semaforo';
+import { apiPost } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
 import '../estilos/painel.css';
 
@@ -100,6 +101,70 @@ function Rede({ dispositivo }: { dispositivo: EstadoDispositivo }) {
   );
 }
 
+/** Quanto esperar o painel confirmar a troca antes de voltar a mostrar o que a máquina diz. */
+const ESPERA_CONFIRMACAO_MS = 15_000;
+
+/**
+ * "Manter ligado": com o interruptor ligado, a máquina não entra em repouso nem
+ * apaga a tela por inatividade. Só aparece onde o agente oferece (Windows).
+ */
+function ManterLigado({ dispositivo }: { dispositivo: EstadoDispositivo }) {
+  const informado = dispositivo.agente?.manterLigado;
+  // Escolha recém-feita, até a próxima leitura do painel confirmar.
+  const [pedido, setPedido] = useState<boolean | null>(null);
+
+  useEffect(() => setPedido(null), [dispositivo.id]);
+  useEffect(() => {
+    if (pedido === null) return undefined;
+    if (pedido === informado) {
+      setPedido(null);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setPedido(null), ESPERA_CONFIRMACAO_MS);
+    return () => window.clearTimeout(timer);
+  }, [pedido, informado]);
+
+  if (!dispositivo.agente?.online || informado === undefined) return null;
+  const ligado = pedido ?? informado;
+
+  async function alternar(): Promise<void> {
+    vibrar(15);
+    const novo = !ligado;
+    setPedido(novo);
+    try {
+      await apiPost(ROTAS.manterLigado, { dispositivo: dispositivo.id, ligado: novo });
+    } catch {
+      // erro já virou toast pelo cliente de API.
+      setPedido(null);
+    }
+  }
+
+  return (
+    <section className="info pc-detalhe__rede" aria-label="Energia">
+      <div className="pc-detalhe__linha">
+        <span>
+          <span className="pc-detalhe__titulo">Manter ligado</span>
+          <span className="versoes__dica pc-detalhe__dica">
+            {ligado
+              ? 'A máquina não entra em repouso nem apaga a tela.'
+              : 'Desligado: a máquina segue o tempo de repouso do Windows.'}
+          </span>
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={ligado}
+          aria-label={`Manter ${dispositivo.nome} ligado`}
+          className={`interruptor${ligado ? ' interruptor--ligado' : ''}`}
+          onClick={() => void alternar()}
+        >
+          <span className="interruptor__bolinha" />
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export function PcDetalhe() {
   const { snapshot, maquinaPedida } = useAppContexto();
   const dispositivos = useMemo(() => snapshot?.dispositivos ?? [], [snapshot]);
@@ -131,6 +196,8 @@ export function PcDetalhe() {
       </header>
 
       <Rede dispositivo={atual} />
+
+      <ManterLigado dispositivo={atual} />
 
       <BlocosMaquina dispositivo={atual} />
 

@@ -12,7 +12,11 @@ param(
     [string]$Caminho = '',
     [string]$Processos = '',
     [ValidateSet('', 'RIGHT', 'LEFT')]
-    [string]$Tecla = ''
+    [string]$Tecla = '',
+    # So a janela principal do programa (o processo sem argumentos). O RustDesk
+    # tem servico, --server, --tray e --cm rodando junto: mexer neles derrubaria
+    # o acesso remoto de quem esta conectado.
+    [switch]$SoPrincipal
 )
 
 $ErrorActionPreference = 'Stop'
@@ -116,6 +120,11 @@ $CATALOGO = @{
         "$env:ProgramFiles\NDI\*\Screen Capture\*Screen Capture*.exe",
         "${env:ProgramFiles(x86)}\NDI\*\Screen Capture\*ScanConverter*.exe"
     )
+    'rustdesk'           = @(
+        "$env:ProgramFiles\RustDesk\rustdesk.exe",
+        "${env:ProgramFiles(x86)}\RustDesk\rustdesk.exe",
+        "$env:LOCALAPPDATA\rustdesk\rustdesk.exe"
+    )
 }
 
 # Nome que aparece no atalho do Menu Iniciar, para quando o programa estiver
@@ -126,6 +135,7 @@ $ATALHOS = @{
     'powerpoint'         = 'PowerPoint'
     'ndi-studio-monitor' = 'Studio Monitor'
     'ndi-screen-capture' = 'Screen Capture'
+    'rustdesk'           = 'RustDesk'
 }
 
 function Resolver-Curinga($padrao) {
@@ -186,6 +196,19 @@ function Obter-Processos($lista) {
     }
 }
 
+function Filtrar-Principal($lista) {
+    return @($lista | Where-Object {
+        $linha = [string](Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)" -ErrorAction SilentlyContinue).CommandLine
+        $linha.Trim() -and (($linha.Trim() -replace '^("[^"]*"|\S+)\s*', '') -eq '')
+    })
+}
+
+function Obter-Alvos {
+    $alvos = @(Obter-Processos $Processos)
+    if ($SoPrincipal) { $alvos = @(Filtrar-Principal $alvos) }
+    return $alvos
+}
+
 function Trazer-ParaFrente($lista) {
     $trouxe = $false
     foreach ($processo in $lista) {
@@ -215,7 +238,7 @@ try {
             $dados = @{ pid = $processo.Id }
         }
         'fechar' {
-            $alvos = @(Obter-Processos $Processos)
+            $alvos = @(Obter-Alvos)
             if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
             foreach ($processo in $alvos) {
                 # CloseMainWindow e o mesmo que clicar no X: o programa ainda
@@ -223,11 +246,18 @@ try {
                 [void]$processo.CloseMainWindow()
             }
             Start-Sleep -Milliseconds 800
-            $restantes = (Obter-Processos $Processos | Measure-Object).Count
+            if ($SoPrincipal) {
+                # A janela pode so ter ido para a bandeja: encerra esse processo
+                # (e so ele) para o programa ficar fechado de fato.
+                foreach ($processo in $alvos) {
+                    try { Stop-Process -Id $processo.Id -Force -ErrorAction Stop } catch { }
+                }
+            }
+            $restantes = (Obter-Alvos | Measure-Object).Count
             $dados = @{ fechados = $alvos.Count; restantes = $restantes }
         }
         'frente' {
-            $alvos = @(Obter-Processos $Processos)
+            $alvos = @(Obter-Alvos)
             if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
             # Antes devolvia ok mesmo sem conseguir, e o botao parecia ter funcionado.
             if (-not (Trazer-ParaFrente $alvos)) { throw "nao-consegui-focar" }
@@ -252,7 +282,7 @@ try {
             # Com alvo: traz o programa para frente antes. Sem alvo (setas do
             # convidado): vai direto para a janela que ja estiver na frente.
             if ($Processos) {
-                $alvos = @(Obter-Processos $Processos)
+                $alvos = @(Obter-Alvos)
                 if ($alvos.Count -eq 0) { throw "nao-esta-aberto" }
                 if (-not (Trazer-ParaFrente $alvos)) { throw "nao-consegui-focar" }
                 # A janela leva um instante para assumir o foco; sem esta pausa a

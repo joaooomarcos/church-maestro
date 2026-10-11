@@ -21,6 +21,11 @@ export interface PontePowerPoint {
    * PowerPoint. Devolve null quando não dá para saber.
    */
   janelaEmPrimeiroPlano(): Promise<{ processo: string; titulo: string } | null>;
+  /**
+   * Linha de comando de cada processo com esse nome de executável (ex.:
+   * "rustdesk.exe"); vazia quando o Windows não deixa ler. null = não deu para saber.
+   */
+  linhasDeComando(executavel: string): Promise<string[] | null>;
   encerrar(): Promise<void>;
 }
 

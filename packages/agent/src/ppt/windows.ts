@@ -237,6 +237,19 @@ export function criarPonteWindows(): PontePowerPoint {
       }
     },
 
+    async linhasDeComando(executavel) {
+      try {
+        const dados = await enviar({ acao: 'linhasDeComando', nome: executavel });
+        const linhas = (dados as { linhas?: unknown } | null)?.linhas;
+        // O PowerShell 5.1 devolve uma string solta quando a lista tem um item só.
+        if (typeof linhas === 'string') return [linhas];
+        if (!Array.isArray(linhas)) return null;
+        return linhas.map((linha) => (typeof linha === 'string' ? linha : ''));
+      } catch {
+        return null;
+      }
+    },
+
     async encerrar() {
       encerrando = true;
       const filho = processo;

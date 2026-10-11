@@ -9,6 +9,7 @@ import Fastify, {
 import {
   comandoAppSchema,
   comandoAvisoSchema,
+  comandoManterLigadoSchema,
   comandoTeclaSchema,
   comandoPptSchema,
   pedidoAtualizarAgenteSchema,
@@ -20,6 +21,7 @@ import {
 import { ErroApp, acordarMaquina, enviarTecla, executarAcaoApp, situacaoDosApps } from './apps/index.js';
 import { fecharAvisos, mostrarAviso } from './avisos/index.js';
 import { capturarMonitor } from './captura/index.js';
+import { definirManterLigado } from './energia.js';
 import { montarHeartbeat } from './heartbeat.js';
 import { SHA_VALIDO, dispararAtualizacao, lerEstadoAtualizacao } from './versao.js';
 import { listarProcessos } from './processos.js';
@@ -158,6 +160,26 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
         return;
       }
       throw err;
+    }
+  });
+
+  /** Liga ou desliga o "Manter ligado": sem repouso e sem apagar a tela por inatividade. */
+  app.post('/manter-ligado', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const analisado = comandoManterLigadoSchema.safeParse(req.body);
+    if (!analisado.success) {
+      const corpo: ErroApi = { erro: 'comando-invalido', mensagem: 'Informe se é para ligar ou desligar.' };
+      reply.code(400).send(corpo);
+      return;
+    }
+    try {
+      return { ligado: await definirManterLigado(analisado.data.ligado) };
+    } catch (err) {
+      const corpo: ErroApi = {
+        erro: 'falha-manter-ligado',
+        mensagem: err instanceof Error ? err.message : 'Não consegui mudar o Manter ligado.',
+      };
+      reply.code(502).send(corpo);
+      return;
     }
   });
 

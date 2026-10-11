@@ -10,6 +10,7 @@ export const APLICATIVOS = [
   'powerpoint',
   'ndi-studio-monitor',
   'ndi-screen-capture',
+  'rustdesk',
 ] as const;
 
 export type Aplicativo = (typeof APLICATIVOS)[number];
@@ -26,6 +27,7 @@ export const NOMES_APLICATIVOS: Record<Aplicativo, string> = {
   powerpoint: 'PowerPoint',
   'ndi-studio-monitor': 'NDI Studio Monitor',
   'ndi-screen-capture': 'NDI Screen Capture',
+  rustdesk: 'RustDesk',
 };
 
 /**
@@ -48,6 +50,7 @@ export const PROCESSOS_POR_APLICATIVO: Record<Aplicativo, string[]> = {
   powerpoint: ['powerpnt'],
   'ndi-studio-monitor': ['studiomonitor', 'videomonitor'],
   'ndi-screen-capture': ['scanconverter', 'screencapture'],
+  rustdesk: ['rustdesk'],
 };
 
 /** Portas padrão de cada integração. Servem de chute inicial na varredura. */

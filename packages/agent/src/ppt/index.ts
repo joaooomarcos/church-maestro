@@ -23,6 +23,9 @@ const PONTE_INERTE: PontePowerPoint = {
   async janelaEmPrimeiroPlano() {
     return null;
   },
+  async linhasDeComando() {
+    return null;
+  },
   async encerrar() {
     /* nada a encerrar */
   },

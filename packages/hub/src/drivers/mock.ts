@@ -320,9 +320,19 @@ export function criarDriversMock(): Drivers {
     return null;
   }
 
+  const mantidosLigados = new Set<string>();
+
   const agente: Drivers['agente'] = {
     async ler(dispositivo) {
-      return estadoAgenteMock(dispositivo, inicioProcesso);
+      const estado = estadoAgenteMock(dispositivo, inicioProcesso);
+      // Só as máquinas Windows oferecem "Manter ligado".
+      return estado.so === 'windows' ? { ...estado, manterLigado: mantidosLigados.has(dispositivo.id) } : estado;
+    },
+    async manterLigado(dispositivo, ligado) {
+      if (ligado) mantidosLigados.add(dispositivo.id);
+      else mantidosLigados.delete(dispositivo.id);
+      console.log(`[mock] manter ligado ${ligado ? 'ligado' : 'desligado'} em ${dispositivo.nome}`);
+      return ligado;
     },
     async lerPowerPoint(dispositivo) {
       return estadoPowerPointMock(obterPpt(dispositivo.id));
@@ -425,13 +435,14 @@ function estadoAgenteMock(dispositivo: DispositivoConfig, inicioProcesso: number
       powerpoint: !ehLinux,
       'ndi-studio-monitor': Boolean(dispositivo.servicos.ndiMonitor),
       'ndi-screen-capture': true,
+      rustdesk: false,
     },
     // Nenhuma máquina de demonstração tem OBS instalado, a não ser a da transmissão.
     appsInstalados: ehLinux
       ? []
       : dispositivo.servicos.obs
-        ? ['obs', 'holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture']
-        : ['holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture'],
+        ? ['obs', 'holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture', 'rustdesk']
+        : ['holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture', 'rustdesk'],
     ...(ehLinux
       ? {}
       : {

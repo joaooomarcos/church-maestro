@@ -16,6 +16,7 @@ import { listarProcessos } from './processos.js';
 import { lerVersaoInstalada } from './versao.js';
 import { appsJaConhecidos } from './apps/index.js';
 import { monitoresConhecidos } from './avisos/index.js';
+import { manterLigadoAtivo, suportaManterLigado } from './energia.js';
 import type { PontePowerPoint } from './ppt/tipos.js';
 
 const INTERVALO_MAXIMO_BACKOFF_MS = 60_000;
@@ -99,6 +100,7 @@ export async function montarHeartbeat(config: ConfigAgente, ponte: PontePowerPoi
     appsInstalados: appsJaConhecidos(config),
     monitores: monitoresConhecidos(),
     capacidades: ponte.disponivel ? ['powerpoint'] : [],
+    ...(suportaManterLigado() ? { manterLigado: manterLigadoAtivo() } : {}),
   });
 }
 

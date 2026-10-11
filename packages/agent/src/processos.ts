@@ -12,6 +12,43 @@ const execAsync = promisify(exec);
 
 const DURACAO_CACHE_MS = 3000;
 
+/**
+ * Programas que têm processos sempre rodando além da janela: o RustDesk
+ * instalado como serviço mantém o serviço, o `--server`, o `--tray` e, durante
+ * um acesso, o `--cm`. Para eles, "aberto" é a janela principal — o processo
+ * sem argumento nenhum —, e é só nela que o painel mexe.
+ */
+export const EXECUTAVEL_SO_JANELA: Partial<Record<Aplicativo, string>> = { rustdesk: 'rustdesk.exe' };
+
+type ConsultaLinhasDeComando = (executavel: string) => Promise<string[] | null>;
+let consultarLinhas: ConsultaLinhasDeComando | undefined;
+
+/** O agente liga isto à ponte do Windows na subida; sem ela vale só o nome do processo. */
+export function definirConsultaLinhasDeComando(consulta: ConsultaLinhasDeComando | undefined): void {
+  consultarLinhas = consulta;
+}
+
+/** Há um processo sem argumentos, ou seja, a janela principal do programa? */
+export function temJanelaPrincipal(linhas: string[]): boolean {
+  return linhas.some((linha) => {
+    const limpa = linha.trim();
+    if (!limpa) return false;
+    return limpa.replace(/^("[^"]*"|\S+)\s*/, '') === '';
+  });
+}
+
+async function refinarSoJanela(resultado: Record<Aplicativo, boolean>): Promise<Record<Aplicativo, boolean>> {
+  if (!consultarLinhas) return resultado;
+  const refinado = { ...resultado };
+  for (const [app, executavel] of Object.entries(EXECUTAVEL_SO_JANELA) as [Aplicativo, string][]) {
+    if (!refinado[app]) continue;
+    const linhas = await consultarLinhas(executavel);
+    // Sem resposta, fica o que o nome do processo disse.
+    if (linhas) refinado[app] = temJanelaPrincipal(linhas);
+  }
+  return refinado;
+}
+
 let cache: { ts: number; resultado: Record<Aplicativo, boolean> } | null = null;
 let jaLogouErro = false;
 
@@ -69,7 +106,7 @@ export async function listarProcessos(): Promise<Record<Aplicativo, boolean>> {
     return resultado;
   }
 
-  const resultado = aplicativosAbertos(nomes);
+  const resultado = await refinarSoJanela(aplicativosAbertos(nomes));
   cache = { ts: Date.now(), resultado };
   return resultado;
 }

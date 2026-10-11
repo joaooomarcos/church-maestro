@@ -1,11 +1,16 @@
 import { ConfigAusente, carregarConfig } from './config.js';
+import { encerrarManterLigado, retomarManterLigado } from './energia.js';
 import { iniciarHeartbeat } from './heartbeat.js';
 import { criarPontePowerPoint } from './ppt/index.js';
+import { definirConsultaLinhasDeComando } from './processos.js';
 import { iniciarServidor } from './rotas.js';
 
 async function main(): Promise<void> {
   const config = await carregarConfig();
   const ponte = criarPontePowerPoint();
+  if (ponte.disponivel) definirConsultaLinhasDeComando((executavel) => ponte.linhasDeComando(executavel));
+
+  retomarManterLigado(config.manterLigado);
 
   const servidor = await iniciarServidor(config, ponte);
   const heartbeat = iniciarHeartbeat(config, ponte);
@@ -21,6 +26,7 @@ async function main(): Promise<void> {
     console.log(`[agente] recebido ${sinal}, encerrando...`);
 
     heartbeat.parar();
+    encerrarManterLigado();
     void Promise.allSettled([servidor.close(), ponte.encerrar()]).then(() => {
       process.exit(0);
     });

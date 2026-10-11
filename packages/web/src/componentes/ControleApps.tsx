@@ -33,6 +33,7 @@ const NOMES_CURTOS: Record<Aplicativo, string> = {
   powerpoint: 'PowerPoint',
   'ndi-studio-monitor': 'Studio Monitor',
   'ndi-screen-capture': 'Screen Capture',
+  rustdesk: 'RustDesk',
 };
 
 /**

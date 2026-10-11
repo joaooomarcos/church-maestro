@@ -450,6 +450,7 @@ async function main(): Promise<void> {
       token: resposta.token,
       intervaloHeartbeatMs,
       caminhosApps,
+      manterLigado: atual?.manterLigado ?? false,
     });
 
     titulo('Pronto!');

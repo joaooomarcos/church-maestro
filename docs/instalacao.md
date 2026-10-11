@@ -597,6 +597,47 @@ dormindo pode aparecer online.
   ligada com o agente no ar. Máquina nunca vista assim não pode ser acordada
   desligada.
 
+### Manter ligado (a máquina não entra em repouso)
+
+Na tela **Máquinas**, logo abaixo de Rede, o interruptor **Manter ligado**. Com
+ele ligado, aquela máquina **não entra em repouso nem apaga a tela** por
+inatividade, até alguém desligar o interruptor. Serve para o dia em que a máquina
+precisa ficar no ar (um ensaio longo, um acesso remoto mais tarde).
+
+- A escolha é **por máquina** e fica gravada nela: continua valendo depois de
+  reiniciar o Windows e depois de atualizar o Maestro. Lembre de desligar quando
+  não precisar mais, senão a máquina passa a semana acordada.
+- Nada é alterado no plano de energia do Windows. Desligando o interruptor (ou
+  com o agente parado), a máquina volta a seguir o tempo de repouso de sempre.
+- **Não segura** o que é feito de propósito: fechar a tampa do notebook, apertar
+  o botão de energia, mandar desligar ou suspender pelo menu Iniciar, ou acabar a
+  bateria.
+- A tela de bloqueio por senha continua valendo, se o Windows estiver
+  configurado para bloquear sozinho.
+- O interruptor só aparece em máquina **Windows**, com o agente no ar e na
+  versão 0.8.0 ou mais nova. Se não aparece, atualize a máquina em **Sistema ›
+  Versões**.
+
+### RustDesk (acesso remoto)
+
+O RustDesk entra na lista de programas como os outros: em **Máquinas** dá para
+**Abrir** e **Fechar** (e trazer para frente ou reiniciar). O que o painel abre e
+fecha é a **janela principal** do RustDesk.
+
+- **Instalado como serviço do Windows** (o caso das máquinas da igreja): o acesso
+  remoto fica sempre disponível, com a janela aberta ou não. A bolinha verde
+  indica só se a janela principal está aberta. **Fechar não derruba quem está
+  conectado** por ele: o serviço, a bandeja e a conexão em andamento não são
+  tocados.
+- **Versão portátil ou sem serviço:** ali a janela principal é o próprio
+  RustDesk, então Fechar encerra o programa e a máquina deixa de aceitar conexão
+  até alguém abrir de novo (pelo painel dá).
+- **Ele não aparece na máquina?** Em máquina que já teve os programas escolhidos,
+  ligue o RustDesk em **Sistema › Ajustes › Programas de cada máquina**.
+- **"Não sei onde o RustDesk está instalado":** o Maestro procura em
+  `C:\Program Files\RustDesk` e no atalho do Menu Iniciar. Na versão portátil
+  (um `.exe` solto), rode `npm run setup` naquela máquina e informe o caminho.
+
 ### Programas que cada máquina usa
 
 Em **Sistema › Ajustes › Programas de cada máquina** há um card por PC, com um

@@ -13,7 +13,7 @@ import {
   type ConfigAgente,
   type SituacaoApp,
 } from '@maestro/shared';
-import { listarProcessos } from '../processos.js';
+import { EXECUTAVEL_SO_JANELA, listarProcessos } from '../processos.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -169,6 +169,11 @@ export async function situacaoDosApps(config: ConfigAgente): Promise<SituacaoApp
   }));
 }
 
+/** Só a janela principal, quando o programa tem outros processos que não podem ser tocados. */
+function alvoDe(app: Aplicativo): string[] {
+  return ['-Processos', processosDe(app), ...(EXECUTAVEL_SO_JANELA[app] ? ['-SoPrincipal'] : [])];
+}
+
 function processosDe(app: Aplicativo): string {
   return PROCESSOS_POR_APLICATIVO[app].join(',');
 }
@@ -219,15 +224,15 @@ export async function executarAcaoApp(
       await abrir(app, config);
       return;
     case 'fechar':
-      await rodarScript(['-Acao', 'fechar', '-Processos', processosDe(app)], app);
+      await rodarScript(['-Acao', 'fechar', ...alvoDe(app)], app);
       return;
     case 'frente':
-      await rodarScript(['-Acao', 'frente', '-Processos', processosDe(app)], app);
+      await rodarScript(['-Acao', 'frente', ...alvoDe(app)], app);
       return;
     case 'reiniciar':
       // Fechar é um "clicar no X": o programa pode demorar a sair, e pode até
       // perguntar se quer salvar. Por isso espera antes de abrir de novo.
-      await rodarScript(['-Acao', 'fechar', '-Processos', processosDe(app)], app).catch(() => {
+      await rodarScript(['-Acao', 'fechar', ...alvoDe(app)], app).catch(() => {
         // já estava fechado: seguir direto para abrir
       });
       await new Promise((resolver) => setTimeout(resolver, ESPERA_FECHAR_MS));

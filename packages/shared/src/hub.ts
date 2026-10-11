@@ -62,6 +62,7 @@ export const ROTAS = {
   appAcao: '/api/apps/acao',
   aviso: '/api/aviso',
   acordar: '/api/acordar',
+  manterLigado: '/api/manter-ligado',
   appsDaMaquina: '/api/dispositivos/:id/apps',
   avisoFechar: '/api/aviso/fechar',
   monitorAvisos: '/api/dispositivos/:id/monitor-avisos',
@@ -182,6 +183,8 @@ export const definirAppsSchema = z.object({
 });
 
 export const pedidoAcordarSchema = z.object({ dispositivo: z.string().min(1) });
+
+export const pedidoManterLigadoSchema = z.object({ dispositivo: z.string().min(1), ligado: z.boolean() });
 
 export interface ResultadoAcordar {
   /** O agente da máquina respondeu e pediu para a tela acordar. */

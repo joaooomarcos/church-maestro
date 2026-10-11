@@ -28,6 +28,8 @@ export const estadoAgenteSchema = z.object({
   appsInstalados: z.array(z.enum(APLICATIVOS)).optional(),
   monitores: z.array(monitorSchema).optional(),
   capacidades: z.array(z.enum(['powerpoint', 'abrir-app', 'desligar'])).default([]),
+  /** Ausente = a máquina não oferece "Manter ligado" (agente antigo ou fora do Windows). */
+  manterLigado: z.boolean().optional(),
 });
 
 export type EstadoAgente = z.infer<typeof estadoAgenteSchema>;

@@ -125,6 +125,11 @@ export const heartbeatAgenteSchema = z.object({
   /** Ausente em agente antigo ou fora do Windows. */
   monitores: z.array(monitorSchema).optional(),
   capacidades: z.array(z.enum(['powerpoint', 'abrir-app', 'desligar'])).default([]),
+  /**
+   * "Manter ligado": a máquina não entra em repouso nem apaga a tela. Ausente
+   * em agente antigo ou fora do Windows — aí o painel nem oferece a opção.
+   */
+  manterLigado: z.boolean().optional(),
 });
 
 export type HeartbeatAgente = z.infer<typeof heartbeatAgenteSchema>;
@@ -172,6 +177,10 @@ export const configAgenteSchema = z.object({
   intervaloHeartbeatMs: z.number().int().positive().default(10_000),
   /** Caminhos informados à mão, quando o agente não achou o programa sozinho. */
   caminhosApps: z.record(z.string(), z.string()).default({}),
+  /** Escolha da equipe em Máquinas › Manter ligado. Fica aqui para valer depois de reiniciar. */
+  manterLigado: z.boolean().default(false),
 });
+
+export const comandoManterLigadoSchema = z.object({ ligado: z.boolean() });
 
 export type ConfigAgente = z.infer<typeof configAgenteSchema>;

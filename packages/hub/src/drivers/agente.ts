@@ -89,6 +89,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           emPrimeiroPlano?: EstadoAgente['emPrimeiroPlano'];
           appsInstalados?: EstadoAgente['appsInstalados'];
           monitores?: EstadoAgente['monitores'];
+          manterLigado?: boolean;
         }>(dispositivo, '/health', { method: 'GET' }, op, tokenPadrao);
 
         return {
@@ -106,6 +107,7 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
           ...(saude.appsInstalados ? { appsInstalados: saude.appsInstalados } : {}),
           ...(saude.monitores ? { monitores: saude.monitores } : {}),
           capacidades: saude.capacidades as EstadoAgente['capacidades'],
+          ...(typeof saude.manterLigado === 'boolean' ? { manterLigado: saude.manterLigado } : {}),
         };
       } catch (err) {
         return {
@@ -193,6 +195,17 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
         { timeoutMs: 10_000, ...(op ?? {}) },
         tokenPadrao,
       );
+    },
+
+    async manterLigado(dispositivo, ligado, op): Promise<boolean> {
+      const resposta = await pedir<{ ligado: boolean }>(
+        dispositivo,
+        '/manter-ligado',
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ligado }) },
+        { timeoutMs: 10_000, ...(op ?? {}) },
+        tokenPadrao,
+      );
+      return resposta.ligado;
     },
 
     async fecharAvisos(dispositivo, op): Promise<void> {

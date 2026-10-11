@@ -1,8 +1,14 @@
 import type { FastifyInstance } from 'fastify';
-import { ROTAS, definirAppsSchema, pedidoAcordarSchema, type ResultadoAcordar } from '@maestro/shared';
+import {
+  ROTAS,
+  definirAppsSchema,
+  pedidoAcordarSchema,
+  pedidoManterLigadoSchema,
+  type ResultadoAcordar,
+} from '@maestro/shared';
 import { enviarWakeOnLan } from '../rede/acordar.js';
 import type { ContextoApp } from './contexto.js';
-import { responderDispositivoNaoEncontrado, responderRequisicaoInvalida } from './erros.js';
+import { responderDispositivoNaoEncontrado, responderErroDriver, responderRequisicaoInvalida } from './erros.js';
 
 /** Escolhas por máquina: quais programas ela usa, e acordá-la. */
 export function registrarRotasMaquinas(app: FastifyInstance, ctx: ContextoApp): void {
@@ -48,5 +54,20 @@ export function registrarRotasMaquinas(app: FastifyInstance, ctx: ContextoApp): 
 
     const resultado: ResultadoAcordar = { telaAcordada, sinalEnviado, mensagem };
     return reply.send(resultado);
+  });
+
+  /** "Manter ligado": a máquina deixa de entrar em repouso e de apagar a tela até alguém desligar a opção. */
+  app.post(ROTAS.manterLigado, async (req, reply) => {
+    const corpo = pedidoManterLigadoSchema.safeParse(req.body);
+    if (!corpo.success) return responderRequisicaoInvalida(reply, 'Escolha a máquina e se é para ligar ou desligar.');
+    const dispositivo = ctx.obterDispositivo(corpo.data.dispositivo);
+    if (!dispositivo) return responderDispositivoNaoEncontrado(reply, corpo.data.dispositivo);
+
+    try {
+      const ligado = await ctx.drivers.agente.manterLigado(dispositivo, corpo.data.ligado);
+      return reply.send({ ligado });
+    } catch (erro) {
+      return responderErroDriver(reply, erro);
+    }
   });
 }

@@ -160,6 +160,8 @@ export interface DriverAgente {
   ): Promise<import('@maestro/shared').CapturaMonitor>;
   /** Acorda a tela da máquina (monitor em repouso por inatividade). */
   acordar(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
+  /** Liga ou desliga o "Manter ligado" (sem repouso, sem apagar a tela). Devolve como ficou. */
+  manterLigado(dispositivo: DispositivoConfig, ligado: boolean, op?: OpcoesRequisicao): Promise<boolean>;
   /** Fecha qualquer janela de aviso aberta na máquina (a que ficou presa no telão, por exemplo). */
   fecharAvisos(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
   /** Abre, fecha, reinicia ou traz para frente um aplicativo daquela máquina. */
