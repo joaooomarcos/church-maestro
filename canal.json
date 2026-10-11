@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "1086894d95f80cb841705e311044ad4f70e52845",
-  "notas": "Tela do celular acesa no controle, reconexão ao desbloquear e PIN escolhido nos links fixos",
+  "sha": "d0df78755ec0661b98a073cded90b4282c053377",
+  "notas": "RustDesk na lista de programas e \"Manter ligado\" por máquina",
   "liberadoEm": "2026-10-11",
-  "versao": "0.7.0",
+  "versao": "0.8.0",
   "versoes": [
+    {
+      "versao": "0.8.0",
+      "sha": "d0df78755ec0661b98a073cded90b4282c053377",
+      "notas": "RustDesk na lista de programas e \"Manter ligado\" por máquina",
+      "data": "2026-10-11"
+    },
     {
       "versao": "0.7.0",
       "sha": "1086894d95f80cb841705e311044ad4f70e52845",
