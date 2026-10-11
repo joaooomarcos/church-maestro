@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "15ef434259ef5817fccf2a1510f386435d61f195",
-  "notas": "Visor do telão nas telas PowerPoint e Holyrics",
-  "liberadoEm": "2026-10-05",
-  "versao": "0.5.0",
+  "sha": "73e171e369066e574960ccf248db4f89632b3db4",
+  "notas": "Cartão de versão libera o botão quando a atualização passa do limite; Painel redesenhado, testes de legendas e NDI, controle remoto e automações",
+  "liberadoEm": "2026-10-11",
+  "versao": "0.6.0",
   "versoes": [
+    {
+      "versao": "0.6.0",
+      "sha": "73e171e369066e574960ccf248db4f89632b3db4",
+      "notas": "Cartão de versão libera o botão quando a atualização passa do limite; Painel redesenhado, testes de legendas e NDI, controle remoto e automações",
+      "data": "2026-10-11"
+    },
     {
       "versao": "0.5.0",
       "sha": "15ef434259ef5817fccf2a1510f386435d61f195",
