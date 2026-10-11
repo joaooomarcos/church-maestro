@@ -539,7 +539,13 @@ Depois, instale de novo a partir da **seção 1**, com o PC Transmissão primeir
   o botão estiver desabilitado, a máquina está offline.
 - O painel mostra "Instalando…" e há quanto tempo o pedido foi feito, mesmo com a
   máquina fora do ar durante a troca. Passando de 10 minutos sem a máquina voltar,
-  o cartão avisa que falhou.
+  o cartão avisa que falhou e o botão volta a funcionar para tentar de novo.
+- **O cartão ficou preso em "Atualizando…" e não deixa tentar de novo** (até a
+  0.5.0): o painel guardava o pedido para sempre quando a máquina não respondia.
+  Corrigido na 0.6.0. Num painel ainda na 0.5.0, rode o atualizador na própria
+  máquina travada — quando ela chegar na versão pedida, o cartão se solta
+  sozinho, sem reiniciar o painel:
+  `cd ~\maestro; powershell -ExecutionPolicy Bypass -File .\scripts\atualizar.ps1 -Forcar`
 - **`config\agent.json` sumiu depois de atualizar** (o agente diz "ainda não foi
   configurada"): foi o atualizador da 0.1.0, que apagava a config. Está corrigido
   na 0.1.1; para quem passou por isso, restaure o arquivo de uma cópia ou rode

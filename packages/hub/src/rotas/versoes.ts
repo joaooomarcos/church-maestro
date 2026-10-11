@@ -30,7 +30,9 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
   // Na troca de arquivos o agente fica fora do ar e o painel perdia tudo o que
   // sabia da máquina. Lembrar o que foi pedido e o que foi visto por último
   // deixa o cartão contar a história até ela voltar.
-  const pedidos = new Map<string, { sha: string; em: number }>();
+  // `vencido` marca o pedido que passou do limite: o cartão mostra a falha e
+  // libera o botão para tentar de novo, em vez de ficar em "Atualizando…".
+  const pedidos = new Map<string, { sha: string; em: number; vencido?: boolean }>();
   const ultimas = new Map<string, { sha: string | null; notas: string }>();
 
   // Demonstração: nenhuma máquina é atualizada, mas o cartão percorre as etapas
@@ -106,6 +108,7 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
           const minutos = Math.round((Date.now() - pedido.em) / 60_000);
           const andamento = atualizacao && atualizacao.ts >= pedido.em - 5000 ? atualizacao : undefined;
           if (Date.now() - pedido.em > LIMITE_ATUALIZACAO_MS) {
+            pedido.vencido = true;
             atualizacao = {
               estado: 'falhou',
               sha: pedido.sha,
@@ -143,7 +146,7 @@ export function registrarRotasVersoes(app: FastifyInstance, ctx: ContextoApp): v
         notas,
         ehMaquinaDoHub,
         ultimaConhecida: !shaAgora && Boolean(lembrada),
-        ...(pedidos.get(dispositivo.id)
+        ...(pedidos.get(dispositivo.id) && !pedidos.get(dispositivo.id)?.vencido
           ? { alvoSha: pedidos.get(dispositivo.id)?.sha, pedidoEm: pedidos.get(dispositivo.id)?.em }
           : {}),
         ...(atualizacao ? { atualizacao } : {}),
