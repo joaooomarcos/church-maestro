@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "d0df78755ec0661b98a073cded90b4282c053377",
-  "notas": "RustDesk na lista de programas e \"Manter ligado\" por máquina",
-  "liberadoEm": "2026-10-11",
-  "versao": "0.8.0",
+  "sha": "7e56f0cababc27037f2f45509d37caa839c7bfe3",
+  "notas": "Cenários: espera personalizada, \"esperar abrir\" e relógio do Holyrics",
+  "liberadoEm": "2026-10-19",
+  "versao": "0.9.0",
   "versoes": [
+    {
+      "versao": "0.9.0",
+      "sha": "7e56f0cababc27037f2f45509d37caa839c7bfe3",
+      "notas": "Cenários: espera personalizada, \"esperar abrir\" e relógio do Holyrics",
+      "data": "2026-10-19"
+    },
     {
       "versao": "0.8.0",
       "sha": "d0df78755ec0661b98a073cded90b4282c053377",
