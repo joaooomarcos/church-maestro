@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ROTAS, type ItemPlaylistHolyrics, type RespostaPlaylistHolyrics } from '@maestro/shared';
 import { useAppContexto, useControlesCabecalho, useControlesRodape } from '../contexto/AppContext';
+import { ControleRelogio } from '../componentes/ControleRelogio';
 import { FaixaTitulo } from '../componentes/FaixaTitulo';
 import { Icone } from '../componentes/Icone';
 import { NavegacaoSlides } from '../componentes/NavegacaoSlides';
@@ -248,6 +249,7 @@ export function Holyrics() {
               </ul>
             )}
           </section>
+          <ControleRelogio key={atual.id} dispositivoId={atual.id} />
           <p className="versoes__dica">
             F8, F9 e F10 funcionam como no teclado do Holyrics: toque de novo para desligar. Se
             alguém apertar a tecla direto na máquina, o botão aceso pode ficar trocado.

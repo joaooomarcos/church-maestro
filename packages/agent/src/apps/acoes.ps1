@@ -7,7 +7,7 @@
 # como ANSI, e acentos aqui viram lixo. Texto para o usuario fica no TypeScript.
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('localizar', 'abrir', 'fechar', 'frente', 'tecla', 'acordar')]
+    [ValidateSet('localizar', 'abrir', 'fechar', 'frente', 'tecla', 'acordar', 'janela')]
     [string]$Acao,
     [string]$Caminho = '',
     [string]$Processos = '',
@@ -262,6 +262,15 @@ try {
             # Antes devolvia ok mesmo sem conseguir, e o botao parecia ter funcionado.
             if (-not (Trazer-ParaFrente $alvos)) { throw "nao-consegui-focar" }
             $dados = @{ trouxe = $true }
+        }
+        'janela' {
+            # "Esperar abrir" dos cenarios: o processo sobe bem antes da janela
+            # principal aparecer, e mandar algo nesse intervalo se perde.
+            $tem = $false
+            foreach ($processo in @(Obter-Alvos)) {
+                if (@([MaestroApps]::JanelasDoProcesso([uint32]$processo.Id)).Count -gt 0) { $tem = $true; break }
+            }
+            $dados = @{ janela = $tem }
         }
         'acordar' {
             # Tela apagada por inatividade: um movimento de mouse de 1 pixel (e de

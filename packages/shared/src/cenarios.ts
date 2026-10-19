@@ -1,5 +1,12 @@
 import { z } from 'zod';
 import { ACOES_APP, APLICATIVOS } from './dispositivos.js';
+import { POSICOES_RELOGIO } from './holyricsRelogio.js';
+
+/** Espera máxima de um passo "Esperar": 5 minutos. */
+export const ESPERA_MAX_MS = 5 * 60_000;
+
+/** Quanto o passo "Abrir" espera o programa ficar pronto, se ninguém mudar. */
+export const ESPERA_ABRIR_PADRAO_S = 60;
 
 /**
  * Um cenário é uma lista de ações declarativas que põe a operação inteira num
@@ -36,6 +43,20 @@ export const acaoCenarioSchema = z.discriminatedUnion('tipo', [
     app: z.enum(APLICATIVOS),
     /** "abrir" não abre uma segunda cópia se o programa já estiver aberto. */
     acao: z.enum(ACOES_APP),
+    /**
+     * Só para abrir/reiniciar: espera o programa ficar pronto antes do próximo
+     * passo (Holyrics: a API responde; os outros: a janela aparece). Se não
+     * ficar pronto a tempo, o resto do cenário não roda.
+     */
+    esperarPronto: z.boolean().optional(),
+    esperaMaxSegundos: z.number().int().min(5).max(600).optional(),
+  }),
+  z.object({
+    tipo: z.literal('holyrics.relogio'),
+    dispositivo: z.string(),
+    /** null = deixa como está. */
+    mostrar: z.boolean().nullable().default(null),
+    posicao: z.enum(POSICOES_RELOGIO).nullable().default(null),
   }),
   z.object({
     tipo: z.literal('aviso.mostrar'),
@@ -51,7 +72,7 @@ export const acaoCenarioSchema = z.discriminatedUnion('tipo', [
   }),
   z.object({
     tipo: z.literal('espera'),
-    ms: z.number().int().positive().max(10_000),
+    ms: z.number().int().positive().max(ESPERA_MAX_MS),
   }),
 ]);
 
@@ -85,11 +106,21 @@ export const resultadoCenarioSchema = z.object({
       descricao: z.string(),
       ok: z.boolean(),
       erro: z.string().optional(),
+      /** Não rodou porque um passo anterior com "esperar abrir" não ficou pronto. */
+      pulado: z.boolean().optional(),
     }),
   ),
 });
 
 export type ResultadoCenario = z.infer<typeof resultadoCenarioSchema>;
+
+/** "Passo: erro; …", com os passos que nem rodaram resumidos numa contagem no fim. */
+export function resumirFalhas(acoes: ResultadoCenario['acoes']): string {
+  const falhas = acoes.filter((a) => !a.ok && !a.pulado).map((a) => `${a.descricao}: ${a.erro ?? 'falhou'}`);
+  const pulados = acoes.filter((a) => a.pulado).length;
+  if (pulados > 0) falhas.push(`${pulados} passo${pulados === 1 ? '' : 's'} seguinte${pulados === 1 ? '' : 's'} não rod${pulados === 1 ? 'ou' : 'aram'}`);
+  return falhas.join('; ');
+}
 
 /** Criar ou editar: sem `id`, o hub gera um a partir do nome. */
 export const salvarCenarioSchema = cenarioSchema.extend({ id: z.string().min(1).optional() });
@@ -168,7 +199,9 @@ export const execucaoAgendadaSchema = z.object({
   resumo: z.string(),
   /** Resultado de cada passo, na ordem em que rodaram. */
   passos: z
-    .array(z.object({ descricao: z.string(), ok: z.boolean(), erro: z.string().optional() }))
+    .array(
+      z.object({ descricao: z.string(), ok: z.boolean(), erro: z.string().optional(), pulado: z.boolean().optional() }),
+    )
     .optional(),
 });
 

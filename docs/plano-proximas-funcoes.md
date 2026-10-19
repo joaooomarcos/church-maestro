@@ -163,3 +163,14 @@ rodando como serviço do usuário.
 - Rota para trocar o PIN da equipe pelo painel.
 - "Desligar" máquina pelo painel.
 - Limpar o CSS antigo não usado em `packages/web/src/estilos.css`.
+
+## Em análise (levantado em 2026-10-18, depois do culto)
+
+- **Nome no lugar do IP.** `maestro.local` o próprio hub consegue anunciar
+  (mDNS: iPhone, Mac e Windows acham; parte dos Android não). Só `maestro`, sem
+  `.local`, depende do roteador da igreja dar nome ao PC Transmissão — ver a
+  marca/modelo. Não renomear o PC: as fontes NDI levam o nome do computador.
+- **Botão "Sincronizar agora" do repertório.** O módulo `hs_sync` só expõe a
+  ação pública `version`; a v7 ganharia uma `sync_now` (o mesmo `hsCycle('now')`),
+  e o Maestro chamaria `ModuleAction` com `async: true` (o ciclo passa dos 4 s
+  que a API espera). Depende de publicar a v7 na máquina principal.

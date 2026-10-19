@@ -2768,3 +2768,66 @@ p {
 .programas-maquina__linha + .programas-maquina__linha {
   border-top: 1px solid var(--cor-borda-fraca);
 }
+
+/* Interruptor com rótulo dentro de um passo do cenário ("esperar abrir"). */
+.passo-editor__opcao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Relógio do telão (tela do Holyrics): uma "tela" 16:9 com as 9 posições. */
+.relogio {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.relogio__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--altura-toque-min);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+
+.relogio__cabecalho .holyrics__playlist-titulo {
+  margin: 0;
+}
+
+.relogio__tela {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 360px;
+  padding: 6px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+  background: #000;
+}
+
+.relogio__posicao {
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.relogio__posicao--atual {
+  background: var(--cor-sucesso);
+}
+
+.relogio__posicao:disabled {
+  cursor: wait;
+}

@@ -309,18 +309,30 @@ Regras que valem a pena saber:
 
 Um **cenário** deixa várias coisas prontas de uma vez: trocar a fonte de um
 datashow, trocar a cena do OBS, ligar o plano de fundo do Holyrics, fechar a
-apresentação, abrir ou fechar um programa, mostrar um aviso na tela, esperar um
-pouco entre um passo e outro. Eles ficam em
+apresentação, mudar o relógio do Holyrics, abrir ou fechar um programa, mostrar
+um aviso na tela, esperar um pouco entre um passo e outro. Eles ficam em
 **Automação › Cenários**, no menu ☰, e aparecem como atalhos no alto do Painel.
 
 - **Novo cenário:** dê um nome, escolha um ícone e adicione os passos. Máquina,
   janela e fonte são escolhidas em listas, com os nomes reais — não tem como
   errar a digitação.
-- Se um passo falhar, os outros continuam, e o painel avisa qual falhou.
+- Se um passo falhar, os outros continuam, e o painel avisa qual falhou. A
+  exceção é o "Abrir" com **Esperar abrir** (abaixo).
+- **Esperar um pouco:** além dos atalhos (300 ms a 1 min), **Outro…** aceita
+  qualquer tempo em segundos, até 5 minutos (ex.: `2,5`).
 - **Abrir um programa** não abre uma segunda cópia se ele já estiver aberto —
   pode rodar o "Pré-culto" duas vezes sem medo. Programa pesado (o Holyrics)
-  leva alguns segundos para abrir: se o passo seguinte depende dele, ponha um
-  "Esperar" no meio.
+  leva alguns segundos para abrir: se o passo seguinte depende dele, ligue
+  **Esperar abrir antes do próximo passo**. O cenário só segue quando o
+  programa está pronto — no Holyrics, quando a API responde (a janela aparece
+  bem antes disso); nos outros, quando a janela aparece. Se não ficar pronto no
+  tempo máximo (60 s, ajustável), **o resto do cenário não roda** e o painel diz
+  por quê. Desligado, o passo só manda abrir e segue na hora.
+- **Relógio do Holyrics:** mostra, esconde ou muda o canto do relógio que o
+  Holyrics desenha sobre o papel de parede. O mesmo controle fica na tela
+  **Holyrics**, em **Relógio do telão** (posição, tamanho, ligar/desligar). O
+  token do API Server precisa ter permissão para `GetWallpaperSettings` e
+  `SetWallpaperSettings`.
 
 ### Avisos na tela
 

@@ -204,6 +204,16 @@ export async function enviarTecla(
 }
 
 /**
+ * O programa já mostra uma janela? É o "pronto" do passo "Abrir" com "esperar
+ * abrir". Fora do Windows vale o processo estar rodando.
+ */
+export async function temJanelaAberta(app: Aplicativo): Promise<boolean> {
+  if (platform() !== 'win32') return Boolean((await listarProcessos())[app]);
+  const dados = (await rodarScript(['-Acao', 'janela', ...alvoDe(app)], app)) as { janela?: boolean } | undefined;
+  return dados?.janela === true;
+}
+
+/**
  * Acorda a tela da máquina (monitor em repouso por inatividade). Fora do
  * Windows não há o que fazer: devolve sem erro.
  */

@@ -1,4 +1,4 @@
-import type { Cenario, ExecucaoCenario, OrigemExecucao, ResultadoCenario } from '@maestro/shared';
+import { resumirFalhas, type Cenario, type ExecucaoCenario, type OrigemExecucao, type ResultadoCenario } from '@maestro/shared';
 import { executarCenario } from '../cenarios/executar.js';
 import type { ContextoApp } from '../rotas/contexto.js';
 
@@ -36,7 +36,6 @@ export function registrarExecucao(
   origem: OrigemExecucao,
   agendamentoId?: string,
 ): ExecucaoCenario {
-  const falhas = resultado.acoes.filter((acao) => !acao.ok);
   const registro: ExecucaoCenario = {
     ...(agendamentoId ? { agendamentoId } : {}),
     origem,
@@ -46,8 +45,13 @@ export function registrarExecucao(
     ok: resultado.ok,
     resumo: resultado.ok
       ? `${resultado.acoes.length} passo(s) aplicados`
-      : falhas.map((falha) => `${falha.descricao}: ${falha.erro ?? 'falhou'}`).join('; '),
-    passos: resultado.acoes.map(({ descricao, ok, erro }) => ({ descricao, ok, ...(erro ? { erro } : {}) })),
+      : resumirFalhas(resultado.acoes),
+    passos: resultado.acoes.map(({ descricao, ok, erro, pulado }) => ({
+      descricao,
+      ok,
+      ...(erro ? { erro } : {}),
+      ...(pulado ? { pulado } : {}),
+    })),
   };
   const lista = listaDe(ctx);
   lista.unshift(registro);

@@ -88,6 +88,7 @@ export const ROTAS = {
   pptAcao: '/api/powerpoint/acao',
   pptSlide: '/api/powerpoint/slide',
   holyricsVisualizacao: '/api/holyrics/visualizacao',
+  holyricsRelogio: '/api/holyrics/relogio',
   cenarios: '/api/cenarios',
   cenario: '/api/cenarios/:id',
   automacoes: '/api/automacoes',

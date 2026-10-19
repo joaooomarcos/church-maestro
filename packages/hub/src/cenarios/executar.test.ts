@@ -10,13 +10,14 @@ function maquina(id: string, extra: Partial<DispositivoConfig> = {}): Dispositiv
   return { id, nome: id.toUpperCase(), host: '10.0.0.1', fixarHost: false, servicos: { agente: { porta: 8770 } }, ...extra };
 }
 
-function montar(falhaEm?: string) {
+function montar(falhaEm?: string, janelaDepoisDe = 0) {
+  let consultasJanela = 0;
   const avisos: { id: string; comando: ComandoAviso }[] = [];
   const apps: { id: string; comando: ComandoApp }[] = [];
   const mensagens: MensagemHub[] = [];
   const store = new Store();
   store.transmitirMensagem = (mensagem) => void mensagens.push(mensagem);
-  const drivers = {
+  const parcial: { agente: Partial<Drivers['agente']>; holyrics: Partial<Drivers['holyrics']> } = {
     agente: {
       async mostrarAviso(dispositivo, comando) {
         if (dispositivo.id === falhaEm) throw new Error('não respondeu');
@@ -25,8 +26,21 @@ function montar(falhaEm?: string) {
       async acaoApp(dispositivo, comando) {
         apps.push({ id: dispositivo.id, comando });
       },
+      async janelaAberta() {
+        consultasJanela += 1;
+        return consultasJanela > janelaDepoisDe;
+      },
     },
-  } as Drivers;
+    holyrics: {
+      async ler() {
+        consultasJanela += 1;
+        return consultasJanela > janelaDepoisDe
+          ? { online: true, erro: null, apresentacao: null }
+          : { online: false, erro: 'API não respondeu', apresentacao: null };
+      },
+    },
+  };
+  const drivers = parcial as unknown as Drivers;
   const ctx = criarContexto({
     config: {
       porta: 8700,
@@ -142,5 +156,78 @@ describe('passos de aviso e de programa', () => {
     expect(resultado.ok).toBe(true);
     expect(resultado.acoes[0]?.descricao).toBe('FUNDO → abrir o Holyrics');
     expect(apps).toEqual([{ id: 'fundo', comando: { app: 'holyrics', acao: 'abrir' } }]);
+  });
+
+  it('com "esperar abrir", só segue quando a janela aparece', async () => {
+    const { ctx, apps, avisos } = montar(undefined, 2);
+    const resultado = await executarCenario(
+      ctx,
+      {
+        id: 'pre',
+        nome: 'Pré-culto',
+        acoes: [
+          { tipo: 'app.acao', dispositivo: 'fundo', app: 'powerpoint', acao: 'abrir', esperarPronto: true, esperaMaxSegundos: 5 },
+          { tipo: 'aviso.mostrar', dispositivos: ['fundo'], mensagem: 'Pronto', noPainel: false, monitores: {}, segundos: null },
+        ],
+      },
+      { intervaloProntoMs: 1 },
+    );
+
+    expect(resultado.ok).toBe(true);
+    expect(resultado.acoes[0]?.descricao).toBe('FUNDO → abrir o PowerPoint e esperar ficar pronto');
+    expect(apps).toHaveLength(1);
+    expect(avisos).toHaveLength(1);
+  });
+
+  it('se o programa não abrir a tempo, o resto do cenário não roda', async () => {
+    const { ctx, avisos } = montar(undefined, 1000);
+    const resultado = await executarCenario(
+      ctx,
+      {
+        id: 'pre',
+        nome: 'Pré-culto',
+        acoes: [
+          { tipo: 'app.acao', dispositivo: 'fundo', app: 'obs', acao: 'abrir', esperarPronto: true, esperaMaxSegundos: 0 },
+          { tipo: 'aviso.mostrar', dispositivos: ['fundo'], mensagem: 'Pronto', noPainel: false, monitores: {}, segundos: null },
+        ],
+      },
+      { intervaloProntoMs: 1 },
+    );
+
+    expect(resultado.ok).toBe(false);
+    expect(resultado.acoes[0]).toMatchObject({ ok: false, erro: expect.stringContaining('não ficou pronto') });
+    expect(resultado.acoes[1]).toMatchObject({ ok: false, pulado: true });
+    expect(avisos).toEqual([]);
+  });
+
+  it('o Holyrics com API configurada está pronto quando a API responde', async () => {
+    const { ctx } = montar(undefined, 1000);
+    await ctx.atualizarDispositivo({ ...maquina('fundo'), servicos: { agente: { porta: 8770 }, holyrics: { porta: 8091, token: 't' } } });
+    const resultado = await executarCenario(
+      ctx,
+      {
+        id: 'pre',
+        nome: 'Pré-culto',
+        acoes: [{ tipo: 'app.acao', dispositivo: 'fundo', app: 'holyrics', acao: 'abrir', esperarPronto: true, esperaMaxSegundos: 0 }],
+      },
+      { intervaloProntoMs: 1 },
+    );
+
+    expect(resultado.acoes[0]?.erro).toContain('API não respondeu');
+  });
+
+  it('sem "esperar abrir", uma falha não segura os outros passos', async () => {
+    const { ctx, avisos } = montar();
+    const resultado = await executarCenario(ctx, {
+      id: 'pre',
+      nome: 'Pré-culto',
+      acoes: [
+        { tipo: 'app.acao', dispositivo: 'nao-existe', app: 'obs', acao: 'abrir' },
+        { tipo: 'aviso.mostrar', dispositivos: ['fundo'], mensagem: 'Pronto', noPainel: false, monitores: {}, segundos: null },
+      ],
+    });
+
+    expect(resultado.acoes[1]?.ok).toBe(true);
+    expect(avisos).toHaveLength(1);
   });
 });

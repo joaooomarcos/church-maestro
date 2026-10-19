@@ -5,6 +5,7 @@ export * from './convidado.js';
 export * from './compartilhar.js';
 export * from './estado.js';
 export * from './checks.js';
+export * from './holyricsRelogio.js';
 export * from './cenarios.js';
 export * from './agente.js';
 export * from './hub.js';

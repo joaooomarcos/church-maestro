@@ -5,6 +5,7 @@ import type {
   DispositivoConfig,
   EstadoAgente,
   EstadoHolyrics,
+  EstadoRelogio,
   EstadoNdiMonitor,
   EstadoObs,
   EstadoPowerPoint,
@@ -167,7 +168,22 @@ export function criarDriversMock(): Drivers {
     },
   };
 
+  const relogios = new Map<string, EstadoRelogio>();
+  const relogioDe = (id: string): EstadoRelogio =>
+    relogios.get(id) ?? { mostrar: true, posicao: 'top_right', tamanho: 12 };
+  /** Programa "abrindo": a janela só aparece uns segundos depois do comando. */
+  const abertoEm = new Map<string, number>();
+
   const holyrics: Drivers['holyrics'] = {
+    async lerRelogio(dispositivo) {
+      return relogioDe(dispositivo.id);
+    },
+    async definirRelogio(dispositivo, mudanca) {
+      const novo = { ...relogioDe(dispositivo.id), ...mudanca };
+      relogios.set(dispositivo.id, novo);
+      console.log(`[mock] relógio do Holyrics em ${dispositivo.nome}:`, novo);
+      return novo;
+    },
     async ler(dispositivo) {
       return estadoHolyricsMock(obterApresentacao(dispositivo.id));
     },
@@ -370,6 +386,11 @@ export function criarDriversMock(): Drivers {
     },
     async acaoApp(dispositivo, comando) {
       console.log(`[mock] ${comando.acao} ${comando.app} em ${dispositivo.nome}`);
+      if (comando.acao === 'abrir' || comando.acao === 'reiniciar') abertoEm.set(`${dispositivo.id}:${comando.app}`, Date.now());
+    },
+    async janelaAberta(dispositivo, app) {
+      const desde = abertoEm.get(`${dispositivo.id}:${app}`);
+      return desde === undefined || Date.now() - desde > 4000;
     },
   };
 

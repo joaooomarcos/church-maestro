@@ -1,7 +1,14 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import type { DispositivoConfig } from '@maestro/shared';
-import { criarDriverHolyrics, normalizarApresentacao, normalizarGatilhos, normalizarPlaylist } from './holyrics.js';
+import {
+  criarDriverHolyrics,
+  montarMudancaRelogio,
+  normalizarApresentacao,
+  normalizarGatilhos,
+  normalizarPlaylist,
+  normalizarRelogio,
+} from './holyrics.js';
 import { ErroDriver } from './tipos.js';
 
 describe('normalizarPlaylist', () => {
@@ -202,5 +209,37 @@ describe('driver Holyrics sobre HTTP', () => {
     await expect(criarDriverHolyrics().checarPaginaLegenda(dispositivo)).rejects.toThrow(
       /URL de legenda/i,
     );
+  });
+});
+
+describe('relógio do papel de parede', () => {
+  const papel = {
+    show_clock: true,
+    by_screen: {
+      default: { clock: { enabled: true, position: 'top_right', height: 12, color: 'FF0000' } },
+      public: null,
+      screen_2: { clock: { enabled: false, position: 'bottom_right', height: 8 } },
+    },
+  };
+
+  it('lê a configuração do telão e, sem ela, a padrão', () => {
+    expect(normalizarRelogio(papel)).toEqual({ mostrar: true, posicao: 'top_right', tamanho: 12 });
+    expect(normalizarRelogio({ show_clock: false })).toEqual({ mostrar: false, posicao: null, tamanho: null });
+  });
+
+  it('muda a posição em toda tela com configuração própria, sem perder cor e fonte', () => {
+    expect(montarMudancaRelogio(papel, { posicao: 'top_left' })).toEqual({
+      by_screen: {
+        default: { clock: { enabled: true, position: 'top_left', height: 12, color: 'FF0000' } },
+        screen_2: { clock: { enabled: false, position: 'top_left', height: 8 } },
+      },
+    });
+  });
+
+  it('esconder também desliga o show_clock geral', () => {
+    expect(montarMudancaRelogio({}, { mostrar: false })).toEqual({
+      show_clock: false,
+      by_screen: { default: { clock: { enabled: false } } },
+    });
   });
 });

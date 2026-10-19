@@ -18,7 +18,7 @@ import {
   type ConfigAgente,
   type ErroApi,
 } from '@maestro/shared';
-import { ErroApp, acordarMaquina, enviarTecla, executarAcaoApp, situacaoDosApps } from './apps/index.js';
+import { ErroApp, acordarMaquina, enviarTecla, executarAcaoApp, situacaoDosApps, temJanelaAberta } from './apps/index.js';
 import { fecharAvisos, mostrarAviso } from './avisos/index.js';
 import { capturarMonitor } from './captura/index.js';
 import { definirManterLigado } from './energia.js';
@@ -83,6 +83,26 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
   app.get('/processos', { preHandler: comToken }, async () => listarProcessos());
 
   app.get('/apps', { preHandler: comToken }, async () => situacaoDosApps(config));
+
+  /** O programa já tem janela na tela? Usado pelo "esperar abrir" dos cenários. */
+  app.get('/apps/janela', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const analisado = comandoAppSchema.shape.app.safeParse((req.query as { app?: string }).app);
+    if (!analisado.success) {
+      const corpo: ErroApi = { erro: 'comando-invalido', mensagem: 'Aplicativo inválido.' };
+      reply.code(400).send(corpo);
+      return;
+    }
+    try {
+      return { janela: await temJanelaAberta(analisado.data) };
+    } catch (err) {
+      if (err instanceof ErroApp) {
+        const corpo: ErroApi = { erro: 'falha-app', mensagem: err.message, detalhe: err.causaTecnica };
+        reply.code(502).send(corpo);
+        return;
+      }
+      throw err;
+    }
+  });
 
   app.post('/teclas', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
     const analisado = comandoTeclaSchema.safeParse(req.body);

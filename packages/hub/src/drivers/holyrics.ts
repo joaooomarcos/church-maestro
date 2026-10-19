@@ -1,4 +1,5 @@
 import { ErroDriver, type DriverHolyrics, type GatilhoHolyrics, type OpcoesRequisicao } from './tipos.js';
+import { POSICOES_RELOGIO, type EstadoRelogio, type MudancaRelogio, type PosicaoRelogio } from '@maestro/shared';
 import type {
   DispositivoConfig,
   EstadoHolyrics,
@@ -166,6 +167,55 @@ export function normalizarGatilhos(bruta: unknown): GatilhoHolyrics[] {
   return gatilhos;
 }
 
+type RelogioBruto = Record<string, unknown> & { enabled?: boolean; position?: string; height?: number };
+
+interface PapelDeParedeBruto {
+  show_clock?: boolean;
+  by_screen?: Record<string, { clock?: RelogioBruto | null } | null>;
+}
+
+/** O papel de parede pode ter configuração própria por tela; a do telão (`public`) vale mais que a padrão. */
+function relogioEmUso(bruta: PapelDeParedeBruto | undefined): RelogioBruto | null {
+  const telas = bruta?.by_screen;
+  return telas?.public?.clock ?? telas?.default?.clock ?? null;
+}
+
+export function normalizarRelogio(bruta: unknown): EstadoRelogio {
+  const papel = (bruta ?? {}) as PapelDeParedeBruto;
+  const relogio = relogioEmUso(papel);
+  const posicao = POSICOES_RELOGIO.find((p) => p === relogio?.position) ?? null;
+  return {
+    // Holyrics antigo (antes da 2.23) só tem o `show_clock` geral.
+    mostrar: relogio?.enabled ?? papel.show_clock ?? false,
+    posicao,
+    tamanho: typeof relogio?.height === 'number' ? relogio.height : null,
+  };
+}
+
+/**
+ * Corpo do SetWallpaperSettings: o relógio inteiro de cada tela que tem
+ * configuração própria, com a mudança por cima. Mandar só o campo mudado
+ * arriscaria o Holyrics zerar cor e fonte.
+ */
+export function montarMudancaRelogio(bruta: unknown, mudanca: MudancaRelogio): Record<string, unknown> {
+  const papel = (bruta ?? {}) as PapelDeParedeBruto;
+  const porTela: Record<string, { clock: RelogioBruto }> = {};
+  const aplicar = (atual: RelogioBruto | null | undefined): RelogioBruto => ({
+    ...(atual ?? {}),
+    ...(mudanca.mostrar !== undefined ? { enabled: mudanca.mostrar } : {}),
+    ...(mudanca.posicao !== undefined ? { position: mudanca.posicao satisfies PosicaoRelogio } : {}),
+    ...(mudanca.tamanho !== undefined ? { height: mudanca.tamanho } : {}),
+  });
+  for (const [tela, config] of Object.entries(papel.by_screen ?? {})) {
+    if (config) porTela[tela] = { clock: aplicar(config.clock) };
+  }
+  if (!porTela.default) porTela.default = { clock: aplicar(null) };
+  return {
+    ...(mudanca.mostrar !== undefined ? { show_clock: mudanca.mostrar } : {}),
+    by_screen: porTela,
+  };
+}
+
 function rotularSemNome(tipo: string | undefined): string {
   switch (tipo) {
     case 'verse':
@@ -265,6 +315,23 @@ export function criarDriverHolyrics(): DriverHolyrics {
         }
       }
       return null;
+    },
+
+    async lerRelogio(dispositivo, op) {
+      // A resposta traz a imagem do papel de parede em base64: pode ser grande.
+      const bruta = await chamar<unknown>(dispositivo, 'GetWallpaperSettings', {}, { timeoutMs: 5000, ...(op ?? {}) });
+      return normalizarRelogio(bruta);
+    },
+
+    async definirRelogio(dispositivo, mudanca, op) {
+      const opcoes = { timeoutMs: 5000, ...(op ?? {}) };
+      const atual = await chamar<unknown>(dispositivo, 'GetWallpaperSettings', {}, opcoes);
+      const resposta = await chamar<unknown>(dispositivo, 'SetWallpaperSettings', montarMudancaRelogio(atual, mudanca), opcoes);
+      // Sucesso é `true`; senão vem a lista do que deu errado.
+      if (Array.isArray(resposta) && resposta.length > 0) {
+        throw new ErroDriver(`O Holyrics do ${dispositivo.nome} não aceitou mudar o relógio: ${resposta.join('; ')}`);
+      }
+      return normalizarRelogio(await chamar<unknown>(dispositivo, 'GetWallpaperSettings', {}, opcoes));
     },
 
     async apresentacaoRapida(dispositivo, texto, op) {

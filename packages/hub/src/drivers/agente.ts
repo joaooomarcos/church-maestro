@@ -134,6 +134,25 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
       );
     },
 
+    async janelaAberta(dispositivo, app, op): Promise<boolean> {
+      try {
+        const { janela } = await pedir<{ janela: boolean }>(
+          dispositivo,
+          `/apps/janela?app=${encodeURIComponent(app)}`,
+          { method: 'GET' },
+          // A consulta abre um PowerShell: leva uns segundos no Windows.
+          { timeoutMs: 15_000, ...(op ?? {}) },
+          tokenPadrao,
+        );
+        return janela;
+      } catch (err) {
+        if (!(err instanceof ErroDriver) || err.causaTecnica !== 'HTTP 404') throw err;
+        // Agente de antes da 0.9.0: vale o processo estar rodando.
+        const processos = await pedir<Record<string, boolean>>(dispositivo, '/processos', { method: 'GET' }, op, tokenPadrao);
+        return processos[app] === true;
+      }
+    },
+
     async acaoApp(dispositivo, comando, op): Promise<void> {
       await pedir<{ ok: boolean }>(
         dispositivo,

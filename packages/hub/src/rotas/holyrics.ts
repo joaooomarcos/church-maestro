@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { ROTAS, acaoHolyricsSchema } from '@maestro/shared';
+import { ROTAS, acaoHolyricsSchema, pedidoRelogioSchema } from '@maestro/shared';
 import type { ContextoApp } from './contexto.js';
 import { responderDispositivoNaoEncontrado, responderErroDriver, responderRequisicaoInvalida } from './erros.js';
 
@@ -82,5 +82,32 @@ export function registrarRotasHolyrics(app: FastifyInstance, ctx: ContextoApp): 
 
     const url = await ctx.drivers.holyrics.paginaVisualizacao(dispositivo).catch(() => null);
     return reply.send({ url });
+  });
+
+  /** Relógio do papel de parede: como está agora. */
+  app.get(ROTAS.holyricsRelogio, async (req, reply) => {
+    const { dispositivo: dispositivoId } = req.query as { dispositivo?: string };
+    if (!dispositivoId) return responderRequisicaoInvalida(reply, 'Informe o dispositivo na consulta.');
+    const dispositivo = ctx.obterDispositivo(dispositivoId);
+    if (!dispositivo) return responderDispositivoNaoEncontrado(reply, dispositivoId);
+    try {
+      return reply.send(await ctx.drivers.holyrics.lerRelogio(dispositivo));
+    } catch (erro) {
+      return responderErroDriver(reply, erro);
+    }
+  });
+
+  /** Muda só o que vier no corpo (mostrar, posição, tamanho) e devolve como ficou. */
+  app.post(ROTAS.holyricsRelogio, async (req, reply) => {
+    const corpo = pedidoRelogioSchema.safeParse(req.body);
+    if (!corpo.success) return responderRequisicaoInvalida(reply, `Requisição inválida: ${corpo.error.message}`);
+    const { dispositivo: dispositivoId, ...mudanca } = corpo.data;
+    const dispositivo = ctx.obterDispositivo(dispositivoId);
+    if (!dispositivo) return responderDispositivoNaoEncontrado(reply, dispositivoId);
+    try {
+      return reply.send(await ctx.drivers.holyrics.definirRelogio(dispositivo, mudanca));
+    } catch (erro) {
+      return responderErroDriver(reply, erro);
+    }
   });
 }

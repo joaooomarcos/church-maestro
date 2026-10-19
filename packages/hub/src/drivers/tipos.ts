@@ -81,6 +81,14 @@ export interface DriverHolyrics {
    * (`/view/widescreen`), ou null se ela não respondeu em nenhuma porta conhecida.
    */
   paginaVisualizacao(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<string | null>;
+  /** Relógio do papel de parede (posição, tamanho, ligado). */
+  lerRelogio(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<import('@maestro/shared').EstadoRelogio>;
+  /** Muda só o que vier preenchido e devolve como ficou. */
+  definirRelogio(
+    dispositivo: DispositivoConfig,
+    mudanca: import('@maestro/shared').MudancaRelogio,
+    op?: OpcoesRequisicao,
+  ): Promise<import('@maestro/shared').EstadoRelogio>;
   /** Exibe um texto avulso — usado como marcador na prova real das legendas. */
   apresentacaoRapida(
     dispositivo: DispositivoConfig,
@@ -164,6 +172,15 @@ export interface DriverAgente {
   manterLigado(dispositivo: DispositivoConfig, ligado: boolean, op?: OpcoesRequisicao): Promise<boolean>;
   /** Fecha qualquer janela de aviso aberta na máquina (a que ficou presa no telão, por exemplo). */
   fecharAvisos(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
+  /**
+   * O programa já mostra uma janela? Agente antigo (sem a consulta) responde
+   * pelo processo estar rodando.
+   */
+  janelaAberta(
+    dispositivo: DispositivoConfig,
+    app: import('@maestro/shared').Aplicativo,
+    op?: OpcoesRequisicao,
+  ): Promise<boolean>;
   /** Abre, fecha, reinicia ou traz para frente um aplicativo daquela máquina. */
   acaoApp(
     dispositivo: DispositivoConfig,

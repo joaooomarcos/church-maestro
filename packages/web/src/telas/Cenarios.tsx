@@ -2,8 +2,13 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   ACOES_APP,
   APLICATIVOS,
+  ESPERA_ABRIR_PADRAO_S,
+  ESPERA_MAX_MS,
   NOMES_APLICATIVOS,
+  NOMES_POSICOES_RELOGIO,
+  POSICOES_RELOGIO,
   ROTAS,
+  resumirFalhas,
   type AcaoApp,
   type AcaoCenario,
   type Aplicativo,
@@ -26,6 +31,7 @@ const NOMES_PASSOS: Record<TipoPasso, string> = {
   'obs.definirCena': 'Trocar a cena do OBS',
   'holyrics.f8': 'Plano de fundo do Holyrics (F8)',
   'holyrics.encerrarApresentacao': 'Fechar a apresentação do Holyrics',
+  'holyrics.relogio': 'Relógio do Holyrics',
   'app.acao': 'Abrir ou fechar um programa',
   'aviso.mostrar': 'Mostrar um aviso na tela',
   espera: 'Esperar um pouco',
@@ -38,7 +44,14 @@ const NOMES_ACOES_APP: Record<AcaoApp, string> = {
   frente: 'Trazer para frente',
 };
 
-const ESPERAS_MS = [300, 500, 1000, 2000, 5000, 10_000];
+const ESPERAS_MS = [300, 500, 1000, 2000, 5000, 10_000, 30_000, 60_000];
+const OUTRA_ESPERA = 'outro';
+
+function rotuloEspera(ms: number): string {
+  if (ms < 1000) return `${ms} ms`;
+  if (ms >= 60_000 && ms % 60_000 === 0) return `${ms / 60_000} min`;
+  return `${(ms / 1000).toLocaleString('pt-BR')} s`;
+}
 
 function comNdi(dispositivos: EstadoDispositivo[]) {
   return dispositivos.filter((d) => d.ndi.length > 0);
@@ -79,9 +92,81 @@ function passoPadrao(tipo: TipoPasso, dispositivos: EstadoDispositivo[]): AcaoCe
     }
     case 'aviso.mostrar':
       return { tipo, dispositivos: [], mensagem: '', noPainel: true, monitores: {}, segundos: null };
+    case 'holyrics.relogio':
+      return { tipo, dispositivo: comHolyrics(dispositivos)[0]?.id ?? '', mostrar: true, posicao: 'top_left' };
     case 'espera':
       return { tipo, ms: 500 };
   }
+}
+
+/** Interruptor com rótulo, no mesmo visual dos Ajustes. */
+function Opcao({ rotulo, ligado, aoMudar }: { rotulo: string; ligado: boolean; aoMudar: (ligado: boolean) => void }) {
+  return (
+    <div className="passo-editor__opcao">
+      <span>{rotulo}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={ligado}
+        aria-label={rotulo}
+        className={`interruptor${ligado ? ' interruptor--ligado' : ''}`}
+        onClick={() => aoMudar(!ligado)}
+      >
+        <span className="interruptor__bolinha" />
+      </button>
+    </div>
+  );
+}
+
+/** Lista de atalhos + "Outro…", que abre um campo em segundos. */
+function CampoEspera({ ms, aoMudar }: { ms: number; aoMudar: (ms: number) => void }) {
+  const [outro, setOutro] = useState(!ESPERAS_MS.includes(ms));
+  const [texto, setTexto] = useState(String(ms / 1000).replace('.', ','));
+  return (
+    <>
+      <label className="campo">
+        <span className="campo__rotulo">Quanto tempo</span>
+        <select
+          className="versoes__select"
+          value={outro ? OUTRA_ESPERA : String(ms)}
+          onChange={(e) => {
+            if (e.target.value === OUTRA_ESPERA) {
+              setOutro(true);
+              setTexto(String(ms / 1000).replace('.', ','));
+              return;
+            }
+            setOutro(false);
+            aoMudar(Number(e.target.value));
+          }}
+        >
+          {ESPERAS_MS.map((opcao) => (
+            <option key={opcao} value={opcao}>
+              {rotuloEspera(opcao)}
+            </option>
+          ))}
+          <option value={OUTRA_ESPERA}>Outro…</option>
+        </select>
+      </label>
+      {outro ? (
+        <label className="campo">
+          <span className="campo__rotulo">Segundos (até {ESPERA_MAX_MS / 60_000} min)</span>
+          <input
+            className="campo__entrada"
+            inputMode="decimal"
+            value={texto}
+            placeholder="Ex.: 15"
+            onChange={(e) => {
+              setTexto(e.target.value);
+              const segundos = Number(e.target.value.replace(',', '.'));
+              if (Number.isFinite(segundos) && segundos > 0) {
+                aoMudar(Math.min(ESPERA_MAX_MS, Math.max(100, Math.round(segundos * 1000))));
+              }
+            }}
+          />
+        </label>
+      ) : null}
+    </>
+  );
 }
 
 /** Mantém o valor salvo na lista mesmo se ele sumiu (máquina offline, fonte fora da rede). */
@@ -256,9 +341,41 @@ function EditorPasso({
           </select>
         </label>
         {passo.acao === 'abrir' || passo.acao === 'reiniciar' ? (
-          <p className="versoes__dica">
-            Programa pesado demora a abrir: se o próximo passo depende dele, ponha um "Esperar" antes.
-          </p>
+          <>
+            <Opcao
+              rotulo="Esperar abrir antes do próximo passo"
+              ligado={passo.esperarPronto === true}
+              aoMudar={(ligado) =>
+                aoMudar({ ...passo, esperarPronto: ligado, esperaMaxSegundos: passo.esperaMaxSegundos ?? ESPERA_ABRIR_PADRAO_S })
+              }
+            />
+            {passo.esperarPronto ? (
+              <>
+                <label className="campo">
+                  <span className="campo__rotulo">Esperar no máximo (segundos)</span>
+                  <input
+                    className="campo__entrada"
+                    type="number"
+                    min={5}
+                    max={600}
+                    value={passo.esperaMaxSegundos ?? ESPERA_ABRIR_PADRAO_S}
+                    onChange={(e) => {
+                      const valor = Math.round(Number(e.target.value));
+                      aoMudar({ ...passo, esperaMaxSegundos: Number.isFinite(valor) ? Math.min(600, Math.max(5, valor)) : ESPERA_ABRIR_PADRAO_S });
+                    }}
+                  />
+                </label>
+                <p className="versoes__dica">
+                  {passo.app === 'holyrics' && maquina?.holyrics !== undefined
+                    ? 'Segue quando o Holyrics responde pela API.'
+                    : 'Segue quando a janela do programa aparece.'}{' '}
+                  Se não abrir nesse tempo, os passos seguintes não rodam.
+                </p>
+              </>
+            ) : (
+              <p className="versoes__dica">Desligado, só manda abrir e passa para o próximo passo na hora.</p>
+            )}
+          </>
         ) : null}
       </>
     );
@@ -332,19 +449,41 @@ function EditorPasso({
         </p>
       </>
     );
-  } else {
+  } else if (passo.tipo === 'holyrics.relogio') {
     campos = (
-      <label className="campo">
-        <span className="campo__rotulo">Quanto tempo</span>
-        <select className="versoes__select" value={passo.ms} onChange={(e) => aoMudar({ ...passo, ms: Number(e.target.value) })}>
-          {comAtual(ESPERAS_MS.map(String), String(passo.ms)).map((ms) => (
-            <option key={ms} value={ms}>
-              {Number(ms) >= 1000 ? `${Number(ms) / 1000} s` : `${ms} ms`}
-            </option>
-          ))}
-        </select>
-      </label>
+      <>
+        {seletorMaquina(comHolyrics(dispositivos), passo.dispositivo, (id) => aoMudar({ ...passo, dispositivo: id }))}
+        <label className="campo">
+          <span className="campo__rotulo">Relógio</span>
+          <select
+            className="versoes__select"
+            value={passo.mostrar === null ? '' : passo.mostrar ? 'mostrar' : 'esconder'}
+            onChange={(e) => aoMudar({ ...passo, mostrar: e.target.value === '' ? null : e.target.value === 'mostrar' })}
+          >
+            <option value="">Deixar como está</option>
+            <option value="mostrar">Mostrar</option>
+            <option value="esconder">Esconder</option>
+          </select>
+        </label>
+        <label className="campo">
+          <span className="campo__rotulo">Posição</span>
+          <select
+            className="versoes__select"
+            value={passo.posicao ?? ''}
+            onChange={(e) => aoMudar({ ...passo, posicao: (e.target.value || null) as typeof passo.posicao })}
+          >
+            <option value="">Deixar como está</option>
+            {POSICOES_RELOGIO.map((posicao) => (
+              <option key={posicao} value={posicao}>
+                {NOMES_POSICOES_RELOGIO[posicao]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </>
     );
+  } else {
+    campos = <CampoEspera key={indice} ms={passo.ms} aoMudar={(ms) => aoMudar({ ...passo, ms })} />;
   }
 
   return (
@@ -397,6 +536,9 @@ function problemaNoRascunho(rascunho: CenarioParaSalvar): string | null {
     }
     if (passo.tipo !== 'espera' && !passo.dispositivo) return `Escolha a máquina do passo ${indice + 1}.`;
     if (passo.tipo === 'obs.definirCena' && !passo.cena) return `Escolha a cena do passo ${indice + 1}.`;
+    if (passo.tipo === 'holyrics.relogio' && passo.mostrar === null && passo.posicao === null) {
+      return `Escolha o que muda no relógio do passo ${indice + 1}.`;
+    }
   }
   return null;
 }
@@ -429,8 +571,7 @@ export function Cenarios() {
       if (resultado.ok) {
         notificar(`"${cenario.nome}" aplicado.`, 'info');
       } else {
-        const falhas = resultado.acoes.filter((a) => !a.ok).map((a) => `${a.descricao}: ${a.erro ?? 'falhou'}`);
-        notificar(`"${cenario.nome}" teve falhas — ${falhas.join('; ')}`, 'alerta');
+        notificar(`"${cenario.nome}" teve falhas — ${resumirFalhas(resultado.acoes)}`, 'alerta');
       }
     } catch {
       // erro já virou toast
@@ -557,7 +698,10 @@ export function Cenarios() {
           >
             <Icone nome="mais" tamanho={18} /> Adicionar passo
           </button>
-          <p className="versoes__dica">Se um passo falhar, os outros continuam — e o painel avisa qual falhou.</p>
+          <p className="versoes__dica">
+            Se um passo falhar, os outros continuam — e o painel avisa qual falhou. A exceção é o "Abrir" com "esperar
+            abrir": se o programa não abrir, o resto para.
+          </p>
         </section>
 
         <div className="cenario-editor__rodape">
