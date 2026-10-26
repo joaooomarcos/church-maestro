@@ -82,3 +82,56 @@ export function dispositivoDaFonteNdi(
     }) ?? null
   );
 }
+
+/** Valor que o Studio Monitor usa para "nenhuma fonte". */
+export const FONTE_NDI_NENHUMA = '';
+
+/**
+ * Extrai nomes de fonte NDI de uma resposta de formato incerto. Aceita:
+ * lista de strings, lista de objetos com `name`, ou objeto cujas chaves
+ * agrupam essas listas (`ndi_sources`, `sources`, ...).
+ */
+export function extrairFontes(dados: unknown): string[] {
+  const encontradas: string[] = [];
+
+  const coletar = (valor: unknown): void => {
+    if (typeof valor === 'string') {
+      if (valor.length > 0) encontradas.push(valor);
+      return;
+    }
+    if (Array.isArray(valor)) {
+      for (const item of valor) coletar(item);
+      return;
+    }
+    if (valor !== null && typeof valor === 'object') {
+      const obj = valor as Record<string, unknown>;
+      const nome = obj['name'] ?? obj['ndi_name'] ?? obj['source_name'];
+      if (typeof nome === 'string' && nome.length > 0) {
+        encontradas.push(nome);
+      }
+    }
+  };
+
+  if (Array.isArray(dados)) {
+    coletar(dados);
+  } else if (dados !== null && typeof dados === 'object') {
+    const obj = dados as Record<string, unknown>;
+    // Só as chaves que sabidamente contêm fontes NDI — displays e saídas de
+    // áudio também vêm nessa resposta e não devem virar opção de exibição.
+    for (const chave of ['ndi_sources', 'sources', 'NDI_sources', 'ndi']) {
+      if (chave in obj) coletar(obj[chave]);
+    }
+    if (encontradas.length === 0) coletar(obj['items']);
+  }
+
+  return [...new Set(encontradas)].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+/** Lê a fonte selecionada de uma resposta de /v1/configuration. */
+export function extrairFonteAtual(dados: unknown): string | null {
+  if (dados === null || typeof dados !== 'object') return null;
+  const obj = dados as Record<string, unknown>;
+  const bruto = obj['NDI_source'] ?? obj['ndi_source'] ?? obj['source'];
+  if (typeof bruto !== 'string' || bruto === FONTE_NDI_NENHUMA) return null;
+  return bruto;
+}

@@ -1,4 +1,5 @@
 import { ConfigAusente, carregarConfig } from './config.js';
+import { criarAtalhoControle } from './controle/atalho.js';
 import { encerrarManterLigado, retomarManterLigado } from './energia.js';
 import { iniciarHeartbeat } from './heartbeat.js';
 import { criarPontePowerPoint } from './ppt/index.js';
@@ -14,6 +15,7 @@ async function main(): Promise<void> {
 
   const servidor = await iniciarServidor(config, ponte);
   const heartbeat = iniciarHeartbeat(config, ponte);
+  void criarAtalhoControle(config.porta);
 
   console.log(
     `[agente] escutando na porta ${config.porta} — dispositivoId=${config.dispositivoId} powerpoint=${ponte.disponivel ? 'disponível' : 'indisponível'}`,

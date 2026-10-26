@@ -21,6 +21,7 @@ import {
 import { ErroApp, acordarMaquina, enviarTecla, executarAcaoApp, situacaoDosApps, temJanelaAberta } from './apps/index.js';
 import { fecharAvisos, mostrarAviso } from './avisos/index.js';
 import { capturarMonitor } from './captura/index.js';
+import { registrarTelaControle } from './controle/index.js';
 import { definirManterLigado } from './energia.js';
 import { montarHeartbeat } from './heartbeat.js';
 import { SHA_VALIDO, dispararAtualizacao, lerEstadoAtualizacao } from './versao.js';
@@ -54,6 +55,9 @@ function exigirToken(config: ConfigAgente) {
 export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): FastifyInstance {
   const app = Fastify({ logger: false });
   const comToken = exigirToken(config);
+
+  // Sem token: a tela de controle é para quem está na frente desta máquina, e só responde em localhost.
+  registrarTelaControle(app, config);
 
   app.get('/health', async () => {
     const [heartbeat, atualizacao] = await Promise.all([

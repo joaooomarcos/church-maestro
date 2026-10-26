@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ACOES_COM_CONFIRMACAO,
   NOMES_MODOS,
   ROTAS,
+  pinDoEndereco,
   type EstadoConvidado,
   type ItemPlaylistHolyrics,
   type ModoConvidado,
@@ -77,12 +78,29 @@ export function Convidado({ token }: { token: string }) {
   const [comandos, setComandos] = useState(0);
   const [semConexao, setSemConexao] = useState(false);
 
+  // O QR da tela de controle do agente traz o PIN depois do "#". Lido uma vez e
+  // apagado da barra de endereço, para não ficar à vista nem num favorito.
+  const pinDoQr = useRef<string | null>(null);
+  if (pinDoQr.current === null && window.location.hash) {
+    pinDoQr.current = pinDoEndereco(window.location.hash);
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+
   const carregar = useCallback(async () => {
+    const lerEstado = () =>
+      apiGet<EstadoConvidado>(`${ROTAS.convidadoEstado}?token=${token}`, TEMPO_LIMITE_COMANDO_MS);
     try {
-      const atual = await apiGet<EstadoConvidado>(
-        `${ROTAS.convidadoEstado}?token=${token}`,
-        TEMPO_LIMITE_COMANDO_MS,
-      );
+      let atual: EstadoConvidado;
+      try {
+        atual = await lerEstado();
+      } catch (falha) {
+        const pin = pinDoQr.current;
+        if (!pin || !(falha instanceof ErroRequisicao && falha.status === 401)) throw falha;
+        // Entra sozinho com o PIN do QR, uma vez só. Se o PIN mudou, cai no teclado.
+        pinDoQr.current = null;
+        await apiPost(ROTAS.convidadoEntrar, { token, pin });
+        atual = await lerEstado();
+      }
       setEstado(atual);
       setPrecisaPin(false);
       setSemConexao(false);

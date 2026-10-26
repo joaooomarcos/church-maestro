@@ -276,6 +276,30 @@ Por padrão, o convidado só tem avançar e voltar. A opção **Controle complet
 Sair, Tela preta e Encerrar pedem confirmação, só para o convidado. O hub confere
 as permissões no servidor.
 
+### Tela de controle da máquina (QR sempre pronto e NDI)
+
+Cada máquina tem uma tela própria, para deixar aberta num monitor da mesa. Ela
+mostra o **QR code dos links fixos daquela máquina** e os **botões do NDI**
+dela. Quem serve a tela é o agente da própria máquina, não o painel.
+
+- **Abrir:** clique no atalho **Controle desta máquina** na área de trabalho. O
+  agente recria o atalho toda vez que sobe, então ele aparece sozinho depois da
+  atualização. A tela abre numa janela própria do Edge, sem barra de endereço.
+  Sem o atalho, o endereço é `http://localhost:8770/controle`.
+- **QR code:** aparece um para cada link fixo da máquina, com o nome e o modo.
+  **O PIN vai dentro do QR**: quem escaneia já entra controlando, sem digitar
+  nada. Para criar ou apagar QR codes, use os links fixos em **Controle remoto**.
+  A tela acompanha sozinha em até 10 segundos.
+- **Se uma foto do QR vazar:** em **Controle remoto**, toque em **Trocar PIN**
+  naquele link. Quem estava conectado cai, o QR antigo para de funcionar e a
+  tela mostra o novo sozinha.
+- **NDI:** um bloco por janela do Studio Monitor, com as fontes como botões. A
+  que está no ar fica em verde, e **Nenhuma (sem imagem)** deixa a janela
+  vazia. A troca vai direto para o Studio Monitor da própria máquina, então
+  **continua funcionando com o painel fora do ar** (só o QR depende dele).
+- **Só na própria máquina:** a tela não abre pelo IP, de outro PC ou do
+  celular. Ninguém da rede troca o NDI por ela.
+
 Tudo isso só funciona na rede da igreja.
 
 ---
@@ -773,3 +797,15 @@ chegou. Confira a olho nu na tela do OBS.
 - **O link foi excluído:** crie um novo em **Controle remoto** e mande o QR
   ou o link atualizado.
 - **A máquina foi renomeada:** o id dela mudou, e o link precisa ser recriado.
+
+### A tela de controle da máquina não mostra o QR code
+
+- **"Sem contato com o painel":** o PC Transmissão está desligado ou o hub não
+  subiu. O NDI continua funcionando pela tela; o QR volta quando o painel
+  responder.
+- **"Esta máquina ainda não tem link fixo":** crie um link fixo para ela em
+  **Compartilhar › Controle remoto**.
+- **"Não está ligada a um painel":** rode `npm.cmd run setup` nesta máquina.
+- **O atalho não apareceu:** veja `data\agent.log` (linha "não consegui criar
+  o atalho do controle"). O endereço `http://localhost:8770/controle` funciona
+  mesmo sem atalho.

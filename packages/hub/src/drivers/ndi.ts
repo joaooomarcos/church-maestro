@@ -1,5 +1,13 @@
 import { ErroDriver, type DriverNdi, type OpcoesRequisicao } from './tipos.js';
-import type { EstadoNdiMonitor } from '@maestro/shared';
+import {
+  FONTE_NDI_NENHUMA,
+  extrairFonteAtual,
+  extrairFontes,
+  type EstadoNdiMonitor,
+} from '@maestro/shared';
+
+// Os leitores das respostas moram no shared (o agente também usa); os testes os importam daqui.
+export { extrairFonteAtual, extrairFontes };
 
 /**
  * NDI Studio Monitor expõe um web control simples quando "Allow Web Control"
@@ -17,9 +25,6 @@ import type { EstadoNdiMonitor } from '@maestro/shared';
  */
 
 const TIMEOUT_PADRAO_MS = 1500;
-
-/** Valor que o Studio Monitor usa para "nenhuma fonte". */
-const FONTE_NENHUMA = '';
 
 async function requisitar(
   url: string,
@@ -54,56 +59,6 @@ async function requisitar(
       causa,
     );
   }
-}
-
-/**
- * Extrai nomes de fonte NDI de uma resposta de formato incerto. Aceita:
- * lista de strings, lista de objetos com `name`, ou objeto cujas chaves
- * agrupam essas listas (`ndi_sources`, `sources`, ...).
- */
-export function extrairFontes(dados: unknown): string[] {
-  const encontradas: string[] = [];
-
-  const coletar = (valor: unknown): void => {
-    if (typeof valor === 'string') {
-      if (valor.length > 0) encontradas.push(valor);
-      return;
-    }
-    if (Array.isArray(valor)) {
-      for (const item of valor) coletar(item);
-      return;
-    }
-    if (valor !== null && typeof valor === 'object') {
-      const obj = valor as Record<string, unknown>;
-      const nome = obj['name'] ?? obj['ndi_name'] ?? obj['source_name'];
-      if (typeof nome === 'string' && nome.length > 0) {
-        encontradas.push(nome);
-      }
-    }
-  };
-
-  if (Array.isArray(dados)) {
-    coletar(dados);
-  } else if (dados !== null && typeof dados === 'object') {
-    const obj = dados as Record<string, unknown>;
-    // Só as chaves que sabidamente contêm fontes NDI — displays e saídas de
-    // áudio também vêm nessa resposta e não devem virar opção de exibição.
-    for (const chave of ['ndi_sources', 'sources', 'NDI_sources', 'ndi']) {
-      if (chave in obj) coletar(obj[chave]);
-    }
-    if (encontradas.length === 0) coletar(obj['items']);
-  }
-
-  return [...new Set(encontradas)].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-}
-
-/** Lê a fonte selecionada de uma resposta de /v1/configuration. */
-export function extrairFonteAtual(dados: unknown): string | null {
-  if (dados === null || typeof dados !== 'object') return null;
-  const obj = dados as Record<string, unknown>;
-  const bruto = obj['NDI_source'] ?? obj['ndi_source'] ?? obj['source'];
-  if (typeof bruto !== 'string' || bruto === FONTE_NENHUMA) return null;
-  return bruto;
 }
 
 export function criarDriverNdi(): DriverNdi {
@@ -158,7 +113,7 @@ export function criarDriverNdi(): DriverNdi {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ version: 1, NDI_source: fonte ?? FONTE_NENHUMA }),
+          body: JSON.stringify({ version: 1, NDI_source: fonte ?? FONTE_NDI_NENHUMA }),
         },
         op,
         'trocar a fonte',

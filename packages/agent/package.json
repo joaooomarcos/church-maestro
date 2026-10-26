@@ -14,6 +14,10 @@
   "dependencies": {
     "@maestro/shared": "*",
     "fastify": "^5.2.0",
+    "qrcode": "^1.5.4",
     "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6"
   }
 }

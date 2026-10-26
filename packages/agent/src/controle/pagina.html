@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Controle desta máquina</title>
+    <style>
+      /* Mesmas cores do painel (tema escuro fixo: a igreja opera no escuro). */
+      :root {
+        --cor-fundo: #0b0f14;
+        --cor-fundo-elevado: #121821;
+        --cor-fundo-cartao: #182130;
+        --cor-borda: #2a3646;
+        --cor-borda-forte: #3d4f66;
+        --cor-texto: #eef3f8;
+        --cor-texto-fraco: #93a4b8;
+        --cor-sucesso: #2fa860;
+        --cor-sucesso-fundo: rgba(47, 168, 96, 0.16);
+        --cor-perigo: #e0453f;
+        --cor-aviso: #e0a83f;
+        --raio: 14px;
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--cor-fundo);
+        color: var(--cor-texto);
+        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .cabecalho {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        padding: 20px 32px 12px;
+      }
+
+      .cabecalho h1 {
+        margin: 0;
+        font-size: 1.6rem;
+      }
+
+      .cabecalho__maquina {
+        color: var(--cor-texto-fraco);
+        font-size: 1.1rem;
+      }
+
+      /* Informação: só borda, sem fundo. */
+      .faixa {
+        margin: 0 32px 12px;
+        padding: 10px 14px;
+        border: 1px solid var(--cor-aviso);
+        border-radius: var(--raio);
+        color: var(--cor-aviso);
+      }
+
+      .faixa--erro {
+        border-color: var(--cor-perigo);
+        color: var(--cor-perigo);
+      }
+
+      .faixa[hidden] {
+        display: none;
+      }
+
+      .colunas {
+        flex: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: 24px;
+        padding: 0 32px 32px;
+        min-height: 0;
+      }
+
+      .coluna {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .coluna h2 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .ajuda {
+        margin: 0;
+        color: var(--cor-texto-fraco);
+      }
+
+      .qrs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .qr {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 16px;
+        border: 1px solid var(--cor-borda);
+        border-radius: var(--raio);
+      }
+
+      .qr__imagem {
+        width: 260px;
+        height: 260px;
+        padding: 10px;
+        background: #fff;
+        border-radius: 10px;
+      }
+
+      .qr__imagem svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .qr__nome {
+        font-size: 1.15rem;
+        font-weight: 600;
+      }
+
+      .qr__modo {
+        color: var(--cor-texto-fraco);
+      }
+
+      .vazio {
+        margin: 0;
+        padding: 16px;
+        border: 1px dashed var(--cor-borda);
+        border-radius: var(--raio);
+        color: var(--cor-texto-fraco);
+      }
+
+      .janela {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px;
+        border: 1px solid var(--cor-borda);
+        border-radius: var(--raio);
+      }
+
+      .janela__titulo {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .janela__atual {
+        color: var(--cor-texto-fraco);
+        font-weight: 400;
+      }
+
+      .fontes {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+      }
+
+      /* Tocável: fundo preenchido. Verde = no ar. */
+      .fonte {
+        min-height: 64px;
+        padding: 10px 14px;
+        border: 1px solid var(--cor-borda-forte);
+        border-radius: var(--raio);
+        background: var(--cor-fundo-cartao);
+        color: var(--cor-texto);
+        font: inherit;
+        font-size: 1rem;
+        text-align: left;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+      }
+
+      .fonte:hover {
+        background: var(--cor-fundo-elevado);
+        border-color: var(--cor-texto-fraco);
+      }
+
+      .fonte:disabled {
+        cursor: progress;
+        opacity: 0.6;
+      }
+
+      .fonte--no-ar {
+        background: var(--cor-sucesso-fundo);
+        border-color: var(--cor-sucesso);
+        font-weight: 600;
+      }
+
+      .fonte--no-ar:hover {
+        background: var(--cor-sucesso-fundo);
+        border-color: var(--cor-sucesso);
+      }
+
+      .fonte--nenhuma {
+        color: var(--cor-texto-fraco);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="cabecalho">
+      <h1>Controle desta máquina</h1>
+      <span class="cabecalho__maquina" id="maquina"></span>
+    </header>
+    <p class="faixa" id="faixa-hub" hidden></p>
+    <p class="faixa faixa--erro" id="faixa-erro" hidden></p>
+    <main class="colunas">
+      <section class="coluna">
+        <h2>Passar os slides pelo celular</h2>
+        <p class="ajuda">Escaneie com a câmera do celular, no wi-fi da igreja. Já entra controlando.</p>
+        <div class="qrs" id="qrs"></div>
+      </section>
+      <section class="coluna">
+        <h2>NDI nesta máquina</h2>
+        <div id="ndi"></div>
+      </section>
+    </main>
+
+    <script>
+      const INTERVALO_MS = 2000;
+      const qrsEl = document.getElementById('qrs');
+      const ndiEl = document.getElementById('ndi');
+      const faixaHub = document.getElementById('faixa-hub');
+      const faixaErro = document.getElementById('faixa-erro');
+      /** Porta → fonte escolhida agora há pouco, até a leitura seguinte confirmar. */
+      const otimista = new Map();
+      let enviando = null;
+      let ultimoEstado = null;
+      let assinaturaQrs = '';
+
+      function el(tag, classe, texto) {
+        const no = document.createElement(tag);
+        if (classe) no.className = classe;
+        if (texto !== undefined) no.textContent = texto;
+        return no;
+      }
+
+      function mostrarErro(mensagem) {
+        faixaErro.textContent = mensagem;
+        faixaErro.hidden = !mensagem;
+      }
+
+      function desenharQrs(estado) {
+        // Só redesenha quando os links mudam: o QR não pisca a cada leitura.
+        const assinatura = JSON.stringify(estado.links.map((l) => [l.id, l.svg.length, l.nome]));
+        if (assinatura === assinaturaQrs && qrsEl.childElementCount > 0) return;
+        assinaturaQrs = assinatura;
+        qrsEl.replaceChildren();
+        if (estado.links.length === 0) {
+          const texto =
+            estado.hub === 'ok'
+              ? 'Esta máquina ainda não tem link fixo. Crie um no painel, em Compartilhar › Controle remoto.'
+              : 'Sem contato com o painel ainda: o QR code aparece assim que ele responder.';
+          qrsEl.append(el('p', 'vazio', texto));
+          return;
+        }
+        for (const link of estado.links) {
+          const cartao = el('div', 'qr');
+          const imagem = el('div', 'qr__imagem');
+          imagem.innerHTML = link.svg; // gerado pelo próprio agente
+          cartao.append(imagem, el('span', 'qr__nome', link.nome), el('span', 'qr__modo', link.modo));
+          qrsEl.append(cartao);
+        }
+      }
+
+      function botaoFonte(janela, fonte, rotulo, atual) {
+        const classes = ['fonte'];
+        if (fonte === atual) classes.push('fonte--no-ar');
+        if (fonte === null) classes.push('fonte--nenhuma');
+        const botao = el('button', classes.join(' '), rotulo);
+        botao.type = 'button';
+        botao.disabled = enviando === janela.porta;
+        botao.addEventListener('click', () => void trocar(janela.porta, fonte));
+        return botao;
+      }
+
+      function desenharNdi(estado) {
+        ndiEl.replaceChildren();
+        if (estado.ndi === null) {
+          ndiEl.append(el('p', 'vazio', 'Esta máquina não tem NDI Studio Monitor cadastrado no painel.'));
+          return;
+        }
+        if (estado.ndi.length === 0) {
+          ndiEl.append(
+            el('p', 'vazio', 'Nenhuma janela do NDI Studio Monitor respondeu. Ele está aberto, com "Allow Web Control" marcado?'),
+          );
+          return;
+        }
+        const lista = el('div', 'coluna');
+        estado.ndi.forEach((janela, indice) => {
+          const bloco = el('div', 'janela');
+          const titulo = el('h3', 'janela__titulo');
+          const atual = otimista.has(janela.porta) ? otimista.get(janela.porta) : janela.fonteAtual;
+          titulo.append(
+            el('span', '', estado.ndi.length > 1 ? `Janela ${indice + 1}` : 'Studio Monitor'),
+            el('span', 'janela__atual', janela.online ? `No ar: ${atual ?? 'nenhuma'}` : 'não respondeu'),
+          );
+          bloco.append(titulo);
+          if (!janela.online) {
+            bloco.append(el('p', 'ajuda', `A janela da porta ${janela.porta} não respondeu. O Studio Monitor está aberto?`));
+          } else {
+            const fontes = el('div', 'fontes');
+            // A fonte no ar pode ter saído da rede; ainda assim aparece.
+            const nomes = atual && !janela.fontes.includes(atual) ? [atual, ...janela.fontes] : janela.fontes;
+            for (const fonte of nomes) fontes.append(botaoFonte(janela, fonte, fonte, atual));
+            fontes.append(botaoFonte(janela, null, 'Nenhuma (sem imagem)', atual));
+            bloco.append(fontes);
+          }
+          lista.append(bloco);
+        });
+        ndiEl.append(lista);
+      }
+
+      function desenhar(estado) {
+        document.getElementById('maquina').textContent = estado.dispositivoNome;
+        faixaHub.hidden = estado.hub === 'ok';
+        faixaHub.textContent =
+          estado.hub === 'sem-hub'
+            ? 'Esta máquina não está ligada a um painel: rode "npm run setup" para o QR code aparecer.'
+            : 'Sem contato com o painel agora. O NDI continua funcionando; o QR code volta quando o painel responder.';
+        desenharQrs(estado);
+        desenharNdi(estado);
+      }
+
+      async function carregar() {
+        try {
+          const resposta = await fetch('/controle/estado', { cache: 'no-store' });
+          if (!resposta.ok) throw new Error();
+          ultimoEstado = await resposta.json();
+          // A leitura nova já traz a fonte de verdade.
+          if (enviando === null) otimista.clear();
+          desenhar(ultimoEstado);
+          if (faixaErro.dataset.conexao) {
+            delete faixaErro.dataset.conexao;
+            mostrarErro('');
+          }
+        } catch {
+          faixaErro.dataset.conexao = '1';
+          mostrarErro('O agente desta máquina não está respondendo. Ele pode estar reiniciando.');
+        }
+      }
+
+      async function trocar(porta, fonte) {
+        if (enviando !== null) return;
+        enviando = porta;
+        otimista.set(porta, fonte);
+        mostrarErro('');
+        if (ultimoEstado) desenhar(ultimoEstado);
+        try {
+          const resposta = await fetch('/controle/ndi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ porta, fonte }),
+          });
+          if (!resposta.ok) {
+            const corpo = await resposta.json().catch(() => null);
+            throw new Error(corpo?.mensagem ?? 'Não consegui trocar a fonte.');
+          }
+        } catch (err) {
+          otimista.delete(porta);
+          mostrarErro(err instanceof Error && err.message ? err.message : 'Não consegui trocar a fonte.');
+        } finally {
+          enviando = null;
+          await carregar();
+        }
+      }
+
+      void carregar();
+      setInterval(() => {
+        if (enviando === null) void carregar();
+      }, INTERVALO_MS);
+    </script>
+  </body>
+</html>

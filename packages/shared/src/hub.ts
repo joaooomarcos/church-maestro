@@ -56,6 +56,8 @@ export const ROTAS = {
   dispositivos: '/api/dispositivos',
   varredura: '/api/varredura',
   registrarAgente: '/api/agentes/registrar',
+  /** Links fixos e janelas de NDI da máquina, para a tela de controle do agente (token dos agentes). */
+  controleAgente: '/api/agentes/controle',
   pareamento: '/api/pareamento',
   versoes: '/api/versoes',
   atualizar: '/api/atualizar',
