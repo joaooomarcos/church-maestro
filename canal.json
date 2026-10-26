@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "7e56f0cababc27037f2f45509d37caa839c7bfe3",
-  "notas": "Cenários: espera personalizada, \"esperar abrir\" e relógio do Holyrics",
-  "liberadoEm": "2026-10-19",
-  "versao": "0.9.0",
+  "sha": "deb782a0052899284dce4e8e89bf1dcc6b5956bc",
+  "notas": "Aviso com tempo fecha sozinho; Controle solo: com o painel desligado, o celular fala direto com o agente; Tela de controle da máquina: QR que já entra com o …",
+  "liberadoEm": "2026-10-26",
+  "versao": "0.10.0",
   "versoes": [
+    {
+      "versao": "0.10.0",
+      "sha": "deb782a0052899284dce4e8e89bf1dcc6b5956bc",
+      "notas": "Aviso com tempo fecha sozinho; Controle solo: com o painel desligado, o celular fala direto com o agente; Tela de controle da máquina: QR que já entra com o …",
+      "data": "2026-10-26"
+    },
     {
       "versao": "0.9.0",
       "sha": "7e56f0cababc27037f2f45509d37caa839c7bfe3",
