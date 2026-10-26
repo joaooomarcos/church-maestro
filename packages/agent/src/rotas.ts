@@ -56,8 +56,9 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
   const app = Fastify({ logger: false });
   const comToken = exigirToken(config);
 
-  // Sem token: a tela de controle é para quem está na frente desta máquina, e só responde em localhost.
-  registrarTelaControle(app, config);
+  // Sem token: a tela de controle só responde em localhost, e o controle solo
+  // (celular com o hub desligado) exige o PIN solo.
+  registrarTelaControle(app, config, ponte);
 
   app.get('/health', async () => {
     const [heartbeat, atualizacao] = await Promise.all([

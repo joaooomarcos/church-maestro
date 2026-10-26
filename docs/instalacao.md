@@ -296,9 +296,24 @@ dela. Quem serve a tela é o agente da própria máquina, não o painel.
 - **NDI:** um bloco por janela do Studio Monitor, com as fontes como botões. A
   que está no ar fica em verde, e **Nenhuma (sem imagem)** deixa a janela
   vazia. A troca vai direto para o Studio Monitor da própria máquina, então
-  **continua funcionando com o painel fora do ar** (só o QR depende dele).
+  **continua funcionando com o painel fora do ar**.
+- **Painel desligado (modo solo):** quando o hub não responde, os QR dos links
+  fixos somem, porque só funcionam com ele. No lugar aparece o **Controle
+  direto**, um QR que fala com a própria máquina. Ele também leva o PIN, então
+  quem escaneia já entra. O celular ganha só **Voltar** e **Avançar**, em um dos
+  modos: PowerPoint, setas do teclado e Holyrics.
+  - O **Holyrics** só aparece se a máquina já falou com o painel alguma vez
+    depois desta versão: o token da API vem de lá e fica guardado.
+  - As janelas de NDI também ficam guardadas, então a tela continua certa
+    mesmo se o agente reiniciar com o painel desligado.
+  - O PIN do controle direto é da máquina (4 dígitos, sorteado na primeira vez)
+    e fica em `config/agent.json`. **Trocar PIN**, embaixo do QR, gera outro e
+    derruba quem estava conectado. 10 PINs errados em 5 minutos bloqueiam por
+    esse tempo.
+  - Quando o painel volta, a tela volta a mostrar os QR dos links fixos.
 - **Só na própria máquina:** a tela não abre pelo IP, de outro PC ou do
-  celular. Ninguém da rede troca o NDI por ela.
+  celular. Ninguém da rede troca o NDI nem o PIN por ela. Só o controle direto
+  (`/solo`, só Voltar e Avançar) abre para a rede, e exige o PIN.
 
 Tudo isso só funciona na rede da igreja.
 
@@ -801,11 +816,17 @@ chegou. Confira a olho nu na tela do OBS.
 ### A tela de controle da máquina não mostra o QR code
 
 - **"Sem contato com o painel":** o PC Transmissão está desligado ou o hub não
-  subiu. O NDI continua funcionando pela tela; o QR volta quando o painel
-  responder.
+  subiu. A tela mostra o **Controle direto** no lugar dos links fixos, e o NDI
+  continua funcionando.
+- **O Controle direto não tem Holyrics:** a máquina ainda não falou com o painel
+  desde esta versão. Ligue o PC Transmissão uma vez e espere a tela de controle
+  mostrar os links fixos; daí em diante o token fica guardado.
+- **"Sem endereço de rede":** a máquina está fora da rede (cabo ou wi-fi), e
+  não há endereço para pôr no QR do Controle direto.
 - **"Esta máquina ainda não tem link fixo":** crie um link fixo para ela em
   **Compartilhar › Controle remoto**.
 - **"Não está ligada a um painel":** rode `npm.cmd run setup` nesta máquina.
+  Até lá, o Controle direto funciona com PowerPoint e setas.
 - **O atalho não apareceu:** veja `data\agent.log` (linha "não consegui criar
   o atalho do controle"). O endereço `http://localhost:8770/controle` funciona
   mesmo sem atalho.

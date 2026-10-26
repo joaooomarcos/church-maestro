@@ -5,16 +5,22 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import QRCode from 'qrcode';
 import {
   CAMINHOS_CONTROLE_AGENTE,
+  CAMINHOS_SOLO,
   NOMES_MODOS,
   PORTAS_PADRAO,
   ROTAS,
   pedidoFonteNdiLocalSchema,
   respostaControleAgenteSchema,
+  urlConvidadoComPin,
   type ConfigAgente,
   type ErroApi,
   type RespostaControleAgente,
 } from '@maestro/shared';
+import { ipsLocais } from '../heartbeat.js';
+import type { PontePowerPoint } from '../ppt/tipos.js';
+import { criarMemoria, type Memoria } from './memoria.js';
 import { lerJanelaNdi, trocarFonteNdi, type JanelaNdiLocal } from './ndiLocal.js';
+import { registrarControleSolo } from './solo.js';
 
 /**
  * Tela de controle desta máquina (http://localhost:<porta>/controle): o QR code
@@ -34,7 +40,13 @@ export interface EstadoControle {
   dispositivoNome: string;
   /** 'sem-hub' = config sem hubUrl; 'fora' = o hub não respondeu na última tentativa. */
   hub: 'ok' | 'fora' | 'sem-hub';
+  /** QR dos links fixos do hub. Vazio com o hub fora: eles só funcionam com ele. */
   links: Array<{ id: string; nome: string; modo: string; svg: string }>;
+  /**
+   * Com o hub fora, o QR do controle solo (fala direto com este agente). null
+   * com o hub no ar, ou sem endereço de rede para pôr no QR.
+   */
+  solo: { svg: string; endereco: string } | null;
   /**
    * null = a máquina não tem Studio Monitor cadastrado no painel. Sem resposta
    * do hub, só as janelas que atenderam nas portas de sempre.
@@ -59,7 +71,7 @@ function recusarDeFora(req: FastifyRequest, reply: FastifyReply, done: (err?: Er
   done();
 }
 
-function criarLeitorHub(config: ConfigAgente) {
+function criarLeitorHub(config: ConfigAgente, memoria: Memoria) {
   let ultimo: RespostaControleAgente | null = null;
   let lidoEm = 0;
   let online = false;
@@ -76,6 +88,9 @@ function criarLeitorHub(config: ConfigAgente) {
       if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
       ultimo = respostaControleAgenteSchema.parse(await resposta.json());
       online = true;
+      await memoria
+        .lembrarHub({ dispositivoNome: ultimo.dispositivoNome, portasNdi: ultimo.portasNdi, holyrics: ultimo.holyrics })
+        .catch(() => {});
     } catch {
       // Fica com o que já tinha: o QR de antes continua valendo enquanto o hub volta.
       online = false;
@@ -109,19 +124,27 @@ function qrSvg(url: string): Promise<string> {
   return svg;
 }
 
-export function registrarTelaControle(app: FastifyInstance, config: ConfigAgente): void {
-  const lerHub = criarLeitorHub(config);
+export function registrarTelaControle(
+  app: FastifyInstance,
+  config: ConfigAgente,
+  ponte: PontePowerPoint,
+  memoria: Memoria = criarMemoria(config),
+): void {
+  registrarControleSolo(app, config, ponte, memoria);
+  const lerHub = criarLeitorHub(config, memoria);
   const caminhoPagina = join(dirname(fileURLToPath(import.meta.url)), 'pagina.html');
 
   async function montarEstado(): Promise<EstadoControle> {
     const { dados, online } = await lerHub();
-    // Sem resposta do hub ainda, procura nas portas de sempre e mostra só as que responderem.
-    const portas = dados ? dados.portasNdi : PORTAS_PADRAO.ndiMonitor;
+    const lembrado = memoria.hub();
+    // Sem o hub agora, vale o que ele disse da última vez; sem nem isso, as portas de sempre.
+    const conhecido = (online ? dados : null) ?? lembrado ?? null;
+    const portas = conhecido ? conhecido.portasNdi : PORTAS_PADRAO.ndiMonitor;
     const janelas = await Promise.all(portas.map(lerJanelaNdi));
-    const ndi = dados ? (portas.length > 0 ? janelas : null) : janelas.filter((j) => j.online);
+    const ndi = conhecido ? (portas.length > 0 ? janelas : null) : janelas.filter((j) => j.online);
 
     const links = await Promise.all(
-      (dados?.links ?? []).map(async (link) => ({
+      (online && dados ? dados.links : []).map(async (link) => ({
         id: link.id,
         nome: link.nome,
         modo: NOMES_MODOS[link.modo],
@@ -129,10 +152,18 @@ export function registrarTelaControle(app: FastifyInstance, config: ConfigAgente
       })),
     );
 
+    let solo: EstadoControle['solo'] = null;
+    const ip = ipsLocais()[0];
+    if (!online && ip) {
+      const endereco = `http://${ip}:${config.porta}${CAMINHOS_SOLO.pagina}`;
+      solo = { endereco, svg: await qrSvg(urlConvidadoComPin(endereco, memoria.pinSolo())) };
+    }
+
     return {
-      dispositivoNome: dados?.dispositivoNome ?? config.dispositivoId,
+      dispositivoNome: conhecido?.dispositivoNome ?? config.dispositivoId,
       hub: config.hubUrl ? (online ? 'ok' : 'fora') : 'sem-hub',
       links,
+      solo,
       ndi,
     };
   }
@@ -143,6 +174,12 @@ export function registrarTelaControle(app: FastifyInstance, config: ConfigAgente
   });
 
   app.get(CAMINHOS_CONTROLE_AGENTE.estado, { preHandler: recusarDeFora }, async () => montarEstado());
+
+  /** O QR solo leva o PIN: se uma foto dele vazar, troca aqui e o antigo para de valer. */
+  app.post(CAMINHOS_CONTROLE_AGENTE.trocarPinSolo, { preHandler: recusarDeFora }, async () => {
+    await memoria.trocarPinSolo();
+    return { ok: true };
+  });
 
   app.post(CAMINHOS_CONTROLE_AGENTE.ndi, { preHandler: recusarDeFora }, async (req, reply) => {
     const analisado = pedidoFonteNdiLocalSchema.safeParse(req.body);

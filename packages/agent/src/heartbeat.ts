@@ -50,7 +50,7 @@ function appDoProcesso(processo: string): Aplicativo | null {
 }
 
 /** IPv4 de todas as interfaces que não sejam loopback. */
-function ipsLocais(): string[] {
+export function ipsLocais(): string[] {
   const ips: string[] = [];
   for (const enderecos of Object.values(networkInterfaces())) {
     for (const info of enderecos ?? []) {

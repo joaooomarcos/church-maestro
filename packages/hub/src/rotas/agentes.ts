@@ -77,6 +77,9 @@ export function registrarRotasAgentes(app: FastifyInstance, ctx: ContextoApp): v
           url: urlConvidadoComPin(urlNaRede(ctx.config.porta, caminhoConvidado(link.token)), link.pin),
         })),
       portasNdi: dispositivo.servicos.ndiMonitor?.portas ?? [],
+      holyrics: dispositivo.servicos.holyrics
+        ? { porta: dispositivo.servicos.holyrics.porta, token: dispositivo.servicos.holyrics.token }
+        : null,
     };
     return reply.send(resposta);
   });

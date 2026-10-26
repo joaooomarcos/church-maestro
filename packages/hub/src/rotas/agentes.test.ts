@@ -79,6 +79,8 @@ describe('controle do agente', () => {
     const corpo = respostaControleAgenteSchema.parse(resposta.json());
     expect(corpo.dispositivoNome).toBe('PC Fundo');
     expect(corpo.portasNdi).toEqual([80, 81]);
+    // Sem Holyrics cadastrado, nada de token para o modo solo.
+    expect(corpo.holyrics).toBeNull();
     expect(corpo.links.map((l) => l.id)).toEqual(['a']);
     const url = new URL(corpo.links[0]!.url);
     expect(url.pathname).toBe('/convidado/token-a-xxxxxxxx');

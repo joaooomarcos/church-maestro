@@ -141,6 +141,26 @@
         color: var(--cor-texto-fraco);
       }
 
+      .qr__endereco {
+        color: var(--cor-texto-fraco);
+        font-size: 0.85rem;
+      }
+
+      /* Tocável secundário: fundo preenchido, discreto. */
+      .acao {
+        padding: 8px 14px;
+        border: 1px solid var(--cor-borda-forte);
+        border-radius: var(--raio);
+        background: var(--cor-fundo-cartao);
+        color: var(--cor-texto);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .acao:hover {
+        background: var(--cor-fundo-elevado);
+      }
+
       .vazio {
         margin: 0;
         padding: 16px;
@@ -228,7 +248,7 @@
     <main class="colunas">
       <section class="coluna">
         <h2>Passar os slides pelo celular</h2>
-        <p class="ajuda">Escaneie com a câmera do celular, no wi-fi da igreja. Já entra controlando.</p>
+        <p class="ajuda" id="ajuda-qr">Escaneie com a câmera do celular, no wi-fi da igreja. Já entra controlando.</p>
         <div class="qrs" id="qrs"></div>
       </section>
       <section class="coluna">
@@ -263,15 +283,35 @@
 
       function desenharQrs(estado) {
         // Só redesenha quando os links mudam: o QR não pisca a cada leitura.
-        const assinatura = JSON.stringify(estado.links.map((l) => [l.id, l.svg.length, l.nome]));
+        const assinatura = JSON.stringify([estado.solo?.svg, estado.links.map((l) => [l.id, l.svg, l.nome])]);
         if (assinatura === assinaturaQrs && qrsEl.childElementCount > 0) return;
         assinaturaQrs = assinatura;
         qrsEl.replaceChildren();
+        document.getElementById('ajuda-qr').textContent = estado.solo
+          ? 'Painel desligado: este QR fala direto com esta máquina. Só Voltar e Avançar.'
+          : 'Escaneie com a câmera do celular, no wi-fi da igreja. Já entra controlando.';
+        if (estado.solo) {
+          const cartao = el('div', 'qr');
+          const imagem = el('div', 'qr__imagem');
+          imagem.innerHTML = estado.solo.svg; // gerado pelo próprio agente
+          const trocar = el('button', 'acao', 'Trocar PIN');
+          trocar.type = 'button';
+          trocar.title = 'Derruba quem estiver conectado e gera um QR novo';
+          trocar.addEventListener('click', () => void trocarPinSolo());
+          cartao.append(
+            imagem,
+            el('span', 'qr__nome', 'Controle direto'),
+            el('span', 'qr__endereco', estado.solo.endereco),
+            trocar,
+          );
+          qrsEl.append(cartao);
+          return;
+        }
         if (estado.links.length === 0) {
           const texto =
             estado.hub === 'ok'
               ? 'Esta máquina ainda não tem link fixo. Crie um no painel, em Compartilhar › Controle remoto.'
-              : 'Sem contato com o painel ainda: o QR code aparece assim que ele responder.';
+              : 'Esta máquina está sem endereço de rede: confira o cabo ou o wi-fi.';
           qrsEl.append(el('p', 'vazio', texto));
           return;
         }
@@ -337,8 +377,8 @@
         faixaHub.hidden = estado.hub === 'ok';
         faixaHub.textContent =
           estado.hub === 'sem-hub'
-            ? 'Esta máquina não está ligada a um painel: rode "npm run setup" para o QR code aparecer.'
-            : 'Sem contato com o painel agora. O NDI continua funcionando; o QR code volta quando o painel responder.';
+            ? 'Esta máquina não está ligada a um painel ("npm run setup" liga). O QR abaixo controla esta máquina direto.'
+            : 'Sem contato com o painel agora. O NDI continua funcionando, e o QR abaixo controla esta máquina direto.';
         desenharQrs(estado);
         desenharNdi(estado);
       }
@@ -359,6 +399,17 @@
           faixaErro.dataset.conexao = '1';
           mostrarErro('O agente desta máquina não está respondendo. Ele pode estar reiniciando.');
         }
+      }
+
+      async function trocarPinSolo() {
+        if (!confirm('Trocar o PIN? Quem estiver controlando pelo celular cai e precisa escanear o QR novo.')) return;
+        try {
+          const resposta = await fetch('/controle/pin-solo', { method: 'POST' });
+          if (!resposta.ok) throw new Error();
+        } catch {
+          mostrarErro('Não consegui trocar o PIN.');
+        }
+        await carregar();
       }
 
       async function trocar(porta, fonte) {

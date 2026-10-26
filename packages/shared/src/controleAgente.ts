@@ -12,7 +12,23 @@ export const CAMINHOS_CONTROLE_AGENTE = {
   pagina: '/controle',
   estado: '/controle/estado',
   ndi: '/controle/ndi',
+  trocarPinSolo: '/controle/pin-solo',
 } as const;
+
+/**
+ * Controle solo: com o hub desligado, o celular fala direto com o agente. Estas
+ * rotas abrem para a rede, protegidas pelo PIN solo.
+ */
+export const CAMINHOS_SOLO = {
+  pagina: '/solo',
+  estado: '/solo/estado',
+  acao: '/solo/acao',
+} as const;
+
+export const acaoSoloSchema = z.object({
+  modo: z.enum(MODOS_CONVIDADO),
+  acao: z.enum(['proximo', 'anterior']),
+});
 
 /** O PIN vai depois do "#": o navegador não manda essa parte para o servidor nem para os logs. */
 export function urlConvidadoComPin(url: string, pin: string): string {
@@ -41,6 +57,8 @@ export const respostaControleAgenteSchema = z.object({
     .default([]),
   /** Portas das janelas do Studio Monitor desta máquina, como cadastradas no painel. */
   portasNdi: z.array(z.number().int().positive()).default([]),
+  /** API do Holyrics desta máquina: o agente guarda para o modo solo. */
+  holyrics: z.object({ porta: z.number().int().positive(), token: z.string() }).nullable().default(null),
 });
 
 export type RespostaControleAgente = z.infer<typeof respostaControleAgenteSchema>;

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0f14" />
+    <title>Controle de slides</title>
+    <style>
+      /* Mesmas cores do painel. Celular primeiro: é aqui que esta página abre. */
+      :root {
+        --cor-fundo: #0b0f14;
+        --cor-fundo-cartao: #182130;
+        --cor-fundo-elevado: #121821;
+        --cor-borda: #2a3646;
+        --cor-borda-forte: #3d4f66;
+        --cor-texto: #eef3f8;
+        --cor-texto-fraco: #93a4b8;
+        --cor-primaria: #2f7dd8;
+        --cor-perigo: #e0453f;
+        --cor-aviso: #e0a83f;
+        --raio: 14px;
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--cor-fundo);
+        color: var(--cor-texto);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button {
+        font: inherit;
+        touch-action: manipulation;
+        user-select: none;
+        cursor: pointer;
+      }
+
+      .tela {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+      }
+
+      .tela[hidden] {
+        display: none;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.4rem;
+      }
+
+      .ajuda {
+        margin: 0;
+        color: var(--cor-texto-fraco);
+      }
+
+      /* Informação: só borda. */
+      .faixa {
+        margin: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--cor-perigo);
+        border-radius: var(--raio);
+        color: var(--cor-perigo);
+      }
+
+      .faixa[hidden] {
+        display: none;
+      }
+
+      .resumo {
+        margin: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--cor-borda);
+        border-radius: var(--raio);
+        color: var(--cor-texto-fraco);
+      }
+
+      .resumo:empty {
+        display: none;
+      }
+
+      .modos {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .modo {
+        flex: 1;
+        min-height: 48px;
+        padding: 8px 12px;
+        border: 1px solid var(--cor-borda-forte);
+        border-radius: var(--raio);
+        background: var(--cor-fundo-cartao);
+        color: var(--cor-texto);
+      }
+
+      .modo--atual {
+        border-color: var(--cor-primaria);
+        background: rgba(47, 125, 216, 0.2);
+        font-weight: 600;
+      }
+
+      .botoes {
+        flex: 1;
+        display: grid;
+        grid-template-rows: 1fr 2fr;
+        gap: 12px;
+        min-height: 320px;
+      }
+
+      .botao {
+        border: none;
+        border-radius: 18px;
+        background: var(--cor-fundo-cartao);
+        color: var(--cor-texto);
+        font-size: 1.5rem;
+        font-weight: 700;
+        border: 1px solid var(--cor-borda-forte);
+      }
+
+      .botao--avancar {
+        background: var(--cor-primaria);
+        border-color: var(--cor-primaria);
+        color: #fff;
+        font-size: 2rem;
+      }
+
+      .botao:active {
+        filter: brightness(0.85);
+      }
+
+      .botao:disabled {
+        opacity: 0.6;
+      }
+
+      .pin {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .pin input {
+        padding: 14px;
+        border: 1px solid var(--cor-borda-forte);
+        border-radius: var(--raio);
+        background: var(--cor-fundo-elevado);
+        color: var(--cor-texto);
+        font-size: 1.6rem;
+        letter-spacing: 0.4em;
+        text-align: center;
+      }
+
+      .pin button {
+        min-height: 56px;
+        border: none;
+        border-radius: var(--raio);
+        background: var(--cor-primaria);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="tela" id="tela-pin" hidden>
+      <h1>Controle de slides</h1>
+      <p class="ajuda">Escaneie de novo o QR code da tela de controle da máquina: ele já entra sozinho. Quem sabe o PIN pode digitar aqui.</p>
+      <form class="pin" id="form-pin">
+        <input id="campo-pin" inputmode="numeric" autocomplete="off" maxlength="4" pattern="\d{4}" aria-label="PIN" />
+        <button type="submit">Entrar</button>
+      </form>
+      <p class="faixa" id="erro-pin" hidden></p>
+    </section>
+
+    <section class="tela" id="tela-controle" hidden>
+      <h1 id="maquina">Controle de slides</h1>
+      <p class="faixa" id="erro" hidden></p>
+      <p class="resumo" id="resumo"></p>
+      <div class="modos" id="modos"></div>
+      <div class="botoes">
+        <button type="button" class="botao" id="voltar">‹ Voltar</button>
+        <button type="button" class="botao botao--avancar" id="avancar">Avançar ›</button>
+      </div>
+    </section>
+
+    <script>
+      const CHAVE_PIN = 'maestro-solo-pin';
+      const CHAVE_MODO = 'maestro-solo-modo';
+      const INTERVALO_MS = 3000;
+
+      function lerGuardado(chave) {
+        try {
+          return localStorage.getItem(chave);
+        } catch {
+          return null;
+        }
+      }
+
+      function guardar(chave, valor) {
+        try {
+          if (valor === null) localStorage.removeItem(chave);
+          else localStorage.setItem(chave, valor);
+        } catch {
+          // Navegador sem armazenamento: o PIN vale só enquanto a página estiver aberta.
+        }
+      }
+
+      // O QR traz o PIN depois do "#". Lido uma vez e apagado da barra de endereço.
+      let pin = null;
+      const doQr = new URLSearchParams(location.hash.replace(/^#/, '')).get('pin');
+      if (doQr && /^\d{4}$/.test(doQr)) pin = doQr;
+      if (location.hash) history.replaceState(null, '', location.pathname);
+      pin = pin ?? lerGuardado(CHAVE_PIN);
+
+      let modo = lerGuardado(CHAVE_MODO);
+      let enviando = false;
+
+      const telaPin = document.getElementById('tela-pin');
+      const telaControle = document.getElementById('tela-controle');
+      const erroEl = document.getElementById('erro');
+      const erroPin = document.getElementById('erro-pin');
+
+      function mostrar(el, texto) {
+        el.textContent = texto ?? '';
+        el.hidden = !texto;
+      }
+
+      function pedirPin(mensagem) {
+        pin = null;
+        guardar(CHAVE_PIN, null);
+        telaControle.hidden = true;
+        telaPin.hidden = false;
+        mostrar(erroPin, mensagem);
+        document.getElementById('campo-pin').focus();
+      }
+
+      async function chamar(caminho, init = {}) {
+        const resposta = await fetch(caminho, {
+          ...init,
+          headers: { ...(init.headers ?? {}), 'x-maestro-pin': pin ?? '' },
+          signal: AbortSignal.timeout(5000),
+        });
+        const corpo = await resposta.json().catch(() => null);
+        if (resposta.status === 401 || resposta.status === 429) {
+          const erro = new Error(
+            resposta.status === 429 ? corpo?.mensagem : 'PIN incorreto ou trocado. Escaneie o QR de novo.',
+          );
+          erro.pin = true;
+          throw erro;
+        }
+        if (!resposta.ok) throw new Error(corpo?.mensagem ?? 'A máquina recusou o comando.');
+        return corpo;
+      }
+
+      function desenhar(estado) {
+        document.getElementById('maquina').textContent = estado.dispositivoNome;
+        document.getElementById('resumo').textContent = estado.resumo;
+        if (!estado.modos.some((m) => m.modo === modo)) modo = estado.modos[0]?.modo ?? null;
+        const modosEl = document.getElementById('modos');
+        modosEl.replaceChildren();
+        // Com um modo só não há o que escolher.
+        if (estado.modos.length > 1) {
+          for (const m of estado.modos) {
+            const botao = document.createElement('button');
+            botao.type = 'button';
+            botao.className = m.modo === modo ? 'modo modo--atual' : 'modo';
+            botao.textContent = m.nome;
+            botao.addEventListener('click', () => {
+              modo = m.modo;
+              guardar(CHAVE_MODO, modo);
+              desenhar(estado);
+            });
+            modosEl.append(botao);
+          }
+        }
+        const semModo = !modo;
+        document.getElementById('voltar').disabled = semModo;
+        document.getElementById('avancar').disabled = semModo;
+        if (semModo) mostrar(erroEl, 'Esta máquina não tem o que controlar agora.');
+      }
+
+      async function carregar() {
+        if (!pin) return pedirPin();
+        try {
+          const estado = await chamar('/solo/estado');
+          guardar(CHAVE_PIN, pin);
+          telaPin.hidden = true;
+          telaControle.hidden = false;
+          desenhar(estado);
+          if (erroEl.dataset.conexao) {
+            delete erroEl.dataset.conexao;
+            mostrar(erroEl, '');
+          }
+        } catch (err) {
+          if (err.pin) return pedirPin(err.message);
+          erroEl.dataset.conexao = '1';
+          mostrar(erroEl, 'Sem conexão com a máquina. Confira se o celular está no wi-fi da igreja.');
+        }
+      }
+
+      async function enviar(acao) {
+        if (enviando || !modo) return;
+        enviando = true;
+        navigator.vibrate?.(15);
+        try {
+          await chamar('/solo/acao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modo, acao }),
+          });
+          mostrar(erroEl, '');
+          void carregar();
+        } catch (err) {
+          if (err.pin) pedirPin(err.message);
+          else mostrar(erroEl, err.message || 'Não consegui mandar o comando.');
+        } finally {
+          enviando = false;
+        }
+      }
+
+      document.getElementById('voltar').addEventListener('click', () => void enviar('anterior'));
+      document.getElementById('avancar').addEventListener('click', () => void enviar('proximo'));
+      document.getElementById('form-pin').addEventListener('submit', (evento) => {
+        evento.preventDefault();
+        const digitado = document.getElementById('campo-pin').value.trim();
+        if (!/^\d{4}$/.test(digitado)) return mostrar(erroPin, 'O PIN tem 4 dígitos.');
+        pin = digitado;
+        void carregar();
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') void carregar();
+      });
+
+      void carregar();
+      setInterval(() => {
+        if (pin && !enviando && document.visibilityState === 'visible') void carregar();
+      }, INTERVALO_MS);
+    </script>
+  </body>
+</html>

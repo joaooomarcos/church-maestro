@@ -179,6 +179,16 @@ export const configAgenteSchema = z.object({
   caminhosApps: z.record(z.string(), z.string()).default({}),
   /** Escolha da equipe em Máquinas › Manter ligado. Fica aqui para valer depois de reiniciar. */
   manterLigado: z.boolean().default(false),
+  /** PIN do controle solo (o QR que a tela de controle mostra com o hub fora). Nasce sozinho. */
+  pinSolo: z.string().regex(/^\d{4}$/).optional(),
+  /** O que o hub informou da última vez, para o modo solo funcionar sem ele. */
+  memoriaHub: z
+    .object({
+      dispositivoNome: z.string(),
+      portasNdi: z.array(z.number().int().positive()).default([]),
+      holyrics: z.object({ porta: z.number().int().positive(), token: z.string() }).nullable().default(null),
+    })
+    .optional(),
 });
 
 export const comandoManterLigadoSchema = z.object({ ligado: z.boolean() });

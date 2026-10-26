@@ -12,6 +12,7 @@ const ativos = [
   ['packages/agent/src/avisos/aviso.ps1', 'packages/agent/dist/avisos/aviso.ps1'],
   ['packages/agent/src/captura/captura.ps1', 'packages/agent/dist/captura/captura.ps1'],
   ['packages/agent/src/controle/pagina.html', 'packages/agent/dist/controle/pagina.html'],
+  ['packages/agent/src/controle/solo.html', 'packages/agent/dist/controle/solo.html'],
 ];
 
 for (const [origem, destino] of ativos) {
