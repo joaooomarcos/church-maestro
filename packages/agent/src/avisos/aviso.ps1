@@ -126,18 +126,21 @@ function Mostrar-Aviso($texto, $idMonitor, $segundos) {
     $form.Add_KeyDown({ if ($_.KeyCode -eq 'Escape') { $form.Close() } })
 
     # Com tempo definido o aviso some sozinho, e o botao mostra quanto falta.
-    $restante = [int]$segundos
-    if ($restante -gt 0) {
-        $botao.Text = 'Ok, visto (fecha em ' + $restante + ' s)'
+    # A contagem fica numa hashtable: o bloco do Tick roda num escopo proprio, e
+    # "$restante = $restante - 1" ali criava uma copia local a cada segundo - a
+    # conta nunca chegava a zero e o aviso ficava na tela para sempre.
+    $contagem = @{ restante = [int]$segundos }
+    if ($contagem.restante -gt 0) {
+        $botao.Text = 'Ok, visto (fecha em ' + $contagem.restante + ' s)'
         $relogio = New-Object System.Windows.Forms.Timer
         $relogio.Interval = 1000
         $relogio.Add_Tick({
-            $restante = $restante - 1
-            if ($restante -le 0) {
+            $contagem.restante -= 1
+            if ($contagem.restante -le 0) {
                 $relogio.Stop()
                 $form.Close()
             } else {
-                $botao.Text = 'Ok, visto (fecha em ' + $restante + ' s)'
+                $botao.Text = 'Ok, visto (fecha em ' + $contagem.restante + ' s)'
             }
         })
         $form.Add_Shown({ $relogio.Start() })

@@ -13,6 +13,8 @@ const execFileAsync = promisify(execFile);
 const CACHE_MONITORES_MS = 2 * 60_000;
 /** Se o PowerShell cair antes disto, a janela não abriu e vale avisar o painel. */
 const ESPERA_FALHA_MS = 2500;
+/** Aviso com tempo que ainda está aberto depois disto (além do tempo) é encerrado pelo agente. */
+const FOLGA_FECHAR_MS = 5000;
 
 function localizarScript(): string {
   const aqui = dirname(fileURLToPath(import.meta.url));
@@ -87,6 +89,14 @@ function mostrarNoWindows(comando: ComandoAviso): Promise<void> {
       filho.stdout.resume();
       resolver();
     }, ESPERA_FALHA_MS);
+    // Segunda garantia do tempo: se a janela não fechar sozinha, o agente fecha.
+    const limite = comando.segundos
+      ? setTimeout(() => {
+          if (filho.exitCode === null) filho.kill();
+        }, comando.segundos * 1000 + FOLGA_FECHAR_MS)
+      : undefined;
+    limite?.unref();
+    filho.on('exit', () => clearTimeout(limite));
     filho.on('error', (erro) => {
       clearTimeout(timer);
       rejeitar(new ErroApp('Não consegui abrir a janela de aviso nesta máquina.', erro.message));

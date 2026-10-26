@@ -380,7 +380,9 @@ hora de iniciar a transmissão") para as máquinas escolhidas e, se marcado, par
 o painel de quem estiver com o celular aberto.
 
 - **Windows:** abre uma janela amarela por cima de tudo, com um som, que fica
-  até alguém clicar em **Ok, visto**.
+  até alguém clicar em **Ok, visto**. Com tempo escolhido, o botão mostra quanto
+  falta e a janela fecha sozinha. Se ela ainda estiver aberta 5 segundos depois
+  do tempo, o agente fecha.
 - **Linux (Note Som):** notificação do sistema. Se não aparecer, instale o
   `notify-send`: `sudo apt install libnotify-bin`.
 - **Painel:** o aviso cobre a tela e o celular vibra; some ao tocar em **Ok,
@@ -630,6 +632,17 @@ Depois, instale de novo a partir da **seção 1**, com o PC Transmissão primeir
   `npm run setup`. Depois do setup, reinicie o agente de verdade (mate o `node`
   dele e suba a tarefa `maestro-agent`), senão ele segue com o token antigo e o
   painel diz que o agente "recusou o token".
+
+### O aviso com tempo não fecha sozinho
+
+Até a versão 0.9.0, o aviso com tempo ficava na tela até alguém usar
+**Fechar todos**, e o botão parava em "fecha em N s". A causa estava no contador
+do `aviso.ps1`: no PowerShell, o bloco que o relógio chama a cada segundo roda
+num escopo próprio, e `$restante = $restante - 1` ali criava uma cópia local, que
+sempre recomeçava do valor inicial. A contagem agora fica numa hashtable, e o
+agente ainda encerra a janela 5 segundos depois do tempo, por garantia. Se
+voltar a acontecer, confira em **Sistema › Versões** se a máquina já está na
+versão nova.
 
 ### O ícone de ligar (Acordar)
 
