@@ -45,4 +45,5 @@ Como se conversam: web -> hub (HTTP + WebSocket, sessão por PIN); hub -> agente
 - **Máquinas só se atualizam por canal aprovado**: elas seguem `canal.json`, não o `main`. Nunca faça as máquinas seguirem `main` nem atualizem sozinhas; quem aplica é o operador em Sistema > Versões.
 - **O agente roda em Windows** (PowerShell `.ps1`, NDI, PowerPoint COM) enquanto o desenvolvimento é em **macOS**: no Mac use o modo mock e não assuma que o agente real roda aqui; cuidado com caminhos, quebras de linha e comandos específicos de Windows.
 - Não edite à mão `package-lock.json` (use `npm install`), `dist/`, `data/` nem `config/{hub,agent,devices,automacoes,convidados}.json` (config local de cada instalação, com tokens e PIN; estão no `.gitignore`).
-- Não comite sem pedido. Nunca coloque PIN, token ou segredo em código, doc ou commit.
+- Comite e faça push assim que o João aprovar a mudança (aprovação dele já vale como pedido, não precisa perguntar de novo); sem aprovação, não comite. Nunca coloque PIN, token ou segredo em código, doc ou commit.
+- **GitHub**: para PR, issue, busca de código e arquivos do repositório, prefira o MCP do GitHub (conector da conta, sem config no projeto). Use o `gh` (CLI) só para o que o MCP não cobre: Actions e logs do `publicar.yml` (`gh run ...`), releases e `gh api`.
