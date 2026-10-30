@@ -2,11 +2,12 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
-.claude/
+.claude/settings.local.json
 
 # Configuração local de cada instalação — contém tokens e PIN
 config/hub.json
 config/agent.json
+config/agent-estado.json
 config/devices.json
 config/automacoes.json
 config/convidados.json
