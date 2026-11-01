@@ -40,6 +40,9 @@ export const configHubSchema = z.object({
     .default(() => String(Math.floor(1000 + Math.random() * 9000))),
   /** Sub-rede a varrer, ex.: "192.168.0.0/24". Vazio = detecta pela interface. */
   redeVarredura: z.string().optional(),
+  /** Canal do YouTube (`UC...`) e chave da API de dados, para a verificação "YouTube sem live". */
+  youtubeCanalId: z.string().optional(),
+  youtubeChaveApi: z.string().optional(),
   intervaloPollingMs: z.number().int().positive().default(2000),
   varreduraAutomaticaMin: z.number().int().nonnegative().default(10),
 });
@@ -75,6 +78,8 @@ export const ROTAS = {
   avisoFechar: '/api/aviso/fechar',
   monitorAvisos: '/api/dispositivos/:id/monitor-avisos',
   ajustes: '/api/ajustes',
+  /** Ajustes › YouTube: consulta agora se o canal está ao vivo. POST, responde `{ aoVivo }`. */
+  youtubeTeste: '/api/ajustes/youtube/testar',
   convidadoLink: '/api/convidado/link',
   convidadoEntrar: '/api/convidado/entrar',
   convidadoEstado: '/api/convidado/estado',
@@ -152,9 +157,26 @@ export type RespostaPlaylistHolyrics = z.infer<typeof respostaPlaylistHolyricsSc
 export const ajustesSchema = z.object({
   intervaloHeartbeatMs: z.number().int().min(2000).max(120_000).optional(),
   pinConvidado: z.string().regex(/^\d{4}$/, 'O PIN do convidado deve ter exatamente 4 dígitos.').optional(),
+  /** Vazio apaga o canal. */
+  youtubeCanalId: z
+    .string()
+    .trim()
+    .max(40)
+    .refine((v) => v === '' || /^UC[\w-]{22}$/.test(v), 'O ID do canal começa com UC e tem 24 caracteres.')
+    .optional(),
+  /** Vazia ou ausente mantém a atual; para apagar use `removerYoutubeChave`. */
+  youtubeChaveApi: z.string().trim().max(200).optional(),
+  removerYoutubeChave: z.boolean().optional(),
 });
 
 export type Ajustes = z.infer<typeof ajustesSchema>;
+
+/** O que o painel recebe de volta: a chave nunca sai do hub. */
+export interface RespostaAjustes {
+  intervaloHeartbeatMs: number;
+  youtubeCanalId: string;
+  youtubeConfigurado: boolean;
+}
 
 export const acaoAppSchema = z.object({
   dispositivo: z.string(),

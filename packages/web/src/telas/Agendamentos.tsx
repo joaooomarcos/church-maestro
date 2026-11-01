@@ -4,11 +4,14 @@ import {
   ESPERA_GATILHO_OBS_PADRAO_S,
   ROTAS,
   ehGatilhoObs,
+  ehVerificacao,
   type Automacao,
   type Cenario,
   type EstadoDispositivo,
+  type CondicaoVerificacao,
   type GatilhoObs,
   type RespostaAutomacoes,
+  type Verificacao,
 } from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
 import { apiGet, apiPut } from '../nucleo/cliente';
@@ -25,6 +28,7 @@ const ORIGENS: Record<string, string> = {
   agendado: 'horário marcado',
   aoLigar: 'máquina ligou',
   obs: 'cena do OBS',
+  verificacao: 'verificação',
 };
 
 function novoHorario(cenarioId: string, base?: Automacao): Automacao {
@@ -53,9 +57,40 @@ function novoGatilho(cenarioId: string, maquinas: EstadoDispositivo[], base?: Au
   };
 }
 
+function novaVerificacao(
+  cenarioId: string,
+  condicao: CondicaoVerificacao,
+  maquinas: EstadoDispositivo[],
+  base?: Automacao,
+): Verificacao {
+  return {
+    id: base?.id ?? novoId(),
+    tipo: 'verificacao',
+    cenarioId,
+    condicao,
+    ...(condicao === 'obsSemTransmitir' ? { dispositivo: maquinas[0]?.id ?? '' } : {}),
+    dias: base?.dias ?? [0],
+    hora: '18:55',
+    ativo: base?.ativo ?? true,
+  };
+}
+
+const NOMES_CONDICAO: Record<CondicaoVerificacao, string> = {
+  obsSemTransmitir: 'OBS sem transmitir',
+  youtubeSemLive: 'YouTube sem ao vivo',
+};
+
+/** Opção escolhida em "Quando rodar". */
+function modoDe(automacao: Automacao): string {
+  if (ehGatilhoObs(automacao)) return 'obs';
+  return ehVerificacao(automacao) ? automacao.condicao : 'horario';
+}
+
 /** Título do cartão: o que dispara a automação. */
 function descreverGatilho(automacao: Automacao): string {
-  return ehGatilhoObs(automacao) ? `cena "${automacao.cena}" no ar` : automacao.hora;
+  if (ehGatilhoObs(automacao)) return `cena "${automacao.cena}" no ar`;
+  if (ehVerificacao(automacao)) return `${NOMES_CONDICAO[automacao.condicao]} às ${automacao.hora}`;
+  return automacao.hora;
 }
 
 function descreverDias(dias: number[]): string {
@@ -147,6 +182,9 @@ export function Agendamentos() {
     if (ehGatilhoObs(rascunho) && (!rascunho.dispositivo || !rascunho.cena)) {
       return notificar('Escolha a máquina e a cena do OBS.', 'alerta');
     }
+    if (ehVerificacao(rascunho) && rascunho.condicao === 'obsSemTransmitir' && !rascunho.dispositivo) {
+      return notificar('Escolha a máquina do OBS.', 'alerta');
+    }
     const existe = dados.agendamentos.some((a) => a.id === rascunho.id);
     const lista = existe
       ? dados.agendamentos.map((a) => (a.id === rascunho.id ? rascunho : a))
@@ -161,9 +199,11 @@ export function Agendamentos() {
 
   const nomeDoCenario = (id: string) => cenarios.find((c) => c.id === id);
   const maquinasObs = (snapshot?.dispositivos ?? []).filter((d) => d.obs !== undefined);
-  // A cena salva continua na lista mesmo com o OBS fechado.
-  const cenasDe = (gatilho: GatilhoObs): string[] => {
-    const cenas = maquinasObs.find((d) => d.id === gatilho.dispositivo)?.obs?.cenas ?? [];
+  const cenasDoObs = (gatilho: GatilhoObs): string[] =>
+    maquinasObs.find((d) => d.id === gatilho.dispositivo)?.obs?.cenas ?? [];
+  // A cena salva continua na lista mesmo se não estiver entre as que o OBS informou.
+  const opcoesDeCena = (gatilho: GatilhoObs): string[] => {
+    const cenas = cenasDoObs(gatilho);
     return gatilho.cena && !cenas.includes(gatilho.cena) ? [gatilho.cena, ...cenas] : cenas;
   };
 
@@ -197,17 +237,22 @@ export function Agendamentos() {
             <span className="campo__rotulo">Quando rodar</span>
             <select
               className="versoes__select"
-              value={ehGatilhoObs(rascunho) ? 'obs' : 'horario'}
-              onChange={(e) =>
+              value={modoDe(rascunho)}
+              onChange={(e) => {
+                const modo = e.target.value;
                 setRascunho(
-                  e.target.value === 'obs'
+                  modo === 'obs'
                     ? novoGatilho(rascunho.cenarioId, maquinasObs, rascunho)
-                    : novoHorario(rascunho.cenarioId, rascunho),
-                )
-              }
+                    : modo === 'obsSemTransmitir' || modo === 'youtubeSemLive'
+                      ? novaVerificacao(rascunho.cenarioId, modo, maquinasObs, rascunho)
+                      : novoHorario(rascunho.cenarioId, rascunho),
+                );
+              }}
             >
               <option value="horario">Em um horário</option>
               <option value="obs">Quando uma cena do OBS estiver no ar</option>
+              <option value="obsSemTransmitir">Verificar: OBS sem transmitir</option>
+              <option value="youtubeSemLive">Verificar: YouTube sem ao vivo</option>
             </select>
           </label>
           <label className="campo">
@@ -244,15 +289,20 @@ export function Agendamentos() {
                       </select>
                     </label>
                   ) : null}
+                  {maquinasObs.length === 0 ? (
+                    <p className="versoes__dica">
+                      Nenhuma máquina tem o OBS configurado. Rode o assistente de instalação no PC do OBS.
+                    </p>
+                  ) : null}
                   <label className="campo">
                     <span className="campo__rotulo">Cena</span>
-                    {cenasDe(rascunho).length > 0 ? (
+                    {cenasDoObs(rascunho).length > 0 ? (
                       <select
                         className="versoes__select"
                         value={rascunho.cena}
                         onChange={(e) => setRascunho({ ...rascunho, cena: e.target.value })}
                       >
-                        {cenasDe(rascunho).map((cena) => (
+                        {opcoesDeCena(rascunho).map((cena) => (
                           <option key={cena} value={cena}>
                             {cena}
                           </option>
@@ -267,6 +317,31 @@ export function Agendamentos() {
                       />
                     )}
                   </label>
+                </>
+              ) : null}
+              {ehVerificacao(rascunho) && rascunho.condicao === 'obsSemTransmitir' ? (
+                <>
+                  {maquinasObs.length > 1 ? (
+                    <label className="campo">
+                      <span className="campo__rotulo">Máquina</span>
+                      <select
+                        className="versoes__select"
+                        value={rascunho.dispositivo ?? ''}
+                        onChange={(e) => setRascunho({ ...rascunho, dispositivo: e.target.value })}
+                      >
+                        {maquinasObs.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  {maquinasObs.length === 0 ? (
+                    <p className="versoes__dica">
+                      Nenhuma máquina tem o OBS configurado. Rode o assistente de instalação no PC do OBS.
+                    </p>
+                  ) : null}
                 </>
               ) : null}
               <div className="campo">
@@ -327,8 +402,9 @@ export function Agendamentos() {
                   </p>
                 </>
               ) : (
+                <>
                 <label className="campo">
-                  <span className="campo__rotulo">Hora</span>
+                  <span className="campo__rotulo">{ehVerificacao(rascunho) ? 'Verificar às' : 'Hora'}</span>
                   <input
                     className="campo__entrada"
                     type="time"
@@ -336,6 +412,14 @@ export function Agendamentos() {
                     onChange={(e) => setRascunho({ ...rascunho, hora: e.target.value })}
                   />
                 </label>
+                {ehVerificacao(rascunho) ? (
+                  <p className="versoes__dica">
+                    {rascunho.condicao === 'obsSemTransmitir'
+                      ? 'Nesta hora, se o OBS não estiver transmitindo (ou estiver fechado), o cenário roda. Confere uma vez por dia.'
+                      : 'Nesta hora, se o canal não estiver ao vivo no YouTube, o cenário roda. Precisa do canal e da chave em Ajustes › YouTube. A live pode demorar alguns minutos para aparecer.'}
+                  </p>
+                ) : null}
+                </>
               )}
             </>
           <div className="cenario-editor__rodape">
@@ -432,7 +516,9 @@ export function Agendamentos() {
       <p className="versoes__dica">
         Os horários rodam no relógio do PC Transmissão, que precisa estar ligado e com o painel no ar na hora
         marcada; se ele ligar mais de 2 minutos depois, aquele horário é pulado até a próxima vez. O gatilho do OBS
-        não tem esse limite: conta quando a cena estiver no ar e transmitindo, a partir da hora escolhida. O que cada
+        não tem esse limite: conta quando a cena estiver no ar e transmitindo, a partir da hora escolhida. A verificação
+        olha a condição (OBS sem transmitir, YouTube sem ao vivo) na hora marcada, com a mesma tolerância dos
+        horários, e só então roda o cenário. O que cada
         máquina faz quando liga fica em Máquinas › Ao ligar, e roda mesmo com o painel desligado.
       </p>
 

@@ -174,13 +174,40 @@ export const gatilhoObsSchema = z.object({
 
 export type GatilhoObs = z.infer<typeof gatilhoObsSchema>;
 
+/** Condições que uma verificação sabe avaliar. */
+export const CONDICOES_VERIFICACAO = ['obsSemTransmitir', 'youtubeSemLive'] as const;
+export type CondicaoVerificacao = (typeof CONDICOES_VERIFICACAO)[number];
+
+/**
+ * Verificação: "em tal hora, se a condição for verdadeira, rode o cenário".
+ * Serve para o "ainda não começou a transmitir" que ninguém viu a tempo. Olha a
+ * condição uma vez só por dia, na hora marcada.
+ */
+export const verificacaoSchema = z.object({
+  id: z.string().min(1),
+  tipo: z.literal('verificacao'),
+  cenarioId: z.string().min(1),
+  condicao: z.enum(CONDICOES_VERIFICACAO),
+  /** id da máquina que roda o OBS (só para `obsSemTransmitir`). */
+  dispositivo: z.string().optional(),
+  dias: z.array(z.number().int().min(0).max(6)).min(1),
+  hora: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'hora no formato HH:MM'),
+  ativo: z.boolean().default(true),
+});
+
+export type Verificacao = z.infer<typeof verificacaoSchema>;
+
 /** Uma linha da tela de Automações. */
-export const automacaoSchema = z.union([gatilhoObsSchema, agendamentoSchema]);
+export const automacaoSchema = z.union([gatilhoObsSchema, agendamentoSchema, verificacaoSchema]);
 
 export type Automacao = z.infer<typeof automacaoSchema>;
 
 export function ehGatilhoObs(automacao: Automacao): automacao is GatilhoObs {
   return automacao.tipo === 'obs';
+}
+
+export function ehVerificacao(automacao: Automacao): automacao is Verificacao {
+  return automacao.tipo === 'verificacao';
 }
 
 /**
@@ -202,8 +229,8 @@ export const arquivoAutomacoesSchema = z.object({
 
 export type ArquivoAutomacoes = z.infer<typeof arquivoAutomacoesSchema>;
 
-/** De onde veio a execução: toque no cenário, horário marcado ou gatilho do OBS. `aoLigar` só existe nos registros da versão anterior. */
-export const ORIGENS_EXECUCAO = ['manual', 'agendado', 'aoLigar', 'obs'] as const;
+/** De onde veio a execução: toque no cenário, horário marcado, gatilho do OBS ou verificação. `aoLigar` só existe nos registros da versão anterior. */
+export const ORIGENS_EXECUCAO = ['manual', 'agendado', 'aoLigar', 'obs', 'verificacao'] as const;
 export type OrigemExecucao = (typeof ORIGENS_EXECUCAO)[number];
 
 /** Uma execução de cenário no histórico, qualquer que seja a origem. */

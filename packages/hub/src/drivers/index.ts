@@ -3,6 +3,7 @@ import { criarDriverNdi } from './ndi.js';
 import { criarDriverHolyrics } from './holyrics.js';
 import { criarDriverObs } from './obs.js';
 import { criarDriverAgente } from './agente.js';
+import { criarDriverYoutube } from './youtube.js';
 import { criarDriversMock } from './mock.js';
 
 export * from './tipos.js';
@@ -18,5 +19,6 @@ export function criarDrivers(mock: boolean, tokenAgentes?: string): Drivers {
     holyrics: criarDriverHolyrics(),
     obs: criarDriverObs(),
     agente: criarDriverAgente(tokenAgentes),
+    youtube: criarDriverYoutube(),
   };
 }

@@ -465,6 +465,38 @@ e quantos segundos esperar (padrão de 90 s):
 - Com o OBS sem responder, nada é decidido: a contagem espera ele voltar.
 - Dois cultos no mesmo dia pedem duas automações, com horários diferentes.
 
+### Verificação (conferir e, se preciso, rodar um cenário)
+
+Em **Quando rodar**, as opções **Verificar: OBS sem transmitir** e **Verificar: YouTube
+sem ao vivo** conferem uma condição na hora marcada e só então rodam o cenário (por
+exemplo, às 18:55, "se o OBS não estiver transmitindo, rode o cenário Socorro").
+
+- **OBS sem transmitir**: vale também com o OBS fechado ou a máquina sem resposta, que
+  é o pior caso. Escolha a máquina se houver mais de uma com OBS.
+- **YouTube sem ao vivo**: consulta o YouTube; precisa da configuração abaixo.
+- Confere **uma vez por dia**, na hora marcada (mesma tolerância de 2 minutos dos
+  horários). Condição falsa: aviso curto no painel e nada roda. Condição verdadeira:
+  o cenário roda e entra no histórico como "verificação".
+- Se não deu para consultar o YouTube (sem chave, sem internet, chave recusada), o
+  cenário **não roda** e o painel mostra um alerta explicando o motivo.
+
+**Configurar o YouTube** (uma vez, em Sistema › Ajustes › YouTube):
+
+1. No Google Cloud (console.cloud.google.com), crie um projeto.
+2. Em **APIs e serviços › Biblioteca**, ative a **YouTube Data API v3**.
+3. Em **Credenciais › Criar credenciais › Chave de API**. Depois, em **Restringir
+   chave**, limite a chave à **YouTube Data API v3**.
+4. O **ID do canal** começa com `UC`: no YouTube Studio, em Configurações › Canal ›
+   Configurações avançadas, aparece o "ID do canal".
+5. Em Ajustes › YouTube, cole o ID e a chave, toque em **Salvar** e depois em
+   **Testar**: o painel diz "Ao vivo agora" ou "Sem live". **Remover chave** apaga a
+   chave guardada.
+
+A chave fica só no PC Transmissão (`config/hub.json`) e nunca volta para o painel;
+deixar o campo vazio ao salvar mantém a atual. Limites: só enxerga **live pública**,
+pode **atrasar alguns minutos** para aparecer, e cada consulta custa **100 das 10.000
+unidades** diárias da cota (uma verificação por dia é irrisória).
+
 O que cada máquina faz **quando liga** não fica aqui: é a rotina **Ao ligar**
 da própria máquina (seção abaixo), que roda mesmo com o painel desligado.
 

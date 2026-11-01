@@ -422,7 +422,14 @@ export function criarDriversMock(): Drivers {
     },
   };
 
-  return { ndi, holyrics, obs, agente };
+  // MAESTRO_MOCK_YOUTUBE=1 simula o canal ao vivo; sem isso, nunca há live.
+  const youtube: Drivers['youtube'] = {
+    async aoVivo() {
+      return process.env.MAESTRO_MOCK_YOUTUBE === '1';
+    },
+  };
+
+  return { ndi, holyrics, obs, agente, youtube };
 }
 
 function estadoHolyricsMock(apresentacao: ApresentacaoMock | null): EstadoHolyrics {

@@ -5,6 +5,7 @@ import {
   ROTAS,
   type Aplicativo,
   type Ajustes as AjustesHub,
+  type RespostaAjustes,
   type DispositivoConfig,
   type EstadoDispositivo,
 } from '@maestro/shared';
@@ -24,8 +25,8 @@ function IntervaloHeartbeat() {
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    apiGet<AjustesHub>(ROTAS.ajustes)
-      .then((ajustes) => setSegundos(Math.round((ajustes.intervaloHeartbeatMs ?? 10_000) / 1000)))
+    apiGet<RespostaAjustes>(ROTAS.ajustes)
+      .then((ajustes) => setSegundos(Math.round(ajustes.intervaloHeartbeatMs / 1000)))
       .catch(() => {
         // erro já virou toast
       });
@@ -64,6 +65,119 @@ function IntervaloHeartbeat() {
       <p className="versoes__dica">
         De quanto em quanto tempo cada máquina avisa o hub que está no ar. Vale para todas; um
         intervalo menor deixa o painel mais rápido em perceber uma queda.
+      </p>
+    </section>
+  );
+}
+
+function AjustesYoutube() {
+  const { notificar } = useAppContexto();
+  const [canal, setCanal] = useState('');
+  const [chave, setChave] = useState('');
+  const [configurada, setConfigurada] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [resultado, setResultado] = useState<{ texto: string; erro: boolean } | null>(null);
+
+  function aplicar(ajustes: RespostaAjustes): void {
+    setCanal(ajustes.youtubeCanalId);
+    setConfigurada(ajustes.youtubeConfigurado);
+    setChave('');
+  }
+
+  useEffect(() => {
+    apiGet<RespostaAjustes>(ROTAS.ajustes)
+      .then(aplicar)
+      .catch(() => {
+        // erro já virou toast
+      });
+  }, []);
+
+  async function enviar(corpo: AjustesHub, aviso: string): Promise<void> {
+    setOcupado(true);
+    try {
+      aplicar(await apiPost<RespostaAjustes>(ROTAS.ajustes, corpo));
+      setResultado(null);
+      notificar(aviso, 'info');
+    } catch {
+      // erro já virou toast
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  async function testar(): Promise<void> {
+    setOcupado(true);
+    setResultado(null);
+    try {
+      const { aoVivo } = await apiPost<{ aoVivo: boolean }>(ROTAS.youtubeTeste, {});
+      setResultado({ texto: aoVivo ? 'Ao vivo agora.' : 'Sem live no momento.', erro: false });
+    } catch (erro) {
+      setResultado({ texto: erro instanceof Error ? erro.message : 'Não consegui consultar o YouTube.', erro: true });
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  return (
+    <section className="versoes__alvo">
+      <h2 className="versoes__titulo">YouTube</h2>
+      <label className="campo">
+        <span className="campo__rotulo">ID do canal</span>
+        <input
+          className="campo__entrada"
+          value={canal}
+          placeholder="UC..."
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          onChange={(e) => setCanal(e.target.value)}
+        />
+      </label>
+      <label className="campo">
+        <span className="campo__rotulo">Chave de API</span>
+        <input
+          className="campo__entrada"
+          type="password"
+          autoComplete="off"
+          value={chave}
+          placeholder={configurada ? 'Configurada' : ''}
+          onChange={(e) => setChave(e.target.value)}
+        />
+      </label>
+      <div className="cenario-editor__rodape">
+        <button
+          type="button"
+          className="botao-acao"
+          disabled={ocupado}
+          onClick={() => void enviar({ youtubeCanalId: canal.trim(), ...(chave.trim() ? { youtubeChaveApi: chave.trim() } : {}) }, 'YouTube salvo.')}
+        >
+          Salvar
+        </button>
+        <button type="button" className="botao-secundario" disabled={ocupado || !configurada} onClick={() => void testar()}>
+          Testar
+        </button>
+        {configurada ? (
+          <button
+            type="button"
+            className="botao-secundario"
+            disabled={ocupado}
+            onClick={() => {
+              if (window.confirm('Remover a chave de API do YouTube?')) void enviar({ removerYoutubeChave: true }, 'Chave removida.');
+            }}
+          >
+            Remover chave
+          </button>
+        ) : null}
+      </div>
+      {resultado ? (
+        <p className={resultado.erro ? 'cartao-info__erro' : 'versoes__dica'} role="status">
+          {resultado.texto}
+        </p>
+      ) : null}
+      <p className="versoes__dica">
+        Usado pela verificação "YouTube sem ao vivo", em Automações. A chave fica guardada só no PC Transmissão e não
+        volta para esta tela. Enxerga apenas live pública, pode atrasar alguns minutos, e cada consulta gasta 100 das
+        10.000 unidades diárias da cota.
       </p>
     </section>
   );
@@ -272,6 +386,7 @@ export function Ajustes() {
       <AjustesNdi />
       <MonitoresDosAvisos />
       <IntervaloHeartbeat />
+      <AjustesYoutube />
     </div>
   );
 }

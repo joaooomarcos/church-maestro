@@ -1,6 +1,10 @@
-import { ehGatilhoObs, type Agendamento, type ExecucaoAgendada } from '@maestro/shared';
+import { ehGatilhoObs, ehVerificacao, type Agendamento, type ExecucaoAgendada, type Verificacao } from '@maestro/shared';
 import { executarERegistrar, historicoDe } from './historico.js';
 import type { ContextoApp } from '../rotas/contexto.js';
+import { avaliarVerificacao } from './verificacoes.js';
+
+/** O que importa para o relógio: horário e dias. Vale para agendamento e verificação. */
+type ComHorario = Pick<Agendamento | Verificacao, 'dias' | 'hora' | 'ativo'>;
 
 const VERIFICAR_A_CADA_MS = 15_000;
 /**
@@ -24,7 +28,7 @@ export function chaveDoDia(data: Date): string {
 
 /** No dia certo, a partir do horário, dentro da tolerância, e uma vez só por dia. */
 export function deveRodar(
-  agendamento: Agendamento,
+  agendamento: ComHorario,
   agora: Date,
   ultimoDiaRodado: string | undefined,
 ): boolean {
@@ -36,7 +40,7 @@ export function deveRodar(
 }
 
 /** Próxima vez que o agendamento vai rodar, em até uma semana. */
-export function proximaExecucao(agendamento: Agendamento, agora: Date): number | null {
+export function proximaExecucao(agendamento: ComHorario, agora: Date): number | null {
   if (!agendamento.ativo) return null;
   for (let adiante = 0; adiante <= 7; adiante++) {
     const dia = new Date(agora);
@@ -77,6 +81,11 @@ export function criarAgendador(ctx: ContextoApp, relogio: () => Date = () => new
         if (ehGatilhoObs(agendamento)) continue;
         if (!deveRodar(agendamento, agora, ultimoDiaRodado.get(agendamento.id))) continue;
         ultimoDiaRodado.set(agendamento.id, chaveDoDia(agora));
+
+        if (ehVerificacao(agendamento)) {
+          await avaliarVerificacao(ctx, agendamento);
+          continue;
+        }
 
         const cenario = ctx.cenarios().find((c) => c.id === agendamento.cenarioId);
         if (!cenario) continue;

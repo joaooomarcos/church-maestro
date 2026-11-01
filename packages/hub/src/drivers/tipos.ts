@@ -201,9 +201,18 @@ export interface DriverAgente {
 }
 
 /** Conjunto de drivers injetado nas rotas. Em modo mock, trocado por falsos. */
+export interface DriverYoutube {
+  /**
+   * Se o canal tem uma live pública agora (YouTube Data API, consulta `search`,
+   * 100 das 10.000 unidades diárias). Pode atrasar alguns minutos.
+   */
+  aoVivo(config: { canalId: string; chaveApi: string }): Promise<boolean>;
+}
+
 export interface Drivers {
   ndi: DriverNdi;
   holyrics: DriverHolyrics;
   obs: DriverObs;
   agente: DriverAgente;
+  youtube: DriverYoutube;
 }

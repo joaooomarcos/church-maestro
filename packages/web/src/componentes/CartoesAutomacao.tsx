@@ -8,6 +8,7 @@ const ORIGENS: Record<OrigemExecucao, string> = {
   agendado: 'agendado',
   aoLigar: 'ao ligar',
   obs: 'cena do OBS',
+  verificacao: 'verificação',
 };
 
 function hora(ts: number): string {

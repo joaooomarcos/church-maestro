@@ -179,6 +179,16 @@ rodando como serviço do usuário.
 Falta testar no Windows: fechar com várias janelas do Chrome, detecção do caminho,
 Chrome em segundo plano sem janela, e o gatilho com o OBS transmitindo de verdade.
 
+## Verificação em Automações (2026-11-01) ✔ feita
+
+- Novo tipo de automação: em tal hora, se **OBS sem transmitir** ou **YouTube sem
+  live**, roda o cenário. Uma vez por dia; OBS offline conta como "sem transmitir".
+- YouTube pela Data API v3 (`search`, 100 unidades por consulta), chave só no cabeçalho
+  e só no hub; erro de consulta nunca roda o cenário, avisa com alerta.
+
+Falta testar na igreja: chave real, atraso da live aparecer na API e o fluxo com o
+OBS fechado.
+
 ## Em análise (levantado em 2026-10-18, depois do culto)
 
 - **Nome no lugar do IP.** `maestro.local` o próprio hub consegue anunciar
