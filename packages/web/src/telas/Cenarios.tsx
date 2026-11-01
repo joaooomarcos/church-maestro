@@ -5,6 +5,7 @@ import {
   ESPERA_ABRIR_PADRAO_S,
   ESPERA_MAX_MS,
   NOMES_APLICATIVOS,
+  urlPaginaSchema,
   NOMES_POSICOES_RELOGIO,
   POSICOES_RELOGIO,
   ROTAS,
@@ -33,6 +34,7 @@ const NOMES_PASSOS: Record<TipoPasso, string> = {
   'holyrics.encerrarApresentacao': 'Fechar a apresentação do Holyrics',
   'holyrics.relogio': 'Relógio do Holyrics',
   'app.acao': 'Abrir ou fechar um programa',
+  'chrome.abrir': 'Chrome: abrir uma página',
   'aviso.mostrar': 'Mostrar um aviso na tela',
   espera: 'Esperar um pouco',
 };
@@ -90,6 +92,8 @@ function passoPadrao(tipo: TipoPasso, dispositivos: EstadoDispositivo[]): AcaoCe
       const apps = appsDa(primeiro);
       return { tipo, dispositivo: primeiro?.id ?? '', app: apps.includes('holyrics') ? 'holyrics' : (apps[0] ?? 'holyrics'), acao: 'abrir' };
     }
+    case 'chrome.abrir':
+      return { tipo, dispositivo: comAgente(dispositivos)[0]?.id ?? '', url: 'https://' };
     case 'aviso.mostrar':
       return { tipo, dispositivos: [], mensagem: '', noPainel: true, monitores: {}, segundos: null };
     case 'holyrics.relogio':
@@ -379,6 +383,23 @@ function EditorPasso({
         ) : null}
       </>
     );
+  } else if (passo.tipo === 'chrome.abrir') {
+    campos = (
+      <>
+        {seletorMaquina(comAgente(dispositivos), passo.dispositivo, (id) => aoMudar({ ...passo, dispositivo: id }))}
+        <label className="campo">
+          <span className="campo__rotulo">Endereço</span>
+          <input
+            className="campo__entrada"
+            type="url"
+            inputMode="url"
+            value={passo.url}
+            onChange={(e) => aoMudar({ ...passo, url: e.target.value })}
+          />
+        </label>
+        <p className="versoes__dica">Abre numa aba nova e traz o Chrome para frente.</p>
+      </>
+    );
   } else if (passo.tipo === 'aviso.mostrar') {
     // As escolhidas continuam na lista mesmo com a máquina fora do ar.
     const maquinas = comAgente(dispositivos).map((d) => d.id);
@@ -535,6 +556,9 @@ function problemaNoRascunho(rascunho: CenarioParaSalvar): string | null {
       continue;
     }
     if (passo.tipo !== 'espera' && !passo.dispositivo) return `Escolha a máquina do passo ${indice + 1}.`;
+    if (passo.tipo === 'chrome.abrir' && !urlPaginaSchema.safeParse(passo.url).success) {
+      return `Use um endereço que comece com http:// ou https:// no passo ${indice + 1}.`;
+    }
     if (passo.tipo === 'obs.definirCena' && !passo.cena) return `Escolha a cena do passo ${indice + 1}.`;
     if (passo.tipo === 'holyrics.relogio' && passo.mostrar === null && passo.posicao === null) {
       return `Escolha o que muda no relógio do passo ${indice + 1}.`;

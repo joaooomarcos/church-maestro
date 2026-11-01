@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   ACOES_APP,
   APLICATIVOS,
+  urlPaginaSchema,
   PORTAS_PADRAO,
   servicoHolyricsSchema,
   servicoNdiMonitorSchema,
@@ -62,10 +63,15 @@ export const ROTAS = {
   versoes: '/api/versoes',
   atualizar: '/api/atualizar',
   appAcao: '/api/apps/acao',
+  appUrl: '/api/apps/url',
   aviso: '/api/aviso',
   acordar: '/api/acordar',
   manterLigado: '/api/manter-ligado',
   appsDaMaquina: '/api/dispositivos/:id/apps',
+  /** Rotina "ao ligar" da máquina, que mora no agente dela: GET lê, PUT grava (a máquina precisa estar ligada). */
+  aoLigarDaMaquina: '/api/dispositivos/:id/ao-ligar',
+  /** "Testar agora": roda a rotina na hora. */
+  aoLigarTestar: '/api/dispositivos/:id/ao-ligar/testar',
   avisoFechar: '/api/aviso/fechar',
   monitorAvisos: '/api/dispositivos/:id/monitor-avisos',
   ajustes: '/api/ajustes',
@@ -154,6 +160,11 @@ export const acaoAppSchema = z.object({
   dispositivo: z.string(),
   app: z.enum(APLICATIVOS),
   acao: z.enum(ACOES_APP),
+});
+
+export const abrirUrlSchema = z.object({
+  dispositivo: z.string(),
+  url: urlPaginaSchema,
 });
 
 /** Mandar um aviso agora — o mesmo que o passo de cenário, usado pelo "Testar". */

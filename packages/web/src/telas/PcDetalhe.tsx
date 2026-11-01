@@ -5,6 +5,7 @@ import { BlocosMaquina, ROTULO_ESTADO, estadoSemaforo } from '../componentes/Blo
 import { BotaoLigar } from '../componentes/BotaoLigar';
 import { ControleApps } from '../componentes/ControleApps';
 import { Icone } from '../componentes/Icone';
+import { RotinaAoLigarMaquina } from '../componentes/RotinaAoLigar';
 import { SeletorPc } from '../componentes/SeletorPc';
 import { Semaforo } from '../componentes/Semaforo';
 import { apiPost } from '../nucleo/cliente';
@@ -198,6 +199,8 @@ export function PcDetalhe() {
       <Rede dispositivo={atual} />
 
       <ManterLigado dispositivo={atual} />
+
+      {atual.agente ? <RotinaAoLigarMaquina dispositivo={atual} /> : null}
 
       <BlocosMaquina dispositivo={atual} />
 

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { ACOES_APP, APLICATIVOS } from './dispositivos.js';
+import { ACOES_APP, APLICATIVOS, urlPaginaSchema } from './dispositivos.js';
+import { rotinaAoLigarSchema } from './aoLigar.js';
 import { estadoAtualizacaoSchema } from './versoes.js';
 
 /**
@@ -23,6 +24,9 @@ export const comandoAppSchema = z.object({
 });
 
 export type ComandoApp = z.infer<typeof comandoAppSchema>;
+
+/** Abrir uma página no Chrome da máquina. */
+export const comandoUrlSchema = z.object({ url: urlPaginaSchema });
 
 /**
  * Seta do teclado — o controle do convidado. Sem `app`, vai para a janela que
@@ -181,6 +185,8 @@ export const configAgenteSchema = z.object({
   manterLigado: z.boolean().default(false),
   /** PIN do controle solo (o QR que a tela de controle mostra com o hub fora). Nasce sozinho. */
   pinSolo: z.string().regex(/^\d{4}$/).optional(),
+  /** Rotina "ao ligar" desta máquina. Mora aqui: o hub só lê e edita por este agente. */
+  rotinaAoLigar: rotinaAoLigarSchema.optional(),
   /** O que o hub informou da última vez, para o modo solo funcionar sem ele. */
   memoriaHub: z
     .object({

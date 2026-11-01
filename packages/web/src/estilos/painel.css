@@ -127,6 +127,18 @@
   font-weight: 600;
 }
 
+.programas__url {
+  display: flex;
+  flex-basis: 100%;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.programas__url .campo__entrada {
+  flex: 1;
+  min-width: 0;
+}
+
 .programas__ponto {
   width: 10px;
   height: 10px;

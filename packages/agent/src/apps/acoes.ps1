@@ -16,7 +16,10 @@ param(
     # So a janela principal do programa (o processo sem argumentos). O RustDesk
     # tem servico, --server, --tray e --cm rodando junto: mexer neles derrubaria
     # o acesso remoto de quem esta conectado.
-    [switch]$SoPrincipal
+    [switch]$SoPrincipal,
+    # Fecha janela por janela. O Chrome tem varias janelas num processo so e dezenas
+    # de processos sem janela: CloseMainWindow fecharia uma e deixaria as outras.
+    [switch]$TodasJanelas
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,6 +43,7 @@ public class MaestroApps {
   [DllImport("user32.dll")] public static extern int GetWindowTextLength(IntPtr hWnd);
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc cb, IntPtr lParam);
+  [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
   [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
   [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr hWnd);
   [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
@@ -125,6 +129,11 @@ $CATALOGO = @{
         "${env:ProgramFiles(x86)}\RustDesk\rustdesk.exe",
         "$env:LOCALAPPDATA\rustdesk\rustdesk.exe"
     )
+    'chrome'             = @(
+        "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+        "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+        "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
+    )
 }
 
 # Nome que aparece no atalho do Menu Iniciar, para quando o programa estiver
@@ -136,6 +145,7 @@ $ATALHOS = @{
     'ndi-studio-monitor' = 'Studio Monitor'
     'ndi-screen-capture' = 'Screen Capture'
     'rustdesk'           = 'RustDesk'
+    'chrome'             = 'Google Chrome'
 }
 
 function Resolver-Curinga($padrao) {
@@ -243,7 +253,14 @@ try {
             foreach ($processo in $alvos) {
                 # CloseMainWindow e o mesmo que clicar no X: o programa ainda
                 # pode perguntar se quer salvar. Nada de matar a forca aqui.
-                [void]$processo.CloseMainWindow()
+                if ($TodasJanelas) {
+                    # 0x10 = WM_CLOSE, o mesmo X, janela por janela.
+                    foreach ($janela in @([MaestroApps]::JanelasDoProcesso([uint32]$processo.Id))) {
+                        [void][MaestroApps]::PostMessage($janela, 0x10, [IntPtr]::Zero, [IntPtr]::Zero)
+                    }
+                } else {
+                    [void]$processo.CloseMainWindow()
+                }
             }
             Start-Sleep -Milliseconds 800
             if ($SoPrincipal) {

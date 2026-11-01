@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ACOES_APP, APLICATIVOS } from './dispositivos.js';
+import { ACOES_APP, APLICATIVOS, urlPaginaSchema } from './dispositivos.js';
 import { POSICOES_RELOGIO } from './holyricsRelogio.js';
 
 /** Espera máxima de um passo "Esperar": 5 minutos. */
@@ -50,6 +50,11 @@ export const acaoCenarioSchema = z.discriminatedUnion('tipo', [
      */
     esperarPronto: z.boolean().optional(),
     esperaMaxSegundos: z.number().int().min(5).max(600).optional(),
+  }),
+  z.object({
+    tipo: z.literal('chrome.abrir'),
+    dispositivo: z.string(),
+    url: urlPaginaSchema,
   }),
   z.object({
     tipo: z.literal('holyrics.relogio'),
@@ -146,44 +151,59 @@ export const agendamentoSchema = z.object({
 
 export type Agendamento = z.infer<typeof agendamentoSchema>;
 
-/** Espera padrão entre a máquina ligar e o cenário rodar: dá tempo de o Windows terminar de subir. */
-export const ESPERA_AO_LIGAR_PADRAO_S = 30;
+/** Quanto o gatilho do OBS espera depois de a cena entrar no ar, se ninguém mudar. */
+export const ESPERA_GATILHO_OBS_PADRAO_S = 90;
 
 /**
- * "Quando <máquina> ligar, rode <cenário>": dispara quando o agente da máquina
- * passa de offline para online, depois de `esperaSegundos`.
+ * Gatilho do OBS: "cena X no ar, transmitindo, a partir de tal hora, espere um
+ * pouco e rode o cenário". Olha o estado, não a troca de cena: se a cena entrou
+ * antes da hora, a contagem começa quando a hora chegar. Roda uma vez por dia.
  */
-export const automacaoAoLigarSchema = z.object({
+export const gatilhoObsSchema = z.object({
   id: z.string().min(1),
-  tipo: z.literal('aoLigar'),
-  dispositivo: z.string().min(1),
+  tipo: z.literal('obs'),
   cenarioId: z.string().min(1),
-  esperaSegundos: z.number().int().min(0).max(600).default(ESPERA_AO_LIGAR_PADRAO_S),
+  /** id da máquina que roda o OBS. */
+  dispositivo: z.string().min(1),
+  cena: z.string().min(1),
+  dias: z.array(z.number().int().min(0).max(6)).min(1),
+  aPartirDe: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'hora no formato HH:MM'),
+  esperaSegundos: z.number().int().min(0).max(600).default(ESPERA_GATILHO_OBS_PADRAO_S),
   ativo: z.boolean().default(true),
 });
 
-export type AutomacaoAoLigar = z.infer<typeof automacaoAoLigarSchema>;
+export type GatilhoObs = z.infer<typeof gatilhoObsSchema>;
 
-/** Cada item da lista de automações: por horário (formato antigo) ou ao ligar uma máquina. */
-export const automacaoSchema = z.union([automacaoAoLigarSchema, agendamentoSchema]);
+/** Uma linha da tela de Automações. */
+export const automacaoSchema = z.union([gatilhoObsSchema, agendamentoSchema]);
 
 export type Automacao = z.infer<typeof automacaoSchema>;
 
-export function ehAoLigar(automacao: Automacao): automacao is AutomacaoAoLigar {
-  return automacao.tipo === 'aoLigar';
+export function ehGatilhoObs(automacao: Automacao): automacao is GatilhoObs {
+  return automacao.tipo === 'obs';
+}
+
+/**
+ * Até a 0.10 o arquivo também guardava "quando <máquina> ligar" (`tipo: 'aoLigar'`).
+ * Isso passou para o agente de cada máquina; as entradas antigas são descartadas
+ * ao ler, antes de validar, para não derrubar os agendamentos por horário.
+ */
+function semAoLigarAntigo(bruto: unknown): unknown {
+  if (!Array.isArray(bruto)) return bruto;
+  return bruto.filter((item) => !(typeof item === 'object' && item !== null && (item as { tipo?: unknown }).tipo === 'aoLigar'));
 }
 
 export const arquivoAutomacoesSchema = z.object({
   /** Liga/desliga geral: desligado, nenhuma automação roda. */
   ativo: z.boolean().default(true),
   /** O nome do campo vem de quando só existiam agendamentos por horário; mantido para os arquivos antigos. */
-  agendamentos: z.array(automacaoSchema).default([]),
+  agendamentos: z.preprocess(semAoLigarAntigo, z.array(automacaoSchema)).default([]),
 });
 
 export type ArquivoAutomacoes = z.infer<typeof arquivoAutomacoesSchema>;
 
-/** De onde veio a execução: toque no cenário, horário marcado ou máquina que ligou. */
-export const ORIGENS_EXECUCAO = ['manual', 'agendado', 'aoLigar'] as const;
+/** De onde veio a execução: toque no cenário, horário marcado ou gatilho do OBS. `aoLigar` só existe nos registros da versão anterior. */
+export const ORIGENS_EXECUCAO = ['manual', 'agendado', 'aoLigar', 'obs'] as const;
 export type OrigemExecucao = (typeof ORIGENS_EXECUCAO)[number];
 
 /** Uma execução de cenário no histórico, qualquer que seja a origem. */

@@ -10,6 +10,8 @@ import { configAgenteSchema, type ConfigAgente } from '@maestro/shared';
  */
 const RAIZ_REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const CAMINHO_CONFIG = resolve(RAIZ_REPO, 'config/agent.json');
+/** O que o agente anota sozinho enquanto roda (última vez vivo, última rotina): não é escolha de ninguém. */
+const CAMINHO_ESTADO = resolve(RAIZ_REPO, 'config/agent-estado.json');
 
 export class ConfigAusente extends Error {
   constructor() {
@@ -57,4 +59,4 @@ function aplicarOverridesDeAmbiente(config: ConfigAgente): ConfigAgente {
   };
 }
 
-export { CAMINHO_CONFIG };
+export { CAMINHO_CONFIG, CAMINHO_ESTADO };

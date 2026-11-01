@@ -181,12 +181,23 @@ export interface DriverAgente {
     app: import('@maestro/shared').Aplicativo,
     op?: OpcoesRequisicao,
   ): Promise<boolean>;
+  /** A rotina "ao ligar" que mora no agente da máquina, e como foi a última vez que rodou. */
+  lerAoLigar(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<import('@maestro/shared').RespostaAoLigar>;
+  salvarAoLigar(
+    dispositivo: DispositivoConfig,
+    rotina: import('@maestro/shared').RotinaAoLigar,
+    op?: OpcoesRequisicao,
+  ): Promise<import('@maestro/shared').RespostaAoLigar>;
+  /** Manda o agente rodar a rotina agora; volta na hora, o resultado vem em `lerAoLigar`. */
+  testarAoLigar(dispositivo: DispositivoConfig, op?: OpcoesRequisicao): Promise<void>;
   /** Abre, fecha, reinicia ou traz para frente um aplicativo daquela máquina. */
   acaoApp(
     dispositivo: DispositivoConfig,
     comando: import('@maestro/shared').ComandoApp,
     op?: OpcoesRequisicao,
   ): Promise<void>;
+  /** Abre uma página no Chrome daquela máquina e traz o Chrome para frente. */
+  abrirUrl(dispositivo: DispositivoConfig, url: string, op?: OpcoesRequisicao): Promise<void>;
 }
 
 /** Conjunto de drivers injetado nas rotas. Em modo mock, trocado por falsos. */

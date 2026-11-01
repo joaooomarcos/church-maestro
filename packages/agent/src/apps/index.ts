@@ -13,6 +13,7 @@ import {
   type ConfigAgente,
   type SituacaoApp,
 } from '@maestro/shared';
+import { abrirNoNavegador } from '../aoLigar/navegador.js';
 import { EXECUTAVEL_SO_JANELA, listarProcessos } from '../processos.js';
 
 const execFileAsync = promisify(execFile);
@@ -21,6 +22,8 @@ const TIMEOUT_MS = 25_000;
 /** Programa instalado não muda de lugar no meio do culto. */
 const CACHE_CAMINHOS_MS = 10 * 60_000;
 const ESPERA_FECHAR_MS = 1500;
+/** O Chrome leva um instante para mostrar a aba; antes disso o foco volta para quem estava na frente. */
+const ESPERA_PAGINA_MS = 1000;
 
 /** Erro com mensagem pronta para a tela de quem está operando. */
 export class ErroApp extends Error {
@@ -174,6 +177,11 @@ function alvoDe(app: Aplicativo): string[] {
   return ['-Processos', processosDe(app), ...(EXECUTAVEL_SO_JANELA[app] ? ['-SoPrincipal'] : [])];
 }
 
+/** No fechar: o Chrome precisa de janela por janela (veja o `.ps1`). */
+function alvoDeFechar(app: Aplicativo): string[] {
+  return [...alvoDe(app), ...(app === 'chrome' ? ['-TodasJanelas'] : [])];
+}
+
 function processosDe(app: Aplicativo): string {
   return PROCESSOS_POR_APLICATIVO[app].join(',');
 }
@@ -222,6 +230,32 @@ export async function acordarMaquina(): Promise<void> {
   await rodarScript(['-Acao', 'acordar'], 'obs');
 }
 
+/**
+ * O Chrome pode continuar rodando sem janela nenhuma (apps em segundo plano): para
+ * ele, "aberto" é ter janela, senão o "Abrir" não faria nada.
+ */
+async function jaEstaAberto(app: Aplicativo): Promise<boolean> {
+  if (app === 'chrome') return temJanelaAberta(app);
+  return Boolean((await listarProcessos())[app]);
+}
+
+/**
+ * Abre a página numa aba nova e traz o Chrome para frente. Se a máquina não tem
+ * Chrome, a página abriu no navegador padrão e não há o que trazer.
+ */
+export async function abrirUrlNoChrome(url: string): Promise<void> {
+  try {
+    await abrirNoNavegador(url);
+  } catch (err) {
+    throw new ErroApp('Não consegui abrir a página nesta máquina.', err instanceof Error ? err.message : String(err));
+  }
+  if (platform() !== 'win32') return;
+  await new Promise((resolver) => setTimeout(resolver, ESPERA_PAGINA_MS));
+  await rodarScript(['-Acao', 'frente', ...alvoDe('chrome')], 'chrome').catch(() => {
+    // a página abriu; ficar atrás de outra janela não é falha do passo
+  });
+}
+
 export async function executarAcaoApp(
   app: Aplicativo,
   acao: AcaoApp,
@@ -230,11 +264,11 @@ export async function executarAcaoApp(
   switch (acao) {
     case 'abrir':
       // Um cenário "Pré-culto" rodado duas vezes não pode abrir dois Holyrics.
-      if ((await listarProcessos())[app]) return;
+      if (await jaEstaAberto(app)) return;
       await abrir(app, config);
       return;
     case 'fechar':
-      await rodarScript(['-Acao', 'fechar', ...alvoDe(app)], app);
+      await rodarScript(['-Acao', 'fechar', ...alvoDeFechar(app)], app);
       return;
     case 'frente':
       await rodarScript(['-Acao', 'frente', ...alvoDe(app)], app);
@@ -242,7 +276,7 @@ export async function executarAcaoApp(
     case 'reiniciar':
       // Fechar é um "clicar no X": o programa pode demorar a sair, e pode até
       // perguntar se quer salvar. Por isso espera antes de abrir de novo.
-      await rodarScript(['-Acao', 'fechar', ...alvoDe(app)], app).catch(() => {
+      await rodarScript(['-Acao', 'fechar', ...alvoDeFechar(app)], app).catch(() => {
         // já estava fechado: seguir direto para abrir
       });
       await new Promise((resolver) => setTimeout(resolver, ESPERA_FECHAR_MS));

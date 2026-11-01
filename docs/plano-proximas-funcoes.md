@@ -122,8 +122,10 @@ rodando como serviço do usuário.
   borda fina, tocável com fundo preenchido; verde = no ar.
 - **Holyrics e PowerPoint:** faixa de título com contador e barra de progresso;
   artista como texto leve; música no ar com borda verde; rodapé com Próximo e Anterior.
-- **Automações** (antes "Agendamentos"): gatilho "Quando uma máquina ligar" roda um
-  cenário depois de uma espera configurável (padrão 30 s).
+- **Automações** (antes "Agendamentos"): só horários. O "Quando uma máquina ligar"
+  do hub foi substituído pela rotina **Ao ligar** de cada máquina, que roda no
+  agente (funciona com o painel desligado) e se edita pela tela dele ou pelo
+  painel, em Máquinas; passos locais, espera padrão de 30 s.
 - **Ajustes › Programas de cada máquina:** interruptor por programa.
 - **Avisos:** tela em seções, "Enviar aviso" fixo no rodapé, resumo "Vai aparecer
   em…"; o aviso preso ficou no fim, recolhido.
@@ -163,6 +165,19 @@ rodando como serviço do usuário.
 - Rota para trocar o PIN da equipe pelo painel.
 - "Desligar" máquina pelo painel.
 - Limpar o CSS antigo não usado em `packages/web/src/estilos.css`.
+
+## Chrome e gatilho do OBS (2026-11-01) ✔ feita
+
+- **Chrome** é um programa como os outros (abrir, fechar, reiniciar, frente), mais
+  abrir página pelo painel e por cenário. Para ele, "aberto" é ter janela, e fechar
+  vai janela por janela.
+- **Gatilho do OBS** em Automações. Decidido monitorar pelo hub, sem request vindo do
+  OBS: os dois rodam na mesma máquina, então o request não cobre a queda do hub e
+  ainda exigiria plugin no OBS e rota com token. Trocar de cena não cancela a
+  contagem; parar a transmissão cancela.
+
+Falta testar no Windows: fechar com várias janelas do Chrome, detecção do caminho,
+Chrome em segundo plano sem janela, e o gatilho com o OBS transmitindo de verdade.
 
 ## Em análise (levantado em 2026-10-18, depois do culto)
 

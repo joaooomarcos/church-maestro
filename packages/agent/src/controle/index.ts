@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import QRCode from 'qrcode';
 import {
+  CAMINHOS_AO_LIGAR_LOCAL,
   CAMINHOS_CONTROLE_AGENTE,
   CAMINHOS_SOLO,
   NOMES_MODOS,
@@ -16,6 +17,8 @@ import {
   type ErroApi,
   type RespostaControleAgente,
 } from '@maestro/shared';
+import type { ServicoAoLigar } from '../aoLigar/index.js';
+import { registrarRotasAoLigar } from '../aoLigar/rotas.js';
 import { ipsLocais } from '../heartbeat.js';
 import type { PontePowerPoint } from '../ppt/tipos.js';
 import { criarMemoria, type Memoria } from './memoria.js';
@@ -129,8 +132,10 @@ export function registrarTelaControle(
   config: ConfigAgente,
   ponte: PontePowerPoint,
   memoria: Memoria = criarMemoria(config),
+  aoLigar?: ServicoAoLigar,
 ): void {
   registrarControleSolo(app, config, ponte, memoria);
+  if (aoLigar) registrarRotasAoLigar(app, aoLigar, CAMINHOS_AO_LIGAR_LOCAL, recusarDeFora);
   const lerHub = criarLeitorHub(config, memoria);
   const caminhoPagina = join(dirname(fileURLToPath(import.meta.url)), 'pagina.html');
 

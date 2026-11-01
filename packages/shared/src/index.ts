@@ -12,3 +12,4 @@ export * from './hub.js';
 export * from './legendas.js';
 export * from './ndi.js';
 export * from './controleAgente.js';
+export * from './aoLigar.js';

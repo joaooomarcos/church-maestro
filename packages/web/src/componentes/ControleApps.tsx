@@ -34,6 +34,7 @@ const NOMES_CURTOS: Record<Aplicativo, string> = {
   'ndi-studio-monitor': 'Studio Monitor',
   'ndi-screen-capture': 'Screen Capture',
   rustdesk: 'RustDesk',
+  chrome: 'Chrome',
 };
 
 /**
@@ -77,6 +78,46 @@ function terminou(pendente: Pendente, aberto: boolean, agora: number): boolean {
 /** Fechado, só faz sentido abrir; aberto, o resto. */
 function acoesPara(aberto: boolean): AcaoApp[] {
   return aberto ? ['frente', 'reiniciar', 'fechar'] : ['abrir'];
+}
+
+/** Abre uma página no Chrome da máquina; o agente traz o Chrome para frente. */
+function AbrirPagina({ dispositivo }: { dispositivo: string }) {
+  const [url, setUrl] = useState('https://');
+  const [enviando, setEnviando] = useState(false);
+
+  async function abrir(): Promise<void> {
+    vibrar(15);
+    setEnviando(true);
+    try {
+      await apiPost(ROTAS.appUrl, { dispositivo, url: url.trim() });
+    } catch {
+      // erro já virou toast pelo cliente de API
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <form
+      className="programas__url"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void abrir();
+      }}
+    >
+      <input
+        className="campo__entrada"
+        type="url"
+        inputMode="url"
+        aria-label="Endereço para abrir no Chrome"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+      />
+      <button type="submit" className="tocavel tocavel--verde programas__acao" disabled={enviando} aria-busy={enviando}>
+        Abrir página
+      </button>
+    </form>
+  );
 }
 
 export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }) {
@@ -185,6 +226,7 @@ export function ControleApps({ dispositivo }: { dispositivo: EstadoDispositivo }
                   </button>
                 ))}
               </span>
+              {app === 'chrome' ? <AbrirPagina dispositivo={dispositivo.id} /> : null}
             </li>
           );
         })}

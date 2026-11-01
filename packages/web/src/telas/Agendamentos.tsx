@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   DIAS_SEMANA,
-  ESPERA_AO_LIGAR_PADRAO_S,
+  ESPERA_GATILHO_OBS_PADRAO_S,
   ROTAS,
-  ehAoLigar,
+  ehGatilhoObs,
   type Automacao,
   type Cenario,
+  type EstadoDispositivo,
+  type GatilhoObs,
   type RespostaAutomacoes,
 } from '@maestro/shared';
 import { useAppContexto } from '../contexto/AppContext';
@@ -22,21 +24,38 @@ const ORIGENS: Record<string, string> = {
   manual: 'toque manual',
   agendado: 'horário marcado',
   aoLigar: 'máquina ligou',
+  obs: 'cena do OBS',
 };
 
-function novoHorario(cenarioId: string): Automacao {
-  return { id: novoId(), tipo: 'horario', cenarioId, dias: [0], hora: '18:50', ativo: true };
+function novoHorario(cenarioId: string, base?: Automacao): Automacao {
+  return {
+    id: base?.id ?? novoId(),
+    tipo: 'horario',
+    cenarioId,
+    dias: base?.dias ?? [0],
+    hora: '18:50',
+    ativo: base?.ativo ?? true,
+  };
 }
 
-function novoAoLigar(cenarioId: string, dispositivo: string): Automacao {
+function novoGatilho(cenarioId: string, maquinas: EstadoDispositivo[], base?: Automacao): GatilhoObs {
+  const maquina = maquinas[0];
   return {
-    id: novoId(),
-    tipo: 'aoLigar',
-    dispositivo,
+    id: base?.id ?? novoId(),
+    tipo: 'obs',
     cenarioId,
-    esperaSegundos: ESPERA_AO_LIGAR_PADRAO_S,
-    ativo: true,
+    dispositivo: maquina?.id ?? '',
+    cena: maquina?.obs?.cenaAtual ?? maquina?.obs?.cenas[0] ?? '',
+    dias: base?.dias ?? [0],
+    aPartirDe: '18:50',
+    esperaSegundos: ESPERA_GATILHO_OBS_PADRAO_S,
+    ativo: base?.ativo ?? true,
   };
+}
+
+/** Título do cartão: o que dispara a automação. */
+function descreverGatilho(automacao: Automacao): string {
+  return ehGatilhoObs(automacao) ? `cena "${automacao.cena}" no ar` : automacao.hora;
 }
 
 function descreverDias(dias: number[]): string {
@@ -124,10 +143,9 @@ export function Agendamentos() {
   async function salvarRascunho(): Promise<void> {
     if (!rascunho || !dados) return;
     if (!rascunho.cenarioId) return notificar('Escolha o cenário.', 'alerta');
-    if (ehAoLigar(rascunho)) {
-      if (!rascunho.dispositivo) return notificar('Escolha a máquina.', 'alerta');
-    } else if (rascunho.dias.length === 0) {
-      return notificar('Escolha pelo menos um dia.', 'alerta');
+    if (rascunho.dias.length === 0) return notificar('Escolha pelo menos um dia.', 'alerta');
+    if (ehGatilhoObs(rascunho) && (!rascunho.dispositivo || !rascunho.cena)) {
+      return notificar('Escolha a máquina e a cena do OBS.', 'alerta');
     }
     const existe = dados.agendamentos.some((a) => a.id === rascunho.id);
     const lista = existe
@@ -142,8 +160,12 @@ export function Agendamentos() {
   if (!dados) return <p className="painel__vazio">Carregando automações…</p>;
 
   const nomeDoCenario = (id: string) => cenarios.find((c) => c.id === id);
-  const maquinas = snapshot?.dispositivos ?? [];
-  const nomeDaMaquina = (id: string) => maquinas.find((m) => m.id === id)?.nome ?? id;
+  const maquinasObs = (snapshot?.dispositivos ?? []).filter((d) => d.obs !== undefined);
+  // A cena salva continua na lista mesmo com o OBS fechado.
+  const cenasDe = (gatilho: GatilhoObs): string[] => {
+    const cenas = maquinasObs.find((d) => d.id === gatilho.dispositivo)?.obs?.cenas ?? [];
+    return gatilho.cena && !cenas.includes(gatilho.cena) ? [gatilho.cena, ...cenas] : cenas;
+  };
 
   return (
     <div className="agendamentos">
@@ -153,7 +175,7 @@ export function Agendamentos() {
             <p className="automacoes-geral__titulo">Automações {dados.ativo ? 'ligadas' : 'desligadas'}</p>
             <p className="versoes__dica">
               {dados.ativo
-                ? 'As automações abaixo rodam sozinhas: na hora marcada ou quando a máquina escolhida ligar.'
+                ? 'As automações abaixo rodam sozinhas na hora marcada.'
                 : 'Nenhuma automação roda enquanto isto estiver desligado.'}
             </p>
           </div>
@@ -171,38 +193,23 @@ export function Agendamentos() {
           <h2 className="versoes__titulo">
             {dados.agendamentos.some((a) => a.id === rascunho.id) ? 'Editar automação' : 'Nova automação'}
           </h2>
-          <div className="campo">
-            <span className="campo__rotulo">Quando</span>
-            <div className="seletor-dias">
-              {(
-                [
-                  ['horario', 'Em um horário'],
-                  ['aoLigar', 'Quando uma máquina ligar'],
-                ] as const
-              ).map(([tipo, rotulo]) => {
-                const marcado = ehAoLigar(rascunho) === (tipo === 'aoLigar');
-                return (
-                  <button
-                    key={tipo}
-                    type="button"
-                    aria-pressed={marcado}
-                    className={`seletor-dias__dia${marcado ? ' seletor-dias__dia--marcado' : ''}`}
-                    onClick={() => {
-                      if (marcado) return;
-                      const base = { id: rascunho.id, cenarioId: rascunho.cenarioId, ativo: rascunho.ativo };
-                      setRascunho(
-                        tipo === 'aoLigar'
-                          ? { ...novoAoLigar(base.cenarioId, maquinas[0]?.id ?? ''), ...base }
-                          : { ...novoHorario(base.cenarioId), ...base },
-                      );
-                    }}
-                  >
-                    {rotulo}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <label className="campo">
+            <span className="campo__rotulo">Quando rodar</span>
+            <select
+              className="versoes__select"
+              value={ehGatilhoObs(rascunho) ? 'obs' : 'horario'}
+              onChange={(e) =>
+                setRascunho(
+                  e.target.value === 'obs'
+                    ? novoGatilho(rascunho.cenarioId, maquinasObs, rascunho)
+                    : novoHorario(rascunho.cenarioId, rascunho),
+                )
+              }
+            >
+              <option value="horario">Em um horário</option>
+              <option value="obs">Quando uma cena do OBS estiver no ar</option>
+            </select>
+          </label>
           <label className="campo">
             <span className="campo__rotulo">Cenário</span>
             <select
@@ -218,43 +225,50 @@ export function Agendamentos() {
               ))}
             </select>
           </label>
-          {ehAoLigar(rascunho) ? (
-            <>
-              <label className="campo">
-                <span className="campo__rotulo">Máquina</span>
-                <select
-                  className="versoes__select"
-                  value={rascunho.dispositivo}
-                  onChange={(e) => setRascunho({ ...rascunho, dispositivo: e.target.value })}
-                >
-                  <option value="">Escolha…</option>
-                  {maquinas.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nome}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="campo">
-                <span className="campo__rotulo">Esperar depois de ligar (segundos)</span>
-                <input
-                  className="campo__entrada"
-                  type="number"
-                  min={0}
-                  max={600}
-                  value={rascunho.esperaSegundos}
-                  onChange={(e) => {
-                    const valor = Math.round(Number(e.target.value));
-                    setRascunho({
-                      ...rascunho,
-                      esperaSegundos: Number.isFinite(valor) ? Math.min(600, Math.max(0, valor)) : 0,
-                    });
-                  }}
-                />
-              </label>
-            </>
-          ) : (
-            <>
+          <>
+              {ehGatilhoObs(rascunho) ? (
+                <>
+                  {maquinasObs.length > 1 ? (
+                    <label className="campo">
+                      <span className="campo__rotulo">Máquina</span>
+                      <select
+                        className="versoes__select"
+                        value={rascunho.dispositivo}
+                        onChange={(e) => setRascunho({ ...rascunho, dispositivo: e.target.value })}
+                      >
+                        {maquinasObs.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  <label className="campo">
+                    <span className="campo__rotulo">Cena</span>
+                    {cenasDe(rascunho).length > 0 ? (
+                      <select
+                        className="versoes__select"
+                        value={rascunho.cena}
+                        onChange={(e) => setRascunho({ ...rascunho, cena: e.target.value })}
+                      >
+                        {cenasDe(rascunho).map((cena) => (
+                          <option key={cena} value={cena}>
+                            {cena}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        className="campo__entrada"
+                        value={rascunho.cena}
+                        placeholder="Nome exato da cena no OBS"
+                        onChange={(e) => setRascunho({ ...rascunho, cena: e.target.value })}
+                      />
+                    )}
+                  </label>
+                </>
+              ) : null}
               <div className="campo">
                 <span className="campo__rotulo">Dias</span>
                 <div className="seletor-dias">
@@ -279,17 +293,51 @@ export function Agendamentos() {
                   })}
                 </div>
               </div>
-              <label className="campo">
-                <span className="campo__rotulo">Hora</span>
-                <input
-                  className="campo__entrada"
-                  type="time"
-                  value={rascunho.hora}
-                  onChange={(e) => setRascunho({ ...rascunho, hora: e.target.value })}
-                />
-              </label>
+              {ehGatilhoObs(rascunho) ? (
+                <>
+                  <label className="campo">
+                    <span className="campo__rotulo">A partir de</span>
+                    <input
+                      className="campo__entrada"
+                      type="time"
+                      value={rascunho.aPartirDe}
+                      onChange={(e) => setRascunho({ ...rascunho, aPartirDe: e.target.value })}
+                    />
+                  </label>
+                  <label className="campo">
+                    <span className="campo__rotulo">Esperar antes de rodar (segundos)</span>
+                    <input
+                      className="campo__entrada"
+                      type="number"
+                      min={0}
+                      max={600}
+                      value={rascunho.esperaSegundos}
+                      onChange={(e) => {
+                        const valor = Math.round(Number(e.target.value));
+                        setRascunho({
+                          ...rascunho,
+                          esperaSegundos: Number.isFinite(valor) ? Math.min(600, Math.max(0, valor)) : ESPERA_GATILHO_OBS_PADRAO_S,
+                        });
+                      }}
+                    />
+                  </label>
+                  <p className="versoes__dica">
+                    Conta com a cena no ar e o OBS transmitindo. Depois que a contagem começa, trocar de cena não
+                    cancela; parar a transmissão cancela. Roda uma vez por dia.
+                  </p>
+                </>
+              ) : (
+                <label className="campo">
+                  <span className="campo__rotulo">Hora</span>
+                  <input
+                    className="campo__entrada"
+                    type="time"
+                    value={rascunho.hora}
+                    onChange={(e) => setRascunho({ ...rascunho, hora: e.target.value })}
+                  />
+                </label>
+              )}
             </>
-          )}
           <div className="cenario-editor__rodape">
             <button type="button" className="botao-acao" disabled={salvando} onClick={() => void salvarRascunho()}>
               {salvando ? 'Salvando…' : 'Salvar automação'}
@@ -307,7 +355,6 @@ export function Agendamentos() {
             <ul className="lista-cenarios">
               {dados.agendamentos.map((agendamento) => {
                 const cenario = nomeDoCenario(agendamento.cenarioId);
-                const aoLigar = ehAoLigar(agendamento);
                 const proxima = dados.proximas[agendamento.id];
                 return (
                   <li
@@ -319,13 +366,11 @@ export function Agendamentos() {
                     </span>
                     <div className="cartao-cenario__texto">
                       <p className="cartao-cenario__nome">
-                        {aoLigar
-                          ? `Quando ${nomeDaMaquina(agendamento.dispositivo)} ligar`
-                          : `${cenario?.nome ?? 'Cenário removido'} · ${agendamento.hora}`}
+                        {`${cenario?.nome ?? 'Cenário removido'} · ${descreverGatilho(agendamento)}`}
                       </p>
                       <p className="cartao-cenario__descricao">
-                        {aoLigar
-                          ? `→ ${cenario?.nome ?? 'Cenário removido'} (espera ${agendamento.esperaSegundos} s)`
+                        {ehGatilhoObs(agendamento)
+                          ? `${descreverDias(agendamento.dias)} — a partir de ${agendamento.aPartirDe}, depois de ${agendamento.esperaSegundos} s`
                           : `${descreverDias(agendamento.dias)}${proxima ? ` — próximo: ${descreverQuando(proxima)}` : ''}`}
                       </p>
                     </div>
@@ -386,9 +431,9 @@ export function Agendamentos() {
 
       <p className="versoes__dica">
         Os horários rodam no relógio do PC Transmissão, que precisa estar ligado e com o painel no ar na hora
-        marcada; se ele ligar mais de 2 minutos depois, aquele horário é pulado até a próxima vez. Já o
-        "quando uma máquina ligar" vale só depois de a máquina ficar pelo menos 1 minuto desligada, e não
-        dispara quando o próprio painel é reiniciado com a máquina já ligada.
+        marcada; se ele ligar mais de 2 minutos depois, aquele horário é pulado até a próxima vez. O gatilho do OBS
+        não tem esse limite: conta quando a cena estiver no ar e transmitindo, a partir da hora escolhida. O que cada
+        máquina faz quando liga fica em Máquinas › Ao ligar, e roda mesmo com o painel desligado.
       </p>
 
       {dados.historico.length > 0 ? (

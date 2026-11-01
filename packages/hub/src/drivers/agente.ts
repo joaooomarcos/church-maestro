@@ -1,5 +1,5 @@
 import { ErroDriver, type DriverAgente, type OpcoesRequisicao } from './tipos.js';
-import { capturaMonitorSchema } from '@maestro/shared';
+import { CAMINHOS_AO_LIGAR, capturaMonitorSchema, respostaAoLigarSchema } from '@maestro/shared';
 import type {
   DispositivoConfig,
   EstadoAgente,
@@ -18,6 +18,15 @@ import type {
  */
 
 const TIMEOUT_PADRAO_MS = 1500;
+
+/** Agente de antes da 0.11 não tem a rotina: o 404 já foi traduzido em `pedir`; aqui só a resposta torta. */
+function parseAoLigar(bruta: unknown, nome: string) {
+  const analisada = respostaAoLigarSchema.safeParse(bruta);
+  if (!analisada.success) {
+    throw new ErroDriver(`O agente do ${nome} devolveu a rotina "ao ligar" num formato que não entendi. Atualize o agente dessa máquina.`);
+  }
+  return analisada.data;
+}
 
 async function pedir<T>(
   dispositivo: DispositivoConfig,
@@ -168,6 +177,21 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
       );
     },
 
+    async abrirUrl(dispositivo, url, op): Promise<void> {
+      await pedir<{ ok: boolean }>(
+        dispositivo,
+        '/apps/url',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ url }),
+        },
+        // Abre um PowerShell para o Chrome e outro para trazê-lo para frente.
+        { timeoutMs: 30_000, ...(op ?? {}) },
+        tokenPadrao,
+      );
+    },
+
     async mostrarAviso(dispositivo, comando, op): Promise<void> {
       await pedir<{ ok: boolean }>(
         dispositivo,
@@ -225,6 +249,32 @@ export function criarDriverAgente(tokenPadrao?: string): DriverAgente {
         tokenPadrao,
       );
       return resposta.ligado;
+    },
+
+    async lerAoLigar(dispositivo, op) {
+      const bruta = await pedir<unknown>(dispositivo, CAMINHOS_AO_LIGAR.rotina, { method: 'GET' }, { timeoutMs: 5000, ...(op ?? {}) }, tokenPadrao);
+      return parseAoLigar(bruta, dispositivo.nome);
+    },
+
+    async salvarAoLigar(dispositivo, rotina, op) {
+      const bruta = await pedir<unknown>(
+        dispositivo,
+        CAMINHOS_AO_LIGAR.rotina,
+        { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(rotina) },
+        { timeoutMs: 8000, ...(op ?? {}) },
+        tokenPadrao,
+      );
+      return parseAoLigar(bruta, dispositivo.nome);
+    },
+
+    async testarAoLigar(dispositivo, op) {
+      await pedir<unknown>(
+        dispositivo,
+        CAMINHOS_AO_LIGAR.testar,
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' },
+        { timeoutMs: 8000, ...(op ?? {}) },
+        tokenPadrao,
+      );
     },
 
     async fecharAvisos(dispositivo, op): Promise<void> {

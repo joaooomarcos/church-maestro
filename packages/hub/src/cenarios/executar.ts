@@ -33,6 +33,8 @@ export function descreverAcao(acao: AcaoCenario, ctx?: Pick<ContextoApp, 'obterD
       return `Holyrics ${nome(acao.dispositivo)} → fechar apresentação`;
     case 'app.acao':
       return `${nome(acao.dispositivo)} → ${VERBOS_APP[acao.acao]} o ${NOMES_APLICATIVOS[acao.app]}${esperaPronto(acao) ? ' e esperar ficar pronto' : ''}`;
+    case 'chrome.abrir':
+      return `${nome(acao.dispositivo)} → abrir no Chrome: ${acao.url}`;
     case 'holyrics.relogio': {
       const partes: string[] = [];
       if (acao.mostrar !== null) partes.push(acao.mostrar ? 'mostrar' : 'esconder');
@@ -132,6 +134,9 @@ async function executarAcao(ctx: ContextoApp, acao: AcaoCenario, intervaloPronto
       if (esperaPronto(acao)) {
         await esperarFicarPronto(ctx, dispositivo, acao.app, acao.esperaMaxSegundos ?? ESPERA_ABRIR_PADRAO_S, intervaloPronto);
       }
+      return;
+    case 'chrome.abrir':
+      await ctx.drivers.agente.abrirUrl(dispositivo, acao.url);
       return;
     case 'holyrics.relogio':
       await ctx.drivers.holyrics.definirRelogio(dispositivo, {

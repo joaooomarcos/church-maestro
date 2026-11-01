@@ -7,7 +7,9 @@ import Fastify, {
   type FastifyRequest,
 } from 'fastify';
 import {
+  CAMINHOS_AO_LIGAR,
   comandoAppSchema,
+  comandoUrlSchema,
   comandoAvisoSchema,
   comandoManterLigadoSchema,
   comandoTeclaSchema,
@@ -18,7 +20,10 @@ import {
   type ConfigAgente,
   type ErroApi,
 } from '@maestro/shared';
-import { ErroApp, acordarMaquina, enviarTecla, executarAcaoApp, situacaoDosApps, temJanelaAberta } from './apps/index.js';
+import type { ServicoAoLigar } from './aoLigar/index.js';
+import { registrarRotasAoLigar } from './aoLigar/rotas.js';
+import type { Memoria } from './controle/memoria.js';
+import { ErroApp, abrirUrlNoChrome, acordarMaquina, enviarTecla, executarAcaoApp, situacaoDosApps, temJanelaAberta } from './apps/index.js';
 import { fecharAvisos, mostrarAviso } from './avisos/index.js';
 import { capturarMonitor } from './captura/index.js';
 import { registrarTelaControle } from './controle/index.js';
@@ -52,13 +57,20 @@ function exigirToken(config: ConfigAgente) {
   };
 }
 
-export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): FastifyInstance {
+export interface ExtrasServidor {
+  memoria?: Memoria;
+  aoLigar?: ServicoAoLigar;
+}
+
+export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint, extras: ExtrasServidor = {}): FastifyInstance {
   const app = Fastify({ logger: false });
   const comToken = exigirToken(config);
 
   // Sem token: a tela de controle só responde em localhost, e o controle solo
   // (celular com o hub desligado) exige o PIN solo.
-  registrarTelaControle(app, config, ponte);
+  registrarTelaControle(app, config, ponte, extras.memoria, extras.aoLigar);
+  // O hub edita a rotina por aqui, com o token dos agentes; a rotina em si mora nesta máquina.
+  if (extras.aoLigar) registrarRotasAoLigar(app, extras.aoLigar, CAMINHOS_AO_LIGAR, comToken);
 
   app.get('/health', async () => {
     const [heartbeat, atualizacao] = await Promise.all([
@@ -140,6 +152,27 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
 
     try {
       await executarAcaoApp(analisado.data.app, analisado.data.acao, config);
+      return { ok: true };
+    } catch (err) {
+      if (err instanceof ErroApp) {
+        const corpo: ErroApi = { erro: 'falha-app', mensagem: err.message, detalhe: err.causaTecnica };
+        reply.code(502).send(corpo);
+        return;
+      }
+      throw err;
+    }
+  });
+
+  app.post('/apps/url', { preHandler: comToken }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const analisado = comandoUrlSchema.safeParse(req.body);
+    if (!analisado.success) {
+      const corpo: ErroApi = { erro: 'comando-invalido', mensagem: 'Use um endereço que comece com http:// ou https://' };
+      reply.code(400).send(corpo);
+      return;
+    }
+
+    try {
+      await abrirUrlNoChrome(analisado.data.url);
       return { ok: true };
     } catch (err) {
       if (err instanceof ErroApp) {
@@ -301,8 +334,12 @@ export function criarServidor(config: ConfigAgente, ponte: PontePowerPoint): Fas
   return app;
 }
 
-export async function iniciarServidor(config: ConfigAgente, ponte: PontePowerPoint): Promise<FastifyInstance> {
-  const app = criarServidor(config, ponte);
+export async function iniciarServidor(
+  config: ConfigAgente,
+  ponte: PontePowerPoint,
+  extras: ExtrasServidor = {},
+): Promise<FastifyInstance> {
+  const app = criarServidor(config, ponte, extras);
   await app.listen({ host: '0.0.0.0', port: config.porta });
   return app;
 }

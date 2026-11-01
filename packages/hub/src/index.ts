@@ -8,7 +8,7 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import type { ErroApi } from '@maestro/shared';
 
-import { carregarConfiguracao } from './config.js';
+import { carregarConfiguracao, raizRepo } from './config.js';
 import { registrarAutenticacao } from './auth.js';
 import { Store } from './estado/store.js';
 import { Poller } from './estado/poller.js';
@@ -19,8 +19,8 @@ import { registrarRotasChecks } from './checks/index.js';
 import { criarAreaCompartilhada } from './compartilhar.js';
 import { registrarRotasCompartilhar } from './rotas/compartilhar.js';
 import { criarAgendador } from './automacoes/agendador.js';
+import { criarMonitorObs } from './automacoes/gatilhoObs.js';
 import { normalizarPinsConvidado } from './pinsConvidado.js';
-import { criarGatilhoAoLigar } from './automacoes/aoLigar.js';
 import { registrarRotasAutomacoes } from './rotas/automacoes.js';
 import { criarAtualizadorAoLigar } from './legendas/atualizarAoLigar.js';
 
@@ -105,9 +105,6 @@ async function principal(): Promise<void> {
       });
     },
   });
-  // Observa antes do primeiro ciclo do poller: a primeira leitura é só o ponto de partida.
-  const gatilhoAoLigar = criarGatilhoAoLigar(ctx);
-  gatilhoAoLigar.iniciar();
   // Fontes de legenda do OBS atualizadas sozinhas quando um Holyrics liga.
   const legendasAoLigar = criarAtualizadorAoLigar({
     dispositivos: () => ctx.dispositivos(),
@@ -119,9 +116,12 @@ async function principal(): Promise<void> {
       store.transmitirMensagem({ tipo: 'aviso', nivel, texto });
     },
   });
+  const monitorObs = criarMonitorObs(ctx, { caminhoMarcas: path.join(raizRepo, 'data', 'gatilhos-obs.json') });
+  await monitorObs.carregar();
   legendasAoLigar.iniciar();
   poller.iniciar();
   agendador.iniciar();
+  monitorObs.iniciar(configuracao.hub.intervaloPollingMs);
 
   await app.listen({ port: configuracao.hub.porta, host: '0.0.0.0' });
 
@@ -132,8 +132,8 @@ async function principal(): Promise<void> {
     app.log.info(`recebido ${sinal}, encerrando…`);
     poller.parar();
     agendador.parar();
+    monitorObs.parar();
     legendasAoLigar.parar();
-    gatilhoAoLigar.parar();
     void drivers.obs
       .encerrar()
       .catch((erro: unknown) => app.log.warn({ erro }, 'falha ao encerrar driver do OBS'))

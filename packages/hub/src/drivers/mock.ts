@@ -1,4 +1,4 @@
-import { ALTURA_AMOSTRA, LARGURA_AMOSTRA } from '@maestro/shared';
+import { ALTURA_AMOSTRA, LARGURA_AMOSTRA, respostaAoLigarSchema, rotinaAoLigarSchema } from '@maestro/shared';
 import type {
   CapturaMonitor,
   ComandoPpt,
@@ -10,6 +10,7 @@ import type {
   EstadoObs,
   EstadoPowerPoint,
   ItemPlaylistHolyrics,
+  RespostaAoLigar,
   StatusPpt,
 } from '@maestro/shared';
 import type { Drivers, GatilhoHolyrics } from './tipos.js';
@@ -337,12 +338,35 @@ export function criarDriversMock(): Drivers {
   }
 
   const mantidosLigados = new Set<string>();
+  const rotinasAoLigar = new Map<string, RespostaAoLigar>();
+  const rotinaDe = (id: string): RespostaAoLigar =>
+    rotinasAoLigar.get(id) ?? respostaAoLigarSchema.parse({ rotina: {} });
 
   const agente: Drivers['agente'] = {
     async ler(dispositivo) {
       const estado = estadoAgenteMock(dispositivo, inicioProcesso);
       // Só as máquinas Windows oferecem "Manter ligado".
       return estado.so === 'windows' ? { ...estado, manterLigado: mantidosLigados.has(dispositivo.id) } : estado;
+    },
+    async lerAoLigar(dispositivo) {
+      return rotinaDe(dispositivo.id);
+    },
+    async salvarAoLigar(dispositivo, rotina) {
+      const nova = { ...rotinaDe(dispositivo.id), rotina: rotinaAoLigarSchema.parse(rotina) };
+      rotinasAoLigar.set(dispositivo.id, nova);
+      return nova;
+    },
+    async testarAoLigar(dispositivo) {
+      const atual = rotinaDe(dispositivo.id);
+      rotinasAoLigar.set(dispositivo.id, {
+        ...atual,
+        ultimaExecucao: {
+          ts: Date.now(),
+          origem: 'teste',
+          ok: true,
+          passos: atual.rotina.passos.map((_, i) => ({ descricao: `Passo ${i + 1} (demonstração)`, ok: true })),
+        },
+      });
     },
     async manterLigado(dispositivo, ligado) {
       if (ligado) mantidosLigados.add(dispositivo.id);
@@ -387,6 +411,10 @@ export function criarDriversMock(): Drivers {
     async acaoApp(dispositivo, comando) {
       console.log(`[mock] ${comando.acao} ${comando.app} em ${dispositivo.nome}`);
       if (comando.acao === 'abrir' || comando.acao === 'reiniciar') abertoEm.set(`${dispositivo.id}:${comando.app}`, Date.now());
+    },
+    async abrirUrl(dispositivo, url) {
+      console.log(`[mock] abrir ${url} no Chrome de ${dispositivo.nome}`);
+      abertoEm.set(`${dispositivo.id}:chrome`, Date.now());
     },
     async janelaAberta(dispositivo, app) {
       const desde = abertoEm.get(`${dispositivo.id}:${app}`);
@@ -457,13 +485,14 @@ function estadoAgenteMock(dispositivo: DispositivoConfig, inicioProcesso: number
       'ndi-studio-monitor': Boolean(dispositivo.servicos.ndiMonitor),
       'ndi-screen-capture': true,
       rustdesk: false,
+      chrome: !ehLinux,
     },
     // Nenhuma máquina de demonstração tem OBS instalado, a não ser a da transmissão.
     appsInstalados: ehLinux
       ? []
       : dispositivo.servicos.obs
-        ? ['obs', 'holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture', 'rustdesk']
-        : ['holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture', 'rustdesk'],
+        ? ['obs', 'holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture', 'rustdesk', 'chrome']
+        : ['holyrics', 'powerpoint', 'ndi-studio-monitor', 'ndi-screen-capture', 'rustdesk', 'chrome'],
     ...(ehLinux
       ? {}
       : {

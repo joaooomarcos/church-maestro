@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import {
   ROTAS,
   arquivoAutomacoesSchema,
-  ehAoLigar,
+  ehGatilhoObs,
   type ProximoAgendamento,
   type RespostaAutomacoes,
 } from '@maestro/shared';
@@ -20,7 +20,8 @@ function montarResposta(ctx: ContextoApp, agendador: Agendador): RespostaAutomac
   const proximas: Record<string, number> = {};
   const todas: ProximoAgendamento[] = [];
   for (const agendamento of automacoes.agendamentos) {
-    if (ehAoLigar(agendamento)) continue;
+    // O gatilho do OBS não tem hora marcada: depende de a cena entrar no ar.
+    if (ehGatilhoObs(agendamento)) continue;
     const proxima = proximaExecucao(agendamento, agora);
     if (proxima === null) continue;
     // `proximas` some com o interruptor geral desligado; a lista do Painel não,
@@ -44,7 +45,7 @@ function montarResposta(ctx: ContextoApp, agendador: Agendador): RespostaAutomac
   };
 }
 
-/** Automações (por horário e "quando uma máquina ligar") e o liga/desliga geral delas. */
+/** Agendamentos por horário e o liga/desliga geral deles. */
 export function registrarRotasAutomacoes(
   app: FastifyInstance,
   ctx: ContextoApp,
@@ -58,7 +59,7 @@ export function registrarRotasAutomacoes(
     if (!corpo.success) {
       return responderRequisicaoInvalida(
         reply,
-        'Automação incompleta: escolha o cenário e, conforme o tipo, os dias e a hora ou a máquina.',
+        'Automação incompleta: escolha o cenário, os dias e a hora (e a cena, no gatilho do OBS).',
       );
     }
     const semCenario = corpo.data.agendamentos.find(
@@ -66,12 +67,6 @@ export function registrarRotasAutomacoes(
     );
     if (semCenario) {
       return responderRequisicaoInvalida(reply, 'Uma das automações aponta para um cenário que não existe mais.');
-    }
-    const semMaquina = corpo.data.agendamentos.find(
-      (item) => ehAoLigar(item) && !ctx.obterDispositivo(item.dispositivo),
-    );
-    if (semMaquina) {
-      return responderRequisicaoInvalida(reply, 'Uma das automações aponta para uma máquina que não está cadastrada.');
     }
     await ctx.salvarAutomacoes(corpo.data);
     return reply.send(montarResposta(ctx, agendador));

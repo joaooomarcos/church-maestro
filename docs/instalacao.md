@@ -311,6 +311,8 @@ dela. Quem serve a tela é o agente da própria máquina, não o painel.
     derruba quem estava conectado. 10 PINs errados em 5 minutos bloqueiam por
     esse tempo.
   - Quando o painel volta, a tela volta a mostrar os QR dos links fixos.
+- **Ao ligar:** a seção embaixo do NDI edita a rotina que a máquina roda quando
+  liga (veja **Ao ligar**, em 3.7).
 - **Só na própria máquina:** a tela não abre pelo IP, de outro PC ou do
   celular. Ninguém da rede troca o NDI nem o PIN por ela. Só o controle direto
   (`/solo`, só Voltar e Avançar) abre para a rede, e exige o PIN.
@@ -373,6 +375,50 @@ um aviso na tela, esperar um pouco entre um passo e outro. Eles ficam em
   token do API Server precisa ter permissão para `GetWallpaperSettings` e
   `SetWallpaperSettings`.
 
+### Ao ligar (o que cada máquina faz sozinha quando liga)
+
+Cada máquina tem a sua rotina **Ao ligar**: uma lista de passos que o **agente
+da própria máquina** roda quando ela liga. Como quem roda é o agente, funciona
+**com o painel desligado**. A rotina mora em `config/agent.json` da máquina.
+
+- **Onde editar:** de dois lugares, que mexem na mesma rotina.
+  - Na **tela de controle da máquina** (seção **Ao ligar**, embaixo do QR e do
+    NDI).
+  - No painel, em **Máquinas**, escolhendo a máquina (bloco **Ao ligar**). Só
+    funciona com a máquina ligada: com ela desligada o painel avisa que a rotina
+    está guardada nela.
+- **Passos possíveis** (só o que a própria máquina consegue fazer): abrir,
+  fechar, reiniciar ou trazer para frente um programa (com **esperar ficar
+  pronto**); abrir uma página no Chrome (você escolhe o endereço); trocar a
+  fonte do NDI Studio Monitor dela (escolhida numa lista, não digitada); ligar
+  ou desligar o plano de fundo do Holyrics (F8); fechar a apresentação do
+  Holyrics; aviso na tela; esperar um tempo. Trocar a cena do OBS ou mexer em outra máquina continua
+  sendo coisa de **cenário**.
+- **Esperar depois de ligar:** 30 segundos por padrão, para o Windows terminar
+  de subir. Desligar a rotina durante a espera cancela a execução.
+- **Se algum passo falhar no boot**, o agente abre o Chrome na tela de controle,
+  já na seção **Ao ligar**, mostrando o que deu errado. Isso só vale quando a
+  rotina roda sozinha ao ligar, não no **Testar agora**.
+- **Passos que falham** não impedem os outros. A exceção é o **esperar ficar
+  pronto** que estoura: o resto não roda e o resultado diz por quê.
+- **Testar agora** salva o que está na tela e roda a rotina na hora, sem esperar
+  a máquina ligar. O resultado da última execução (ao ligar ou teste), passo a
+  passo, aparece na própria seção, na tela da máquina e no painel.
+- **Quando conta como "ligou":** o agente anota que está vivo a cada 30
+  segundos. Ao subir, se ficou sem dar sinal por **mais de 30 minutos**, ou por
+  **mais de 2 minutos com o Windows ligado há menos de 10**, a máquina ligou. Por
+  isso reiniciar ou atualizar o agente no meio do culto não reabre programa
+  nenhum, e a primeira vez que o agente roda (instalação) também não dispara.
+  O uptime do Windows sozinho não serve: com a inicialização rápida ele não zera
+  ao desligar.
+- **Atualizando da 0.10 para a 0.11:** as automações **"Quando uma máquina
+  ligar"** do painel foram removidas e **somem sozinhas** ao atualizar o hub; os
+  agendamentos por horário continuam. Cadastre a rotina de cada máquina de novo
+  na seção **Ao ligar**. Os agentes só mostram a seção depois de atualizados.
+- **O Holyrics e o token:** os passos do Holyrics usam o token que o painel
+  informou a esta máquina (o mesmo do controle direto). Se a máquina nunca falou
+  com o painel depois da atualização, o passo diz que ainda não sabe o token.
+
 ### Avisos na tela
 
 O passo **Mostrar um aviso na tela** manda uma mensagem ("Faltam 10 minutos,
@@ -404,14 +450,23 @@ Em **Automação › Automações** um cenário roda sozinho: escolha o cenário
 dias da semana e a hora (por exemplo, "Pré-culto, domingo, 18:50"). O interruptor
 **Automações ligadas**, no alto, liga e desliga **todas** as automações de uma vez.
 
-Além do horário, existe o gatilho **"Quando uma máquina ligar"**: ele roda um
-cenário (por exemplo, abrir o Holyrics) depois de uma espera configurável, de 30
-segundos por padrão. Ele dispara só quando a máquina passa de desligada para
-ligada, depois de ficar pelo menos 60 segundos fora do ar. Se a máquina cair
-durante a espera, a execução é cancelada.
+Em **Quando rodar**, a opção **Quando uma cena do OBS estiver no ar** dispara o
+cenário pela transmissão, sem hora exata. Escolha a cena, os dias, **A partir de**
+e quantos segundos esperar (padrão de 90 s):
 
-Reiniciar o hub no meio do culto não reabre programas: a primeira leitura depois
-que o hub inicia não dispara nada.
+- A contagem começa quando a cena está no ar, o OBS está transmitindo e já passou
+  da hora escolhida. Se a cena entrou antes, a contagem começa quando a hora chegar.
+- O painel avisa quando a contagem começa e mostra o resultado no fim. A execução
+  entra no histórico como "cena do OBS".
+- Depois que a contagem começa, **trocar de cena não cancela**. **Parar a
+  transmissão cancela**, e a contagem recomeça se a condição voltar a valer.
+- Roda **uma vez por dia**, por automação, mesmo se o hub reiniciar: a marca fica em
+  `data/gatilhos-obs.json`. Para rodar de novo no mesmo dia, use o cenário manualmente.
+- Com o OBS sem responder, nada é decidido: a contagem espera ele voltar.
+- Dois cultos no mesmo dia pedem duas automações, com horários diferentes.
+
+O que cada máquina faz **quando liga** não fica aqui: é a rotina **Ao ligar**
+da própria máquina (seção abaixo), que roda mesmo com o painel desligado.
 
 O agendamento usa o relógio do PC Transmissão, que precisa estar ligado e com
 o painel no ar na hora marcada. Se ele ligar mais de 2 minutos depois, aquele
@@ -419,8 +474,7 @@ horário é pulado até a próxima semana — rodar o "Pré-culto" atrasado, no 
 do culto, faria mais mal do que bem. No alto do Painel, o cartão **Agendamentos**
 mostra os próximos 2 horários (ou o aviso de que as automações estão desligadas).
 O cartão **Última execução** mostra a execução mais recente, com os passos; uma
-falha aparece em vermelho. Toda execução (manual, agendada ou ao ligar uma
-máquina) entra no histórico, que fica só na memória do hub: reiniciar o hub o
+falha aparece em vermelho. Toda execução (manual ou agendada) entra no histórico, que fica só na memória do hub: reiniciar o hub o
 apaga.
 
 ---
@@ -704,6 +758,12 @@ fecha é a **janela principal** do RustDesk.
 
 ### Programas que cada máquina usa
 
+O **Chrome** entra na lista desde a 0.11.0. Máquina que já tinha escolha salva
+aqui precisa ligar o interruptor dele para vê-lo em **Máquinas**. Lá, a linha do
+Chrome tem um campo para abrir uma página: ela abre numa aba nova e o Chrome vem
+para frente. Nos cenários, o passo é **Chrome: abrir uma página**. No Note Som
+(Linux) só abrir página funciona: abrir, fechar e trazer para frente são do Windows.
+
 Em **Sistema › Ajustes › Programas de cada máquina** há um card por PC, com um
 interruptor para cada programa. O que estiver desligado some do painel e da tela
 **Máquinas** (Frente, Reiniciar, Fechar, Abrir) e não entra nos testes.
@@ -740,6 +800,9 @@ o programa sem administrador, ou rode o Maestro também como administrador.
 
 - Veja `~\maestro\data\hub.log`.
 - Se outra coisa já usa a porta 8700, o log mostra `EADDRINUSE`.
+- Se voltou para uma versão anterior à 0.11.0 e o log diz `config/automacoes.json
+  inválido`, é uma automação de cena do OBS, que a versão antiga não conhece. Remova
+  essas automações antes de voltar, ou tire as entradas com `"tipo": "obs"` do arquivo.
 
 ### As fontes NDI não aparecem na lista
 
@@ -825,6 +888,24 @@ chegou. Confira a olho nu na tela do OBS.
 - **O link foi excluído:** crie um novo em **Controle remoto** e mande o QR
   ou o link atualizado.
 - **A máquina foi renomeada:** o id dela mudou, e o link precisa ser recriado.
+
+### O "Ao ligar" não rodou
+
+- **Conferir o resultado:** na seção **Ao ligar** (tela de controle da máquina ou
+  Máquinas no painel), a linha **Última vez** diz quando rodou e o que falhou.
+  Sem nenhuma linha, nunca rodou.
+- **A rotina está desligada:** a caixa **Rodar quando a máquina ligar** precisa
+  estar marcada, e a lista, com pelo menos um passo.
+- **A máquina não "ligou" para o agente:** reiniciar o agente com a máquina já
+  ligada não dispara (de propósito). Para conferir a rotina sem desligar nada,
+  use **Testar agora**.
+- **Primeira vez depois de instalar o agente:** não dispara. Vale a partir da
+  próxima vez que a máquina ligar.
+- **O painel diz que a máquina está desligada ou o agente não respondeu:** a
+  rotina só edita pelo painel com a máquina ligada; pela tela de controle da
+  própria máquina sempre dá.
+- **"Não consegui ler a rotina deste agente":** o agente é anterior à 0.11.
+  Atualize a máquina em **Sistema › Versões**.
 
 ### A tela de controle da máquina não mostra o QR code
 

@@ -11,6 +11,7 @@ export const APLICATIVOS = [
   'ndi-studio-monitor',
   'ndi-screen-capture',
   'rustdesk',
+  'chrome',
 ] as const;
 
 export type Aplicativo = (typeof APLICATIVOS)[number];
@@ -20,6 +21,13 @@ export const ACOES_APP = ['abrir', 'fechar', 'reiniciar', 'frente'] as const;
 
 export type AcaoApp = (typeof ACOES_APP)[number];
 
+/** Endereço para abrir no Chrome. Só http(s): o agente nunca abre arquivo ou programa por aqui. */
+export const urlPaginaSchema = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine((valor) => URL.canParse(valor) && /^https?:$/.test(new URL(valor).protocol), 'Use um endereço que comece com http:// ou https://');
+
 /** Nome de cada aplicativo como a equipe o chama, para mensagens e botões. */
 export const NOMES_APLICATIVOS: Record<Aplicativo, string> = {
   obs: 'OBS',
@@ -28,6 +36,7 @@ export const NOMES_APLICATIVOS: Record<Aplicativo, string> = {
   'ndi-studio-monitor': 'NDI Studio Monitor',
   'ndi-screen-capture': 'NDI Screen Capture',
   rustdesk: 'RustDesk',
+  chrome: 'Chrome',
 };
 
 /**
@@ -51,6 +60,7 @@ export const PROCESSOS_POR_APLICATIVO: Record<Aplicativo, string[]> = {
   'ndi-studio-monitor': ['studiomonitor', 'videomonitor'],
   'ndi-screen-capture': ['scanconverter', 'screencapture'],
   rustdesk: ['rustdesk'],
+  chrome: ['chrome'],
 };
 
 /** Portas padrão de cada integração. Servem de chute inicial na varredura. */

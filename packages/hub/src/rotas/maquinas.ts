@@ -4,6 +4,7 @@ import {
   definirAppsSchema,
   pedidoAcordarSchema,
   pedidoManterLigadoSchema,
+  rotinaAoLigarSchema,
   type ResultadoAcordar,
 } from '@maestro/shared';
 import { enviarWakeOnLan } from '../rede/acordar.js';
@@ -54,6 +55,43 @@ export function registrarRotasMaquinas(app: FastifyInstance, ctx: ContextoApp): 
 
     const resultado: ResultadoAcordar = { telaAcordada, sinalEnviado, mensagem };
     return reply.send(resultado);
+  });
+
+  /**
+   * "Ao ligar": a rotina mora no agente da máquina (e funciona sem o hub); aqui o
+   * painel só lê e edita por ele. Com a máquina desligada não há o que mostrar nem gravar.
+   */
+  app.get<{ Params: { id: string } }>(ROTAS.aoLigarDaMaquina, async (req, reply) => {
+    const dispositivo = ctx.obterDispositivo(req.params.id);
+    if (!dispositivo) return responderDispositivoNaoEncontrado(reply, req.params.id);
+    try {
+      return reply.send(await ctx.drivers.agente.lerAoLigar(dispositivo));
+    } catch (erro) {
+      return responderErroDriver(reply, erro);
+    }
+  });
+
+  app.put<{ Params: { id: string } }>(ROTAS.aoLigarDaMaquina, async (req, reply) => {
+    const corpo = rotinaAoLigarSchema.safeParse(req.body);
+    if (!corpo.success) return responderRequisicaoInvalida(reply, 'Rotina incompleta: confira os passos (aviso sem texto, espera sem tempo…).');
+    const dispositivo = ctx.obterDispositivo(req.params.id);
+    if (!dispositivo) return responderDispositivoNaoEncontrado(reply, req.params.id);
+    try {
+      return reply.send(await ctx.drivers.agente.salvarAoLigar(dispositivo, corpo.data));
+    } catch (erro) {
+      return responderErroDriver(reply, erro);
+    }
+  });
+
+  app.post<{ Params: { id: string } }>(ROTAS.aoLigarTestar, async (req, reply) => {
+    const dispositivo = ctx.obterDispositivo(req.params.id);
+    if (!dispositivo) return responderDispositivoNaoEncontrado(reply, req.params.id);
+    try {
+      await ctx.drivers.agente.testarAoLigar(dispositivo);
+      return reply.code(202).send({ iniciado: true });
+    } catch (erro) {
+      return responderErroDriver(reply, erro);
+    }
   });
 
   /** "Manter ligado": a máquina deixa de entrar em repouso e de apagar a tela até alguém desligar a opção. */

@@ -28,7 +28,7 @@
 
       html,
       body {
-        height: 100%;
+        min-height: 100%;
       }
 
       body {
@@ -236,6 +236,129 @@
       .fonte--nenhuma {
         color: var(--cor-texto-fraco);
       }
+
+      /* Ao ligar: o que esta máquina faz sozinha quando liga. */
+      .ao-ligar {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin: 0 32px 32px;
+        padding: 20px;
+        border: 1px solid var(--cor-borda);
+        border-radius: var(--raio);
+      }
+
+      .ao-ligar h2 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .linha {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .passos {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .passo {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border: 1px solid var(--cor-borda);
+        border-radius: var(--raio);
+        background: var(--cor-fundo-cartao);
+      }
+
+      .passo__nome {
+        font-weight: 600;
+        min-width: 150px;
+      }
+
+      .passo__campos {
+        flex: 1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .passo__botoes {
+        display: flex;
+        gap: 6px;
+      }
+
+      .campo-texto,
+      .campo-select {
+        padding: 8px 10px;
+        border: 1px solid var(--cor-borda-forte);
+        border-radius: 10px;
+        background: var(--cor-fundo);
+        color: var(--cor-texto);
+        font: inherit;
+      }
+
+      .campo-texto--curto {
+        width: 90px;
+      }
+
+      .campo-texto--largo {
+        flex: 1;
+        min-width: 220px;
+      }
+
+      .rotulo-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--cor-texto-fraco);
+      }
+
+      .acao--principal {
+        background: var(--cor-sucesso-fundo);
+        border-color: var(--cor-sucesso);
+        font-weight: 600;
+      }
+
+      .acao:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .resultado {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px 14px;
+        border: 1px solid var(--cor-borda);
+        border-radius: var(--raio);
+      }
+
+      .resultado[hidden] {
+        display: none;
+      }
+
+      .resultado--erro {
+        border-color: var(--cor-perigo);
+      }
+
+      .resultado__passo--erro {
+        color: var(--cor-perigo);
+      }
+
+      .resultado__passo--pulado {
+        color: var(--cor-texto-fraco);
+      }
     </style>
   </head>
   <body>
@@ -256,6 +379,43 @@
         <div id="ndi"></div>
       </section>
     </main>
+    <section class="ao-ligar" id="ao-ligar" aria-labelledby="titulo-ao-ligar">
+      <h2 id="titulo-ao-ligar">Ao ligar</h2>
+      <p class="ajuda">
+        O que esta máquina faz sozinha quando liga, mesmo com o painel desligado. Reiniciar o agente com a máquina já
+        ligada não repete nada.
+      </p>
+      <div class="linha">
+        <label class="rotulo-inline">
+          <input type="checkbox" id="al-ativo" />
+          Rodar quando a máquina ligar
+        </label>
+        <label class="rotulo-inline">
+          Esperar
+          <input type="number" id="al-espera" class="campo-texto campo-texto--curto" min="0" max="600" />
+          segundos depois de ligar
+        </label>
+      </div>
+      <ol class="passos" id="al-passos"></ol>
+      <div class="linha">
+        <select id="al-novo" class="campo-select" aria-label="Tipo do novo passo">
+          <option value="app.acao">Programa: abrir, fechar…</option>
+          <option value="chrome.abrir">Chrome: abrir uma página</option>
+          <option value="ndi.definirFonte">NDI: trocar a fonte</option>
+          <option value="holyrics.f8">Holyrics: plano de fundo (F8)</option>
+          <option value="holyrics.encerrarApresentacao">Holyrics: fechar apresentação</option>
+          <option value="aviso">Aviso na tela</option>
+          <option value="espera">Esperar um tempo</option>
+        </select>
+        <button type="button" class="acao" id="al-adicionar">Adicionar passo</button>
+      </div>
+      <div class="linha">
+        <button type="button" class="acao acao--principal" id="al-salvar">Salvar</button>
+        <button type="button" class="acao" id="al-testar" title="Roda agora, sem esperar a máquina ligar">Testar agora</button>
+        <span class="ajuda" id="al-status"></span>
+      </div>
+      <div class="resultado" id="al-resultado" hidden></div>
+    </section>
 
     <script>
       const INTERVALO_MS = 2000;
@@ -377,8 +537,8 @@
         faixaHub.hidden = estado.hub === 'ok';
         faixaHub.textContent =
           estado.hub === 'sem-hub'
-            ? 'Esta máquina não está ligada a um painel ("npm run setup" liga). O QR abaixo controla esta máquina direto.'
-            : 'Sem contato com o painel agora. O NDI continua funcionando, e o QR abaixo controla esta máquina direto.';
+            ? 'Esta máquina não está conectada ao hub principal. O QR abaixo controla só esta máquina.'
+            : 'Esta máquina está sem conexão com o hub principal agora. O NDI continua funcionando, e o QR abaixo controla só esta máquina.';
         desenharQrs(estado);
         desenharNdi(estado);
       }
@@ -387,7 +547,9 @@
         try {
           const resposta = await fetch('/controle/estado', { cache: 'no-store' });
           if (!resposta.ok) throw new Error();
+          const antesNdi = JSON.stringify(ultimoEstado && ultimoEstado.ndi);
           ultimoEstado = await resposta.json();
+          if (antesNdi !== JSON.stringify(ultimoEstado.ndi) && typeof desenharPassos === 'function' && rascunhoAl) desenharPassos();
           // A leitura nova já traz a fonte de verdade.
           if (enviando === null) otimista.clear();
           desenhar(ultimoEstado);
@@ -440,6 +602,328 @@
       void carregar();
       setInterval(() => {
         if (enviando === null) void carregar();
+      }, INTERVALO_MS);
+
+      /* ---------- Ao ligar ---------- */
+      // Mesmas opções do catálogo do agente (shared/dispositivos.ts).
+      const APPS = [
+        ['obs', 'OBS'],
+        ['holyrics', 'Holyrics'],
+        ['powerpoint', 'PowerPoint'],
+        ['ndi-studio-monitor', 'NDI Studio Monitor'],
+        ['ndi-screen-capture', 'NDI Screen Capture'],
+        ['rustdesk', 'RustDesk'],
+        ['chrome', 'Chrome'],
+      ];
+      const ACOES = [
+        ['abrir', 'Abrir'],
+        ['fechar', 'Fechar'],
+        ['reiniciar', 'Reiniciar'],
+        ['frente', 'Trazer para frente'],
+      ];
+      const alAtivo = document.getElementById('al-ativo');
+      const alEspera = document.getElementById('al-espera');
+      const alPassos = document.getElementById('al-passos');
+      const alStatus = document.getElementById('al-status');
+      const alResultado = document.getElementById('al-resultado');
+      const alSalvar = document.getElementById('al-salvar');
+      const alTestar = document.getElementById('al-testar');
+      /** O que está na tela; só é trocado pelo salvo quando ninguém está editando. */
+      let rascunhoAl = null;
+      let alSujo = false;
+      let alOcupado = false;
+
+      const PASSOS_NOVOS = {
+        'app.acao': () => ({ tipo: 'app.acao', app: 'holyrics', acao: 'abrir', esperarPronto: true }),
+        'chrome.abrir': () => ({ tipo: 'chrome.abrir', url: 'https://' }),
+        'ndi.definirFonte': () => ({ tipo: 'ndi.definirFonte', porta: (ultimoEstado && ultimoEstado.ndi && ultimoEstado.ndi[0] ? ultimoEstado.ndi[0].porta : 80), fonte: null }),
+        'holyrics.f8': () => ({ tipo: 'holyrics.f8', ativar: true }),
+        'holyrics.encerrarApresentacao': () => ({ tipo: 'holyrics.encerrarApresentacao' }),
+        aviso: () => ({ tipo: 'aviso', mensagem: '', segundos: null }),
+        espera: () => ({ tipo: 'espera', ms: 5000 }),
+      };
+
+      const NOMES_PASSOS = {
+        'app.acao': 'Programa',
+        'chrome.abrir': 'Chrome',
+        'ndi.definirFonte': 'NDI',
+        'holyrics.f8': 'Holyrics F8',
+        'holyrics.encerrarApresentacao': 'Holyrics',
+        aviso: 'Aviso na tela',
+        espera: 'Esperar',
+      };
+
+      function marcarSujo() {
+        alSujo = true;
+        alStatus.textContent = 'Alterações não salvas.';
+      }
+
+      function selecao(opcoes, valor, aoMudar) {
+        const campo = el('select', 'campo-select');
+        for (const [chave, rotulo] of opcoes) {
+          const opcao = el('option', '', rotulo);
+          opcao.value = chave;
+          campo.append(opcao);
+        }
+        campo.value = valor;
+        campo.addEventListener('change', () => {
+          aoMudar(campo.value);
+          marcarSujo();
+          desenharPassos();
+        });
+        return campo;
+      }
+
+      function entrada(tipo, valor, classe, aoMudar, extra = {}) {
+        const campo = el('input', `campo-texto ${classe}`);
+        campo.type = tipo;
+        campo.value = valor;
+        Object.assign(campo, extra);
+        campo.addEventListener('input', () => {
+          aoMudar(campo.value);
+          marcarSujo();
+        });
+        return campo;
+      }
+
+      function camposDoPasso(passo) {
+        const campos = [];
+        if (passo.tipo === 'app.acao') {
+          campos.push(selecao(ACOES, passo.acao, (v) => (passo.acao = v)));
+          campos.push(selecao(APPS, passo.app, (v) => (passo.app = v)));
+          if (passo.acao === 'abrir' || passo.acao === 'reiniciar') {
+            const rotulo = el('label', 'rotulo-inline');
+            const caixa = el('input');
+            caixa.type = 'checkbox';
+            caixa.checked = passo.esperarPronto === true;
+            caixa.addEventListener('change', () => {
+              passo.esperarPronto = caixa.checked;
+              marcarSujo();
+            });
+            rotulo.append(caixa, 'esperar ficar pronto (o resto só roda se ficar)');
+            campos.push(rotulo);
+          }
+        } else if (passo.tipo === 'ndi.definirFonte') {
+          const janelas = ultimoEstado && ultimoEstado.ndi ? ultimoEstado.ndi : [];
+          if (janelas.length === 0) {
+            // Sem janela conhecida (Studio Monitor fechado): dá para escrever, mas o ideal é abrir e escolher da lista.
+            campos.push(
+              entrada('number', passo.porta, 'campo-texto--curto', (v) => (passo.porta = Math.max(1, Math.round(Number(v)) || 80)), { min: 1 }),
+            );
+            campos.push(
+              entrada('text', passo.fonte ?? '', 'campo-texto--largo', (v) => (passo.fonte = v.trim() === '' ? null : v), {
+                placeholder: 'Abra o NDI Studio Monitor para escolher da lista (vazio = nenhuma)',
+              }),
+            );
+          } else {
+            const portas = janelas.map((j, i) => [String(j.porta), janelas.length > 1 ? `Janela ${i + 1} (porta ${j.porta})` : `Studio Monitor (porta ${j.porta})`]);
+            if (!janelas.some((j) => j.porta === passo.porta)) portas.unshift([String(passo.porta), `Porta ${passo.porta} (não encontrada)`]);
+            campos.push(selecao(portas, String(passo.porta), (v) => (passo.porta = Number(v))));
+            const janela = janelas.find((j) => j.porta === passo.porta);
+            const fontes = [['', 'Nenhuma (sem imagem)']];
+            const nomes = janela ? [...janela.fontes] : [];
+            // A fonte salva pode não estar na rede agora; continua na lista para não ser trocada sem querer.
+            if (passo.fonte && !nomes.includes(passo.fonte)) nomes.unshift(passo.fonte);
+            for (const nome of nomes) fontes.push([nome, janela && janela.fontes.includes(nome) ? nome : `${nome} (fora da rede agora)`]);
+            campos.push(selecao(fontes, passo.fonte ?? '', (v) => (passo.fonte = v === '' ? null : v)));
+          }
+        } else if (passo.tipo === 'holyrics.f8') {
+          campos.push(
+            selecao(
+              [
+                ['1', 'Ligar o plano de fundo'],
+                ['0', 'Desligar o plano de fundo'],
+              ],
+              passo.ativar ? '1' : '0',
+              (v) => (passo.ativar = v === '1'),
+            ),
+          );
+        } else if (passo.tipo === 'aviso') {
+          campos.push(
+            entrada('text', passo.mensagem, 'campo-texto--largo', (v) => (passo.mensagem = v), {
+              placeholder: 'Mensagem',
+              maxLength: 300,
+            }),
+          );
+          campos.push(
+            entrada('number', passo.segundos ?? '', 'campo-texto--curto', (v) => (passo.segundos = v === '' ? null : Math.min(600, Math.max(1, Math.round(Number(v)) || 1))), {
+              placeholder: 'seg.',
+              min: 1,
+              title: 'Some sozinho depois de tantos segundos (vazio = até clicar em Ok)',
+            }),
+          );
+        } else if (passo.tipo === 'chrome.abrir') {
+          campos.push(
+            entrada('text', passo.url, 'campo-texto--largo', (v) => (passo.url = v.trim()), {
+              placeholder: 'Endereço da página, ex.: https://youtube.com/…',
+              maxLength: 2000,
+            }),
+          );
+        } else if (passo.tipo === 'espera') {
+          campos.push(entrada('number', passo.ms / 1000, 'campo-texto--curto', (v) => (passo.ms = Math.min(300000, Math.max(100, Math.round(Number(v) * 1000) || 1000))), { min: 0.1, step: 'any' }));
+          campos.push(el('span', 'ajuda', 'segundos'));
+        }
+        return campos;
+      }
+
+      function desenharPassos() {
+        alPassos.replaceChildren();
+        if (rascunhoAl.passos.length === 0) {
+          alPassos.append(el('li', 'vazio', 'Nenhum passo ainda. Adicione o primeiro abaixo.'));
+          return;
+        }
+        rascunhoAl.passos.forEach((passo, indice) => {
+          const item = el('li', 'passo');
+          item.append(el('span', 'passo__nome', `${indice + 1}. ${NOMES_PASSOS[passo.tipo]}`));
+          const campos = el('div', 'passo__campos');
+          campos.append(...camposDoPasso(passo));
+          const botoes = el('div', 'passo__botoes');
+          const mover = (de, para) => {
+            const [tirado] = rascunhoAl.passos.splice(de, 1);
+            rascunhoAl.passos.splice(para, 0, tirado);
+            marcarSujo();
+            desenharPassos();
+          };
+          const subir = el('button', 'acao', '↑');
+          subir.type = 'button';
+          subir.title = 'Subir';
+          subir.disabled = indice === 0;
+          subir.addEventListener('click', () => mover(indice, indice - 1));
+          const descer = el('button', 'acao', '↓');
+          descer.type = 'button';
+          descer.title = 'Descer';
+          descer.disabled = indice === rascunhoAl.passos.length - 1;
+          descer.addEventListener('click', () => mover(indice, indice + 1));
+          const remover = el('button', 'acao', 'Remover');
+          remover.type = 'button';
+          remover.addEventListener('click', () => {
+            rascunhoAl.passos.splice(indice, 1);
+            marcarSujo();
+            desenharPassos();
+          });
+          botoes.append(subir, descer, remover);
+          item.append(campos, botoes);
+          alPassos.append(item);
+        });
+      }
+
+      function desenharResultado(execucao, executando) {
+        alResultado.replaceChildren();
+        alResultado.classList.toggle('resultado--erro', Boolean(execucao && !execucao.ok));
+        if (executando) {
+          alResultado.hidden = false;
+          alResultado.append(el('strong', '', 'Rodando agora…'));
+          return;
+        }
+        if (!execucao) {
+          alResultado.hidden = true;
+          return;
+        }
+        alResultado.hidden = false;
+        const quando = new Date(execucao.ts).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        const origem = execucao.origem === 'boot' ? 'ao ligar' : 'teste';
+        alResultado.append(el('strong', '', `Última vez: ${quando} (${origem}) — ${execucao.ok ? 'tudo certo' : 'com falhas'}`));
+        for (const passo of execucao.passos) {
+          const classe = passo.ok ? '' : passo.pulado ? 'resultado__passo--pulado' : 'resultado__passo--erro';
+          alResultado.append(el('span', classe, `${passo.ok ? '✓' : passo.pulado ? '–' : '✗'} ${passo.descricao}${passo.erro ? `: ${passo.erro}` : ''}`));
+        }
+      }
+
+      function aplicarRotinaSalva(resposta) {
+        desenharResultado(resposta.ultimaExecucao, resposta.executando);
+        alTestar.disabled = resposta.executando || alOcupado;
+        if (alSujo && rascunhoAl) return;
+        rascunhoAl = structuredClone(resposta.rotina);
+        alAtivo.checked = rascunhoAl.ativo;
+        alEspera.value = rascunhoAl.esperaSegundos;
+        desenharPassos();
+      }
+
+      async function carregarAoLigar() {
+        try {
+          const resposta = await fetch('/controle/ao-ligar', { cache: 'no-store' });
+          if (!resposta.ok) throw new Error();
+          aplicarRotinaSalva(await resposta.json());
+        } catch {
+          // a faixa de erro de conexão já avisa; a próxima leitura tenta de novo
+        }
+      }
+
+      async function salvarAoLigar() {
+        if (!rascunhoAl) return false;
+        const vazio = rascunhoAl.passos.findIndex((p) => p.tipo === 'aviso' && p.mensagem.trim() === '');
+        if (vazio >= 0) {
+          mostrarErro(`O passo ${vazio + 1} (aviso) está sem mensagem.`);
+          return false;
+        }
+        const corpo = {
+          ativo: alAtivo.checked,
+          esperaSegundos: Math.min(600, Math.max(0, Math.round(Number(alEspera.value)) || 0)),
+          passos: rascunhoAl.passos,
+        };
+        alOcupado = true;
+        alSalvar.disabled = true;
+        mostrarErro('');
+        try {
+          const resposta = await fetch('/controle/ao-ligar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corpo),
+          });
+          if (!resposta.ok) {
+            const erro = await resposta.json().catch(() => null);
+            throw new Error(erro?.mensagem ?? 'Não consegui salvar a rotina.');
+          }
+          alSujo = false;
+          alStatus.textContent = 'Salvo.';
+          aplicarRotinaSalva(await resposta.json());
+          return true;
+        } catch (err) {
+          mostrarErro(err instanceof Error && err.message ? err.message : 'Não consegui salvar a rotina.');
+          return false;
+        } finally {
+          alOcupado = false;
+          alSalvar.disabled = false;
+        }
+      }
+
+      async function testarAoLigar() {
+        // Testa o que está na tela: salva antes, para não rodar uma versão que ninguém está vendo.
+        if (alSujo && !(await salvarAoLigar())) return;
+        alOcupado = true;
+        alTestar.disabled = true;
+        alStatus.textContent = 'Rodando…';
+        mostrarErro('');
+        try {
+          const resposta = await fetch('/controle/ao-ligar/testar', { method: 'POST' });
+          if (!resposta.ok) {
+            const erro = await resposta.json().catch(() => null);
+            throw new Error(erro?.mensagem ?? 'Não consegui rodar a rotina.');
+          }
+          alStatus.textContent = '';
+        } catch (err) {
+          alStatus.textContent = '';
+          mostrarErro(err instanceof Error && err.message ? err.message : 'Não consegui rodar a rotina.');
+        } finally {
+          alOcupado = false;
+          await carregarAoLigar();
+        }
+      }
+
+      alAtivo.addEventListener('change', marcarSujo);
+      alEspera.addEventListener('input', marcarSujo);
+      document.getElementById('al-adicionar').addEventListener('click', () => {
+        if (!rascunhoAl) return;
+        rascunhoAl.passos.push(PASSOS_NOVOS[document.getElementById('al-novo').value]());
+        marcarSujo();
+        desenharPassos();
+      });
+      alSalvar.addEventListener('click', () => void salvarAoLigar());
+      alTestar.addEventListener('click', () => void testarAoLigar());
+
+      void carregarAoLigar();
+      setInterval(() => {
+        if (!alOcupado) void carregarAoLigar();
       }, INTERVALO_MS);
     </script>
   </body>

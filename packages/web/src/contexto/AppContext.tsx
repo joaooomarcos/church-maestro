@@ -15,7 +15,7 @@ import type {
   ResultadoCheck,
   Snapshot,
 } from '@maestro/shared';
-import { ROTAS, ehAoLigar } from '@maestro/shared';
+import { ROTAS } from '@maestro/shared';
 import { apiGet, apiPost, definirOuvinteNaoAutenticado, ouvirErros } from '../nucleo/cliente';
 import { vibrar } from '../nucleo/vibrar';
 import { ehTela, type TelaId } from '../componentes/MenuLateral';
@@ -220,7 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (canceladoRef.current) return;
         setAutomacoes({
           ativo: resposta.ativo,
-          temHorarios: resposta.agendamentos.some((a) => !ehAoLigar(a) && a.ativo),
+          temHorarios: resposta.agendamentos.some((a) => a.ativo),
           proximos: resposta.proximosAgendamentos,
           ultimaExecucao: resposta.ultimaExecucao,
         });

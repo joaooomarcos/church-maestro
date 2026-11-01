@@ -40,17 +40,21 @@ function pinConfere(esperado: string, recebido: unknown): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-async function holyricsLocal(holyrics: { porta: number; token: string }, acao: string): Promise<void> {
+export async function holyricsLocal(
+  holyrics: { porta: number; token: string },
+  acao: string,
+  corpo: Record<string, unknown> = {},
+): Promise<void> {
   const url = `http://127.0.0.1:${holyrics.porta}/api/${acao}?token=${encodeURIComponent(holyrics.token)}`;
-  let corpo: { status?: string; error?: string } | null;
+  let corpoResposta: { status?: string; error?: string } | null;
   try {
     const resposta = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: '{}',
+      body: JSON.stringify(corpo),
       signal: AbortSignal.timeout(TIMEOUT_HOLYRICS_MS),
     });
-    corpo = (await resposta.json().catch(() => null)) as typeof corpo;
+    corpoResposta = (await resposta.json().catch(() => null)) as typeof corpoResposta;
     if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
   } catch (err) {
     throw new ErroApp(
@@ -58,8 +62,8 @@ async function holyricsLocal(holyrics: { porta: number; token: string }, acao: s
       err instanceof Error ? err.message : String(err),
     );
   }
-  if (corpo?.status === 'error') {
-    throw new ErroApp(`O Holyrics recusou o comando: ${corpo.error ?? 'erro desconhecido'}`);
+  if (corpoResposta?.status === 'error') {
+    throw new ErroApp(`O Holyrics recusou o comando: ${corpoResposta.error ?? 'erro desconhecido'}`);
   }
 }
 

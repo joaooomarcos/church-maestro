@@ -1,4 +1,4 @@
-import { ehAoLigar, type Agendamento, type ExecucaoAgendada } from '@maestro/shared';
+import { ehGatilhoObs, type Agendamento, type ExecucaoAgendada } from '@maestro/shared';
 import { executarERegistrar, historicoDe } from './historico.js';
 import type { ContextoApp } from '../rotas/contexto.js';
 
@@ -10,7 +10,7 @@ const VERIFICAR_A_CADA_MS = 15_000;
  */
 export const TOLERANCIA_MS = 2 * 60_000;
 
-function horarioNoDia(dia: Date, hora: string): Date {
+export function horarioNoDia(dia: Date, hora: string): Date {
   const [horas, minutos] = hora.split(':').map(Number);
   const alvo = new Date(dia);
   alvo.setHours(horas ?? 0, minutos ?? 0, 0, 0);
@@ -74,8 +74,7 @@ export function criarAgendador(ctx: ContextoApp, relogio: () => Date = () => new
     try {
       const agora = relogio();
       for (const agendamento of automacoes.agendamentos) {
-        // Os "quando ligar" têm gatilho próprio (aoLigar.ts), não dependem do relógio.
-        if (ehAoLigar(agendamento)) continue;
+        if (ehGatilhoObs(agendamento)) continue;
         if (!deveRodar(agendamento, agora, ultimoDiaRodado.get(agendamento.id))) continue;
         ultimoDiaRodado.set(agendamento.id, chaveDoDia(agora));
 

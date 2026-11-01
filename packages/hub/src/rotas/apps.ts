@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { ROTAS, acaoAppSchema } from '@maestro/shared';
+import { ROTAS, abrirUrlSchema, acaoAppSchema } from '@maestro/shared';
 import type { ContextoApp } from './contexto.js';
 import {
   responderDispositivoNaoEncontrado,
@@ -25,6 +25,27 @@ export function registrarRotasApps(app: FastifyInstance, ctx: ContextoApp): void
         app: corpo.data.app,
         acao: corpo.data.acao,
       });
+    } catch (erro) {
+      return responderErroDriver(reply, erro);
+    }
+
+    return reply.send({ ok: true });
+  });
+
+  /** Abrir uma página no Chrome de uma máquina. */
+  app.post(ROTAS.appUrl, async (req, reply) => {
+    const corpo = abrirUrlSchema.safeParse(req.body);
+    if (!corpo.success) {
+      return responderRequisicaoInvalida(reply, 'Use um endereço que comece com http:// ou https://');
+    }
+
+    const dispositivo = ctx.obterDispositivo(corpo.data.dispositivo);
+    if (!dispositivo) {
+      return responderDispositivoNaoEncontrado(reply, corpo.data.dispositivo);
+    }
+
+    try {
+      await ctx.drivers.agente.abrirUrl(dispositivo, corpo.data.url);
     } catch (erro) {
       return responderErroDriver(reply, erro);
     }
