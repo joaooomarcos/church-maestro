@@ -796,6 +796,26 @@ o programa sem administrador, ou rode o Maestro também como administrador.
 - O hub precisa de internet para consultar as versões no GitHub. Sem ela, a aba
   mostra um aviso e as máquinas continuam rodando normalmente.
 
+### A versão está no main, mas não aparece em Sistema › Versões
+
+O número já subiu no `main` (há um commit `Versão x.y.z`), mas a versão não entra
+na lista do painel: em **Actions › Publicar versão** não há execução para esse
+push. O GitHub pula o workflow quando a mensagem do último commit do push traz
+`[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]` ou `[actions skip]`. Foi o que
+aconteceu na 0.11.0: as notas eram montadas com o assunto dos commits, e um
+`[skip ci]` de um commit de documentação foi parar na mensagem de `Versão 0.11.0`.
+Desde então o `publicar.mjs` tira esses marcadores das notas.
+
+**Saída:** no GitHub, abra **Actions › Publicar versão › Run workflow**, deixe a
+branch `main` e o tipo **automatico** e confirme. O workflow compila, testa e
+libera o número que está no `package.json`; depois a versão aparece no painel.
+
+Para o caso contrário, de mandar ao `main` sem publicar: mudança só em texto, em
+`docs/` ou em `.github/` já não dispara nada. Mudança em outros lugares, como
+`scripts/`, dispara e publica uma correção, a não ser que o commit leve
+`[skip ci]`. Vale o último commit do push: ao juntar um PR com commit de merge, o
+marcador precisa estar na mensagem desse merge, não só nos commits da branch.
+
 ### O hub não sobe
 
 - Veja `~\maestro\data\hub.log`.

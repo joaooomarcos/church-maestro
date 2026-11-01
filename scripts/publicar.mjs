@@ -30,6 +30,7 @@ const caminhoCanal = resolve(raiz, 'canal.json');
 const PACOTES = ['', 'packages/shared', 'packages/hub', 'packages/agent', 'packages/web'];
 const MAXIMO_HISTORICO = 40;
 const VERSAO_VALIDA = /^\d+\.\d+\.\d+$/;
+const MARCADOR_PULA_CI = /\s*\[(?:skip ci|ci skip|no ci|skip actions|actions skip)\]/i;
 
 function git(...args) {
   return execFileSync('git', args, { cwd: raiz, encoding: 'utf8' }).trim();
@@ -78,12 +79,26 @@ function gravarVersao(versao) {
   gravarJson(caminhoLock, lock);
 }
 
-/** Commits de trabalho desde a última versão liberada — os de liberação ficam de fora. */
+/**
+ * As notas entram na mensagem do commit "Versão x.y.z": um marcador ali faria o
+ * GitHub pular o publicar.yml, e a versão não sairia.
+ */
+function semMarcadorDeCi(texto) {
+  return texto.split(MARCADOR_PULA_CI).join('').trim();
+}
+
+/**
+ * Commits de trabalho desde a última versão liberada — os de liberação ficam de
+ * fora. Os marcados para não publicar não mudam nada nas máquinas e só aparecem
+ * se não houver outros.
+ */
 function novidadesDesde(shaAnterior) {
   const intervalo = shaAnterior ? [`${shaAnterior}..HEAD`] : ['-1'];
-  return git('log', '--format=%s', ...intervalo)
+  const assuntos = git('log', '--format=%s', ...intervalo)
     .split('\n')
     .filter((assunto) => assunto && !/^(Libera |Versão \d|Desliga a oferta)/.test(assunto));
+  const deTrabalho = assuntos.filter((assunto) => !MARCADOR_PULA_CI.test(assunto));
+  return (deTrabalho.length > 0 ? deTrabalho : assuntos).map(semMarcadorDeCi).filter(Boolean);
 }
 
 function resumir(assuntos) {
@@ -129,6 +144,7 @@ if (pedido && VERSAO_VALIDA.test(pedido) && historico.some((v) => v.versao === p
   // Voltar (ou avançar) as máquinas para uma versão que já foi liberada.
   const registro = historico.find((v) => v.versao === pedido);
   ({ versao, sha, notas } = registro);
+  notas = semMarcadorDeCi(notas);
 } else if (pedido && (PARTES[pedido] || VERSAO_VALIDA.test(pedido))) {
   if (VERSAO_VALIDA.test(pedido)) {
     if (comparar(pedido, atual) < 0) sair(`${pedido} é menor que a versão atual (${atual}) e nunca foi liberada.`);
@@ -143,7 +159,7 @@ if (pedido && VERSAO_VALIDA.test(pedido) && historico.some((v) => v.versao === p
   if (novidades.length === 0 && historico.length > 0) {
     sair(`não há nada novo desde a ${historico[0].versao}. Faça o commit das mudanças antes.`);
   }
-  notas = notasPedidas ?? resumir(novidades);
+  notas = semMarcadorDeCi(notasPedidas ?? resumir(novidades));
   novaVersao = true;
 
   // Na primeira liberação o número já está no package.json: não há o que subir.
