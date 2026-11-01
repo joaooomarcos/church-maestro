@@ -940,6 +940,8 @@ ação "abrir" agora faz isso (`Start-Process ... -WorkingDirectory`). Causa da
 versão 0.11.0: o OBS era aberto a partir de outra pasta. Se ainda aparecer, a
 máquina está com o agente anterior: atualize em **Sistema › Versões**.
 
+Na 0.11.1, "Abrir" de qualquer programa falhou com "O conjunto de parâmetros não pode ser resolvido": no PowerShell 5.1, `Split-Path` recusa `-LiteralPath` com `-Parent`. Corrigido na versão seguinte: atualize a máquina.
+
 ### Abrir uma URL sempre dá "Não consegui abrir a página"
 
 Causa da versão 0.11.0: o script que abre o Chrome juntava `try { ... }` e

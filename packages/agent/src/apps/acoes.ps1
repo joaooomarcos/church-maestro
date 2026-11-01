@@ -248,7 +248,8 @@ try {
                 throw "caminho-invalido"
             }
             # O OBS so acha o locale/en-US.ini se rodar a partir da pasta do proprio executavel.
-            $processo = Start-Process -FilePath $Caminho -WorkingDirectory (Split-Path -LiteralPath $Caminho -Parent) -PassThru
+            # GetDirectoryName porque o Split-Path do PowerShell 5.1 recusa caminho literal junto com pasta-pai.
+            $processo = Start-Process -FilePath $Caminho -WorkingDirectory ([System.IO.Path]::GetDirectoryName($Caminho)) -PassThru
             $dados = @{ pid = $processo.Id }
         }
         'fechar' {
