@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "0f36fbd20f65e0f61d9d2b6cf2dd99cfacd4e6bf",
-  "notas": "Chrome como programa, gatilho do OBS e rotina Ao ligar no agente; CLAUDE.md: regra de GitHub (MCP x gh) e commit/push após aprovação [skip ci]; Configura o C…",
+  "sha": "49acc539db9271135867c51a18e6b8931c908b30",
+  "notas": "Corrige abrir o OBS, abrir URL no Chrome e o controle do RustDesk",
   "liberadoEm": "2026-11-01",
-  "versao": "0.11.0",
+  "versao": "0.11.1",
   "versoes": [
+    {
+      "versao": "0.11.1",
+      "sha": "49acc539db9271135867c51a18e6b8931c908b30",
+      "notas": "Corrige abrir o OBS, abrir URL no Chrome e o controle do RustDesk",
+      "data": "2026-11-01"
+    },
     {
       "versao": "0.11.0",
       "sha": "0f36fbd20f65e0f61d9d2b6cf2dd99cfacd4e6bf",
