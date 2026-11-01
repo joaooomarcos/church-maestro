@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "deb782a0052899284dce4e8e89bf1dcc6b5956bc",
-  "notas": "Aviso com tempo fecha sozinho; Controle solo: com o painel desligado, o celular fala direto com o agente; Tela de controle da máquina: QR que já entra com o …",
-  "liberadoEm": "2026-10-26",
-  "versao": "0.10.0",
+  "sha": "0f36fbd20f65e0f61d9d2b6cf2dd99cfacd4e6bf",
+  "notas": "Chrome como programa, gatilho do OBS e rotina Ao ligar no agente; CLAUDE.md: regra de GitHub (MCP x gh) e commit/push após aprovação [skip ci]; Configura o C…",
+  "liberadoEm": "2026-11-01",
+  "versao": "0.11.0",
   "versoes": [
+    {
+      "versao": "0.11.0",
+      "sha": "0f36fbd20f65e0f61d9d2b6cf2dd99cfacd4e6bf",
+      "notas": "Chrome como programa, gatilho do OBS e rotina Ao ligar no agente; CLAUDE.md: regra de GitHub (MCP x gh) e commit/push após aprovação [skip ci]; Configura o C…",
+      "data": "2026-11-01"
+    },
     {
       "versao": "0.10.0",
       "sha": "deb782a0052899284dce4e8e89bf1dcc6b5956bc",
