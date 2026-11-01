@@ -14,7 +14,7 @@ import {
   type SituacaoApp,
 } from '@maestro/shared';
 import { abrirNoNavegador } from '../aoLigar/navegador.js';
-import { EXECUTAVEL_SO_JANELA, listarProcessos } from '../processos.js';
+import { APLICATIVOS_SO_PRINCIPAL, invalidarCacheProcessos, listarProcessos } from '../processos.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -174,7 +174,7 @@ export async function situacaoDosApps(config: ConfigAgente): Promise<SituacaoApp
 
 /** Só a janela principal, quando o programa tem outros processos que não podem ser tocados. */
 function alvoDe(app: Aplicativo): string[] {
-  return ['-Processos', processosDe(app), ...(EXECUTAVEL_SO_JANELA[app] ? ['-SoPrincipal'] : [])];
+  return ['-Processos', processosDe(app), ...(APLICATIVOS_SO_PRINCIPAL.includes(app) ? ['-SoPrincipal'] : [])];
 }
 
 /** No fechar: o Chrome precisa de janela por janela (veja o `.ps1`). */
@@ -212,6 +212,20 @@ export async function enviarTecla(
 }
 
 /**
+ * O programa tem processo principal rodando (janela, bandeja ou conexão)? Usa o
+ * mesmo critério do painel (`-SoPrincipal`, sem o serviço). Devolve null quando
+ * não dá para saber (fora do Windows ou consulta falhou): aí vale o nome do processo.
+ */
+export async function consultarProcessoPrincipal(app: Aplicativo): Promise<boolean | null> {
+  try {
+    const dados = (await rodarScript(['-Acao', 'rodando', ...alvoDe(app)], app)) as { rodando?: unknown } | undefined;
+    return typeof dados?.rodando === 'boolean' ? dados.rodando : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * O programa já mostra uma janela? É o "pronto" do passo "Abrir" com "esperar
  * abrir". Fora do Windows vale o processo estar rodando.
  */
@@ -235,7 +249,8 @@ export async function acordarMaquina(): Promise<void> {
  * ele, "aberto" é ter janela, senão o "Abrir" não faria nada.
  */
 async function jaEstaAberto(app: Aplicativo): Promise<boolean> {
-  if (app === 'chrome') return temJanelaAberta(app);
+  // O RustDesk só na bandeja conta como fechado: abrir roda o exe e mostra a janela.
+  if (app === 'chrome' || app === 'rustdesk') return temJanelaAberta(app);
   return Boolean((await listarProcessos())[app]);
 }
 
@@ -266,11 +281,19 @@ export async function executarAcaoApp(
       // Um cenário "Pré-culto" rodado duas vezes não pode abrir dois Holyrics.
       if (await jaEstaAberto(app)) return;
       await abrir(app, config);
+      invalidarCacheProcessos();
       return;
     case 'fechar':
       await rodarScript(['-Acao', 'fechar', ...alvoDeFechar(app)], app);
+      invalidarCacheProcessos();
       return;
     case 'frente':
+      // Bandeja não tem janela para focar: sem janela, o RustDesk é aberto de novo.
+      if (app === 'rustdesk' && !(await temJanelaAberta(app))) {
+        await abrir(app, config);
+        invalidarCacheProcessos();
+        return;
+      }
       await rodarScript(['-Acao', 'frente', ...alvoDe(app)], app);
       return;
     case 'reiniciar':
@@ -279,8 +302,10 @@ export async function executarAcaoApp(
       await rodarScript(['-Acao', 'fechar', ...alvoDeFechar(app)], app).catch(() => {
         // já estava fechado: seguir direto para abrir
       });
+      invalidarCacheProcessos();
       await new Promise((resolver) => setTimeout(resolver, ESPERA_FECHAR_MS));
       await abrir(app, config);
+      invalidarCacheProcessos();
       return;
   }
 }

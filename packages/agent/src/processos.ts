@@ -11,40 +11,61 @@ import {
 const execAsync = promisify(exec);
 
 const DURACAO_CACHE_MS = 3000;
+/** A janela abre e fecha devagar, e a consulta abre um PowerShell: guarda por mais tempo. */
+const DURACAO_CACHE_PRINCIPAL_MS = 30_000;
 
 /**
- * Programas que têm processos sempre rodando além da janela: o RustDesk
- * instalado como serviço mantém o serviço, o `--server`, o `--tray` e, durante
- * um acesso, o `--cm`. Para eles, "aberto" é a janela principal — o processo
- * sem argumento nenhum —, e é só nela que o painel mexe.
+ * Programas que têm um processo de serviço rodando sempre, além dos processos
+ * principais. O RustDesk instalado como serviço mantém o serviço o tempo todo.
+ * Para eles, "aberto" é ter processo principal (janela, `--tray` ou `--cm`), e o
+ * critério é o do `acoes.ps1 -Acao rodando -SoPrincipal`, que deixa de fora o
+ * serviço (`--service`, `--server` ou linha de comando vazia).
  */
-export const EXECUTAVEL_SO_JANELA: Partial<Record<Aplicativo, string>> = { rustdesk: 'rustdesk.exe' };
+export const APLICATIVOS_SO_PRINCIPAL: readonly Aplicativo[] = ['rustdesk'];
 
-type ConsultaLinhasDeComando = (executavel: string) => Promise<string[] | null>;
-let consultarLinhas: ConsultaLinhasDeComando | undefined;
+/** Diz se o programa tem processo principal rodando; null quando não deu para saber. */
+export type ConsultaPrincipal = (app: Aplicativo) => Promise<boolean | null>;
 
-/** O agente liga isto à ponte do Windows na subida; sem ela vale só o nome do processo. */
-export function definirConsultaLinhasDeComando(consulta: ConsultaLinhasDeComando | undefined): void {
-  consultarLinhas = consulta;
+let consultaPrincipal: ConsultaPrincipal | undefined;
+const cachePrincipal = new Map<Aplicativo, { ts: number; valor: boolean | null }>();
+
+/**
+ * O agente liga isto ao `acoes.ps1` na subida (no Windows). Sem ela, vale só o
+ * nome do processo.
+ */
+export function definirConsultaPrincipal(consulta: ConsultaPrincipal | undefined): void {
+  consultaPrincipal = consulta;
+  cachePrincipal.clear();
 }
 
-/** Há um processo sem argumentos, ou seja, a janela principal do programa? */
-export function temJanelaPrincipal(linhas: string[]): boolean {
-  return linhas.some((linha) => {
-    const limpa = linha.trim();
-    if (!limpa) return false;
-    return limpa.replace(/^("[^"]*"|\S+)\s*/, '') === '';
-  });
+/** Esquece o que foi perguntado sobre processos e janelas, depois de abrir ou fechar algo. */
+export function invalidarCacheProcessos(): void {
+  cache = null;
+  cachePrincipal.clear();
 }
 
-async function refinarSoJanela(resultado: Record<Aplicativo, boolean>): Promise<Record<Aplicativo, boolean>> {
-  if (!consultarLinhas) return resultado;
+async function consultaPrincipalComCache(app: Aplicativo): Promise<boolean | null> {
+  const guardado = cachePrincipal.get(app);
+  if (guardado && Date.now() - guardado.ts < DURACAO_CACHE_PRINCIPAL_MS) return guardado.valor;
+  const valor = consultaPrincipal ? await consultaPrincipal(app) : null;
+  cachePrincipal.set(app, { ts: Date.now(), valor });
+  return valor;
+}
+
+/**
+ * Para os programas com serviço, o nome do processo diz só que existe algum
+ * processo, e o serviço sempre existe. Quem diz se está aberto é a consulta de
+ * processo principal. Sem resposta, fica o que o nome disse.
+ */
+export async function refinarSoPrincipal(
+  resultado: Record<Aplicativo, boolean>,
+  consultar: ConsultaPrincipal,
+): Promise<Record<Aplicativo, boolean>> {
   const refinado = { ...resultado };
-  for (const [app, executavel] of Object.entries(EXECUTAVEL_SO_JANELA) as [Aplicativo, string][]) {
+  for (const app of APLICATIVOS_SO_PRINCIPAL) {
     if (!refinado[app]) continue;
-    const linhas = await consultarLinhas(executavel);
-    // Sem resposta, fica o que o nome do processo disse.
-    if (linhas) refinado[app] = temJanelaPrincipal(linhas);
+    const janela = await consultar(app);
+    if (janela !== null) refinado[app] = janela;
   }
   return refinado;
 }
@@ -106,7 +127,7 @@ export async function listarProcessos(): Promise<Record<Aplicativo, boolean>> {
     return resultado;
   }
 
-  const resultado = await refinarSoJanela(aplicativosAbertos(nomes));
+  const resultado = await refinarSoPrincipal(aplicativosAbertos(nomes), consultaPrincipalComCache);
   cache = { ts: Date.now(), resultado };
   return resultado;
 }

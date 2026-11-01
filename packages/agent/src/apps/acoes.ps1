@@ -7,15 +7,14 @@
 # como ANSI, e acentos aqui viram lixo. Texto para o usuario fica no TypeScript.
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('localizar', 'abrir', 'fechar', 'frente', 'tecla', 'acordar', 'janela')]
+    [ValidateSet('localizar', 'abrir', 'fechar', 'frente', 'tecla', 'acordar', 'janela', 'rodando')]
     [string]$Acao,
     [string]$Caminho = '',
     [string]$Processos = '',
     [ValidateSet('', 'RIGHT', 'LEFT')]
     [string]$Tecla = '',
-    # So a janela principal do programa (o processo sem argumentos). O RustDesk
-    # tem servico, --server, --tray e --cm rodando junto: mexer neles derrubaria
-    # o acesso remoto de quem esta conectado.
+    # So os processos principais do programa (veja Filtrar-Principal): sem o
+    # servico, que roda sempre. O --cm entra: fechar encerra a conexao ativa.
     [switch]$SoPrincipal,
     # Fecha janela por janela. O Chrome tem varias janelas num processo so e dezenas
     # de processos sem janela: CloseMainWindow fecharia uma e deixaria as outras.
@@ -207,9 +206,13 @@ function Obter-Processos($lista) {
 }
 
 function Filtrar-Principal($lista) {
+    # Processo principal = tem linha de comando e nao e o servico nem o servidor.
+    # Contam a janela, a bandeja (--tray) e a conexao (--cm). Ficam de fora o
+    # servico do RustDesk (--service, ou sem linha de comando quando o Windows nao
+    # deixa ler), que roda sempre e tornaria "aberto" uma informacao sem sentido.
     return @($lista | Where-Object {
         $linha = [string](Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)" -ErrorAction SilentlyContinue).CommandLine
-        $linha.Trim() -and (($linha.Trim() -replace '^("[^"]*"|\S+)\s*', '') -eq '')
+        $linha.Trim() -ne '' -and $linha -notmatch '(^|\s)--(service|server)(\s|$)'
     })
 }
 
@@ -244,7 +247,8 @@ try {
             if (-not $Caminho -or -not (Test-Path -LiteralPath $Caminho)) {
                 throw "caminho-invalido"
             }
-            $processo = Start-Process -FilePath $Caminho -PassThru
+            # O OBS so acha o locale/en-US.ini se rodar a partir da pasta do proprio executavel.
+            $processo = Start-Process -FilePath $Caminho -WorkingDirectory (Split-Path -LiteralPath $Caminho -Parent) -PassThru
             $dados = @{ pid = $processo.Id }
         }
         'fechar' {
@@ -253,7 +257,7 @@ try {
             foreach ($processo in $alvos) {
                 # CloseMainWindow e o mesmo que clicar no X: o programa ainda
                 # pode perguntar se quer salvar. Nada de matar a forca aqui.
-                if ($TodasJanelas) {
+                if ($TodasJanelas -or $SoPrincipal) {
                     # 0x10 = WM_CLOSE, o mesmo X, janela por janela.
                     foreach ($janela in @([MaestroApps]::JanelasDoProcesso([uint32]$processo.Id))) {
                         [void][MaestroApps]::PostMessage($janela, 0x10, [IntPtr]::Zero, [IntPtr]::Zero)
@@ -263,9 +267,10 @@ try {
                 }
             }
             Start-Sleep -Milliseconds 800
+            # Com -SoPrincipal, o alvo pode ser a bandeja ou a conexao (--cm), que nao
+            # tem janela para o WM_CLOSE alcancar: encerra a forca o que sobrou. Os
+            # alvos ja vieram sem o servico, entao ele nunca e tocado.
             if ($SoPrincipal) {
-                # A janela pode so ter ido para a bandeja: encerra esse processo
-                # (e so ele) para o programa ficar fechado de fato.
                 foreach ($processo in $alvos) {
                     try { Stop-Process -Id $processo.Id -Force -ErrorAction Stop } catch { }
                 }
@@ -288,6 +293,11 @@ try {
                 if (@([MaestroApps]::JanelasDoProcesso([uint32]$processo.Id)).Count -gt 0) { $tem = $true; break }
             }
             $dados = @{ janela = $tem }
+        }
+        'rodando' {
+            # Ha processo principal rodando (janela, bandeja ou conexao). Com
+            # -SoPrincipal, o servico do RustDesk nao entra na conta.
+            $dados = @{ rodando = (@(Obter-Alvos).Count -gt 0) }
         }
         'acordar' {
             # Tela apagada por inatividade: um movimento de mouse de 1 pixel (e de

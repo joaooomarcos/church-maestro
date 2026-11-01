@@ -8,13 +8,14 @@ import { criarAtalhoControle } from './controle/atalho.js';
 import { encerrarManterLigado, retomarManterLigado } from './energia.js';
 import { iniciarHeartbeat } from './heartbeat.js';
 import { criarPontePowerPoint } from './ppt/index.js';
-import { definirConsultaLinhasDeComando } from './processos.js';
+import { consultarProcessoPrincipal } from './apps/index.js';
+import { definirConsultaPrincipal } from './processos.js';
 import { iniciarServidor } from './rotas.js';
 
 async function main(): Promise<void> {
   const config = await carregarConfig();
   const ponte = criarPontePowerPoint();
-  if (ponte.disponivel) definirConsultaLinhasDeComando((executavel) => ponte.linhasDeComando(executavel));
+  definirConsultaPrincipal(consultarProcessoPrincipal);
 
   retomarManterLigado(config.manterLigado);
 

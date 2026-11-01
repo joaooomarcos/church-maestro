@@ -739,17 +739,25 @@ precisa ficar no ar (um ensaio longo, um acesso remoto mais tarde).
 ### RustDesk (acesso remoto)
 
 O RustDesk entra na lista de programas como os outros: em **Máquinas** dá para
-**Abrir** e **Fechar** (e trazer para frente ou reiniciar). O que o painel abre e
-fecha é a **janela principal** do RustDesk.
+**Abrir**, **Fechar**, trazer para frente ou reiniciar. O painel controla o
+**processo** do RustDesk, não só a janela.
 
-- **Instalado como serviço do Windows** (o caso das máquinas da igreja): o acesso
-  remoto fica sempre disponível, com a janela aberta ou não. A bolinha verde
-  indica só se a janela principal está aberta. **Fechar não derruba quem está
-  conectado** por ele: o serviço, a bandeja e a conexão em andamento não são
-  tocados.
-- **Versão portátil ou sem serviço:** ali a janela principal é o próprio
-  RustDesk, então Fechar encerra o programa e a máquina deixa de aceitar conexão
-  até alguém abrir de novo (pelo painel dá).
+- **Como o painel decide se está aberto:** o RustDesk está aberto quando tem
+  processo principal rodando: a janela, a bandeja (`--tray`) ou a conexão ativa
+  (`--cm`). O serviço do Windows roda sempre e fica de fora (ele não conta). Assim,
+  **só na bandeja também aparece como aberto**; fechado é quando não resta nenhum
+  desses processos.
+- **Abrir** roda o `rustdesk.exe`. Se ele já estiver só na bandeja, roda de novo e
+  o programa mostra a janela; rodar de novo não duplica o programa. **Trazer para
+  frente** com o RustDesk só na bandeja faz o mesmo: abre a janela.
+- **Fechar** manda o mesmo "X" para cada janela, espera cerca de 0,8 s e encerra à
+  força o que sobrou (bandeja e conexão). **Quem estiver conectado pelo RustDesk
+  cai.** O serviço continua rodando, então o acesso remoto pode reconectar sozinho.
+- **Reiniciar** fecha, espera e abre de novo.
+- **Versão portátil ou sem serviço:** não há serviço para reconectar; o acesso
+  remoto só volta quando o RustDesk for aberto de novo.
+- **Atenção:** o painel pode levar até 30 s para notar um RustDesk aberto ou fechado
+  à mão na máquina.
 - **Ele não aparece na máquina?** Em máquina que já teve os programas escolhidos,
   ligue o RustDesk em **Sistema › Ajustes › Programas de cada máquina**.
 - **"Não sei onde o RustDesk está instalado":** o Maestro procura em
@@ -924,3 +932,37 @@ chegou. Confira a olho nu na tela do OBS.
 - **O atalho não apareceu:** veja `data\agent.log` (linha "não consegui criar
   o atalho do controle"). O endereço `http://localhost:8770/controle` funciona
   mesmo sem atalho.
+
+### OBS: "Failed to find locale/en-US.ini" ao abrir pelo Maestro
+
+O OBS precisa rodar com a pasta de trabalho na pasta do próprio executável. A
+ação "abrir" agora faz isso (`Start-Process ... -WorkingDirectory`). Causa da
+versão 0.11.0: o OBS era aberto a partir de outra pasta. Se ainda aparecer, a
+máquina está com o agente anterior: atualize em **Sistema › Versões**.
+
+### Abrir uma URL sempre dá "Não consegui abrir a página"
+
+Causa da versão 0.11.0: o script que abre o Chrome juntava `try { ... }` e
+`catch { ... }` com `; `, e o PowerShell lê esse `;` como fim do `try`, o que
+dá erro de sintaxe antes de rodar qualquer linha. O teste AL-CHROME-04 impede
+que isso volte. Corrigido na versão seguinte: atualize a máquina.
+
+### RustDesk aparece como fechado, e abrir ou fechar não funciona
+
+Causa: a versão anterior contava só a janela principal. Com o RustDesk só na
+bandeja, a máquina aparecia como fechado, e **Fechar** não encerrava a bandeja. Agora
+o critério é o processo principal (janela, `--tray` ou `--cm`), e o serviço fica de
+fora. Só o serviço rodando aparece como fechado, e **Abrir** mostra a janela. Atualize
+a máquina em **Sistema › Versões** para receber a correção. O painel pode levar até
+30 s para notar uma mudança feita à mão na máquina.
+
+Se continuar errado, rode no PowerShell da máquina (como o mesmo usuário do
+agente) e envie o resultado:
+
+    Get-Process rustdesk -ErrorAction SilentlyContinue | Select-Object Id, MainWindowTitle, @{ n = 'Linha'; e = { (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)").CommandLine } }
+
+Com o RustDesk aberto ou só na bandeja, deve haver um processo com `Linha`
+preenchida (`--tray`, `--cm` ou a janela, sem argumento). Se a `Linha` vier vazia em
+todos, é o serviço, ou o processo roda com outro usuário ou elevado: abra o RustDesk
+sem administrador e teste de novo. Este critério ainda não foi validado numa máquina
+Windows real.

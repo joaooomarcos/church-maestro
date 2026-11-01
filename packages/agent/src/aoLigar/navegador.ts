@@ -9,10 +9,10 @@ const execFileAsync = promisify(execFile);
  * O endereço vai por variável de ambiente, nunca montado dentro do comando:
  * um "&" ou aspas na URL não viram comando.
  */
-const SCRIPT = [
+export const SCRIPT = [
   "$ErrorActionPreference = 'Stop'",
-  'try { Start-Process chrome -ArgumentList $env:MAESTRO_URL }',
-  'catch { Start-Process $env:MAESTRO_URL }',
+  // Sem ";" entre o "}" do try e o catch: o PowerShell daria erro de sintaxe.
+  'try { Start-Process chrome -ArgumentList $env:MAESTRO_URL } catch { Start-Process $env:MAESTRO_URL }',
 ].join('; ');
 const SCRIPT_CODIFICADO = Buffer.from(SCRIPT, 'utf16le').toString('base64');
 

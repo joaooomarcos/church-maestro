@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aplicativosAbertos, temJanelaPrincipal } from './processos.js';
+import { aplicativosAbertos, refinarSoPrincipal, type ConsultaPrincipal } from './processos.js';
 
 /**
  * Nomes tirados de um PC da igreja (NDI 5 Tools, Office 16). O NDI não usa o
@@ -26,17 +26,50 @@ describe('aplicativosAbertos', () => {
     expect(aplicativosAbertos(['obs64.exe']).rustdesk).toBe(false);
   });
 
-  it('RustDesk só conta como aberto com a janela principal (processo sem argumentos)', () => {
-    const exe = '"C:\\Program Files\\RustDesk\\RustDesk.exe"';
-    // Serviço e --server (linha vazia), bandeja e uma conexão em andamento: nada de janela.
-    expect(temJanelaPrincipal(['', '', `${exe}  --tray`, `${exe} --cm`])).toBe(false);
-    expect(temJanelaPrincipal(['', `${exe}`, `${exe}  --tray`])).toBe(true);
-    expect(temJanelaPrincipal(['C:\\RustDesk\\rustdesk.exe'])).toBe(true);
-    expect(temJanelaPrincipal([])).toBe(false);
-  });
-
   it('não confunde Studio Monitor com Screen Capture', () => {
     const abertos = aplicativosAbertos(['Application.Network.StudioMonitor.x64']);
     expect(abertos['ndi-screen-capture']).toBe(false);
+  });
+});
+
+/**
+ * O RustDesk tem um processo de serviço que roda sempre. Conta como aberto
+ * qualquer processo principal (janela, bandeja ou conexão); a consulta vem do
+ * acoes.ps1 (-Acao rodando -SoPrincipal), que deixa o serviço de fora.
+ */
+describe('refinarSoPrincipal (RustDesk)', () => {
+  const comRustdesk = aplicativosAbertos(['rustdesk.exe']);
+
+  it('só serviço (consulta sem processo principal) = fechado', async () => {
+    const consultar: ConsultaPrincipal = async () => false;
+    expect((await refinarSoPrincipal(comRustdesk, consultar)).rustdesk).toBe(false);
+  });
+
+  it('com bandeja, conexão ou janela (consulta com principal) = aberto', async () => {
+    const consultar: ConsultaPrincipal = async () => true;
+    expect((await refinarSoPrincipal(comRustdesk, consultar)).rustdesk).toBe(true);
+  });
+
+  it('sem resposta da consulta, vale o que o nome do processo disse', async () => {
+    const consultar: ConsultaPrincipal = async () => null;
+    expect((await refinarSoPrincipal(comRustdesk, consultar)).rustdesk).toBe(true);
+  });
+
+  it('sem processo nenhum não consulta a janela', async () => {
+    const perguntas: string[] = [];
+    const consultar: ConsultaPrincipal = async (app) => {
+      perguntas.push(app);
+      return true;
+    };
+    const resultado = await refinarSoPrincipal(aplicativosAbertos([]), consultar);
+    expect(resultado.rustdesk).toBe(false);
+    expect(perguntas).toEqual([]);
+  });
+
+  it('não mexe nos outros programas', async () => {
+    const abertos = aplicativosAbertos(['rustdesk.exe', 'obs64.exe']);
+    const consultar: ConsultaPrincipal = async () => false;
+    const resultado = await refinarSoPrincipal(abertos, consultar);
+    expect(resultado).toMatchObject({ rustdesk: false, obs: true });
   });
 });

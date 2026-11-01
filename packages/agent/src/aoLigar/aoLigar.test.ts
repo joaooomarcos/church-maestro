@@ -12,7 +12,7 @@ import {
 } from './index.js';
 import { registrarRotasAoLigar } from './rotas.js';
 import { executarPassos, type DependenciasRotina } from './passos.js';
-import { urlSegura } from './navegador.js';
+import { SCRIPT, urlSegura } from './navegador.js';
 
 const MIN = 60_000;
 
@@ -165,6 +165,11 @@ describe('AL-CHROME: passo que abre uma página', () => {
       expect(rotinaAoLigarSchema.safeParse({ passos: [{ tipo: 'chrome.abrir', url }] }).success, url).toBe(false);
     }
     expect(rotinaAoLigarSchema.safeParse({ passos: [{ tipo: 'chrome.abrir', url: 'https://youtube.com' }] }).success).toBe(true);
+  });
+
+  it('AL-CHROME-04: o script do PowerShell não tem ";" entre o try e o catch', () => {
+    expect(SCRIPT).not.toMatch(/\}\s*;\s*catch/);
+    expect(SCRIPT).toMatch(/try \{.*\} catch \{/);
   });
 });
 
