@@ -1,10 +1,16 @@
 {
   "ativo": true,
-  "sha": "49acc539db9271135867c51a18e6b8931c908b30",
-  "notas": "Corrige abrir o OBS, abrir URL no Chrome e o controle do RustDesk",
+  "sha": "137bbf6e170ceca0093d5b74adf9b7f72b954000",
+  "notas": "Corrige o Abrir de todos os programas no Windows",
   "liberadoEm": "2026-11-01",
-  "versao": "0.11.1",
+  "versao": "0.11.2",
   "versoes": [
+    {
+      "versao": "0.11.2",
+      "sha": "137bbf6e170ceca0093d5b74adf9b7f72b954000",
+      "notas": "Corrige o Abrir de todos os programas no Windows",
+      "data": "2026-11-01"
+    },
     {
       "versao": "0.11.1",
       "sha": "49acc539db9271135867c51a18e6b8931c908b30",
